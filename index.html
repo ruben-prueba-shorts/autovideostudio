@@ -743,8 +743,7 @@ async function generateImagesFromPromptsAI() {
   const styleDesc = styleInput || "cinematic documentary, natural lighting";
   const targetCount = scriptLines.length;
   
-  // SOLUCIÓN CLAVE: NO incluir NUNCA el texto del guion en el prompt de la imagen. 
-  // Solo pasamos el estilo visual del usuario y una descripción genérica abstracta + restricciones estrictas anti-texto.
+  // SOLUCIÓN CLAVE: NO incluir NUNCA el texto del guion en el prompt de la imagen.
   const negativeConstraint = ", strictly no text, no words, no letters, no numbers, no typography, no captions, pure visual graphics";
   const imagePrompts = scriptLines.map((_, i) => "Scene illustration " + (i + 1) + " of " + targetCount + ". Style: " + styleDesc + negativeConstraint);
   document.getElementById("promptsArea").value = imagePrompts.join("\n\n");
