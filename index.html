@@ -140,9 +140,9 @@
 
 <div class="format-gate" id="formatGate" role="dialog" aria-modal="true" aria-labelledby="formatGateTitle">
   <div class="format-panel">
-    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · STUDIO MASTER PRO</div>
+    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · STUDIO MASTER ULTIMATE</div>
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
-    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos perfectamente sincronizados y control exacto de audio, música y SFX por segundo.</p>
+    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos perfectamente sincronizados y control exacto de audio, música y SFX.</p>
     <div class="format-options">
       <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
       <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
@@ -155,8 +155,8 @@
   <div class="brand">
     <div class="brand-icon">🤖</div>
     <div>
-      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">PRO MASTER</span></div>
-      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Galería Corregida · Música de Fondo en Bucle · SFX por Segundo Exacto</div>
+      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">MASTER ULTIMATE</span></div>
+      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Galería Corregida · BGM Independiente · SFX por Segundo Exacto</div>
     </div>
   </div>
   <div class="header-actions">
@@ -191,9 +191,9 @@
 
     <div class="sidebar-box">
       <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">💡 Guía Master:</strong>
-      1. Genera tus imágenes con IA (compatible con foto de referencia).<br>
-      2. Sube tu voz (en Off) y tu música de fondo (BGM con volumen bajo ajustable).<br>
-      3. Sube archivos MP3 de risas/teclado y colócalos en el segundo exacto que elijas en la Pestaña 4.
+      1. Genera tus imágenes (con foto de referencia optimizada).<br>
+      2. Sube tu voz (en Off) y tu música BGM en bucle.<br>
+      3. Sube tus MP3 de risas/teclado y colócalos en el segundo exacto en la Pestaña 4.
     </div>
   </aside>
 
@@ -668,6 +668,11 @@ async function fetchCloudflareImage(prompt, aspectRatio) {
   const accessKey = getCloudflareAccessKey();
   if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave de tu Worker.");
   
+  let cleanRefImage = autoVideoReferenceImageData || null;
+  if (cleanRefImage && cleanRefImage.includes("base64,")) {
+    cleanRefImage = cleanRefImage.split("base64,")[1];
+  }
+
   const response = await fetch(workerUrl + "/generate", {
     method: "POST",
     mode: "cors",
@@ -676,7 +681,7 @@ async function fetchCloudflareImage(prompt, aspectRatio) {
       prompt, 
       aspectRatio, 
       steps: 4, 
-      referenceImage: autoVideoReferenceImageData || null, 
+      referenceImage: cleanRefImage, 
       referenceImageMimeType: autoVideoReferenceImageMime || null 
     })
   });
@@ -1194,6 +1199,25 @@ async function exportVideoYouTubeMaster() {
       gainNode.connect(dest); 
       gainNode.connect(audioCtx.destination);
     }
+
+    // Mezclar también todos los SFX personalizados programados en las escenas para la exportación
+    scenes.forEach(sc => {
+      if (sc.sfxId) {
+        const sfxItem = userSfxList.find(x => x.id === sc.sfxId);
+        if (sfxItem && sfxItem.buffer) {
+          try {
+            const sfxNode = audioCtx.createBufferSource();
+            sfxNode.buffer = sfxItem.buffer;
+            sfxNode.connect(dest);
+            sfxNode.connect(audioCtx.destination);
+            const triggerTime = sc.start + (sc.sfxSecond || 0);
+            if (triggerTime >= 0 && triggerTime < totalDuration) {
+              sfxNode.start(triggerTime);
+            }
+          } catch(e) {}
+        }
+      }
+    });
 
     const combinedTracks = [...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()];
     const combinedStream = new MediaStream(combinedTracks);
