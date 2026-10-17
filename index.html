@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AutoVideo Faceless Studio — Pro Ultimate Master</title>
+<title>AutoVideo Faceless Studio — AI Master Pro</title>
 <style>
   :root {
     --bg-dark: #0b0f17;
@@ -140,9 +140,9 @@
 
 <div class="format-gate" id="formatGate" role="dialog" aria-modal="true" aria-labelledby="formatGateTitle">
   <div class="format-panel">
-    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · STUDIO MASTER ULTIMATE</div>
+    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · STUDIO AI MASTER</div>
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
-    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos sincronizados y control exacto de cuándo empieza y cuándo acaba el audio SFX.</p>
+    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos sincronizados y automatización por IA de tus efectos SFX.</p>
     <div class="format-options">
       <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
       <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
@@ -155,8 +155,8 @@
   <div class="brand">
     <div class="brand-icon">🤖</div>
     <div>
-      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">MASTER ULTIMATE</span></div>
-      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Control Inicio/Fin SFX · Galería Corregida · BGM Independiente</div>
+      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">AI MASTER PRO</span></div>
+      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">IA Automatización de SFX · BGM Independiente · Control Inicio/Fin</div>
     </div>
   </div>
   <div class="header-actions">
@@ -185,15 +185,13 @@
       <span class="step-status" id="st3">0 imgs</span>
     </button>
     <button class="step-btn" onclick="switchTab(4)" id="nav4">
-      <span>4. Línea de Tiempo & SFX</span>
+      <span>4. Línea de Tiempo & IA SFX</span>
       <span class="step-status" id="st4">0 escenas</span>
     </button>
 
     <div class="sidebar-box">
-      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">💡 Guía Master (Inicio y Fin):</strong>
-      1. Elige el efecto (ej: risas).<br>
-      2. Indica el segundo de <b>Inicio</b> (ej: 2.0s) y el segundo de <b>Fin</b> (ej: 3.0s para que dure exactamente 1s).<br>
-      3. Funciona al reproducir y al descargar el vídeo.
+      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">🤖 Automatización IA:</strong>
+      Usa el botón de la Pestaña 4 para que la IA lea tu guion y coloque automáticamente los efectos de sonido (ej. avispas, risas) donde corresponda.
     </div>
   </aside>
 
@@ -202,7 +200,7 @@
     <div class="tab-View active" id="tab0">
       <div class="card ai-card">
         <h2>📝 1. Tu guion e imágenes limpias con IA</h2>
-        <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y añadirá automáticamente las imágenes a la galería.</p>
+        <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y generará imágenes limpias mediante Cloudflare.</p>
 
         <div class="settings-grid" style="margin-bottom:12px;">
           <div>
@@ -287,10 +285,10 @@
       </div>
 
       <div class="card">
-        <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, etc.)</h2>
-        <p class="sub">Sube tus archivos MP3/WAV de efectos especiales. Podrás asignarlos a cualquier escena indicando cuándo empieza y cuándo acaba.</p>
+        <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, Avispas...)</h2>
+        <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) para que la IA los detecte automáticamente.</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
-          <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX (Risas, etc.)</button>
+          <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX</button>
           <input type="file" id="sfxFileInput" accept="audio/*" multiple style="display:none" onchange="handleSfxUpload(this.files)">
         </div>
         <div id="sfxLibraryList" style="display:flex; flex-direction:column; gap:8px;">
@@ -343,16 +341,20 @@
       </div>
     </div>
 
-    <!-- PESTAÑA 4: TIMELINE & SFX -->
+    <!-- PESTAÑA 4: TIMELINE & AI SFX -->
     <div class="tab-View" id="tab4">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
           <div>
-            <h2>⏱️ 4. Línea de Tiempo, Tiempos y SFX (Inicio y Fin)</h2>
-            <p class="sub" style="margin-bottom:0;">Elige el efecto (ej: risas), el segundo exacto donde <b>empieza</b> y el segundo exacto donde <b>acaba</b>.</p>
+            <h2>⏱️ 4. Línea de Tiempo y Automatización IA de SFX</h2>
+            <p class="sub" style="margin-bottom:0;">Haz que la IA lea tu guion y coloque los efectos de sonido automáticamente según las palabras clave.</p>
           </div>
-          <button class="btn" onclick="addBlankScene()">➕ Añadir Escena</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-ai" onclick="autoDetectAndAssignSFXWithAI()">🤖 Auto-Detectar SFX con IA</button>
+            <button class="btn" onclick="addBlankScene()">➕ Añadir Escena</button>
+          </div>
         </div>
+        <div id="aiSfxLog" class="status-banner" style="display:none; margin-bottom:12px;"></div>
         <div class="scene-list" id="sceneList"></div>
       </div>
     </div>
@@ -431,7 +433,7 @@
     <div class="card" style="padding:14px; margin-top:auto;">
       <h3 style="font-size:0.88rem; margin-bottom:8px;">🚀 Exportar Vídeo Master Pro</h3>
       <div id="exportStatus" class="status-banner" style="margin-bottom:10px;">
-        Listo para exportar vídeo con BGM de fondo, SFX precisos (inicio/fin) y subtítulos exactos.
+        Listo para exportar vídeo con automatización IA, BGM y SFX precisos.
       </div>
       <div class="progress-outer" id="exportProgressOuter" style="margin-bottom:10px;">
         <div class="progress-inner" id="exportProgressInner"></div>
@@ -530,8 +532,7 @@ function playPreviewSfx(id) {
   } catch(e) {}
 }
 
-// Reproducir SFX con tiempo de inicio y fin (duración = fin - inicio)
-function playAssignedSfx(id, startSec = 0, endSec = 1) {
+function playAssignedSfx(id, startSec = 2.0, endSec = 3.0) {
   if (!id) return;
   const item = userSfxList.find(x => x.id === id);
   if (!item) return;
@@ -545,6 +546,52 @@ function playAssignedSfx(id, startSec = 0, endSec = 1) {
     const duration = Math.max(0.1, endSec - startSec);
     src.start(0, 0, duration);
   } catch(e) {}
+}
+
+// AUTOMATIZACIÓN DE SFX POR IA (ANÁLISIS DE PALABRAS CLAVE)
+function autoDetectAndAssignSFXWithAI() {
+  if (userSfxList.length === 0) {
+    alert("Sube primero al menos un archivo SFX en la Pestaña 1.");
+    switchTab(1);
+    return;
+  }
+  if (scenes.length === 0) {
+    alert("No hay escenas en la línea de tiempo. Sincroniza tu guion primero.");
+    return;
+  }
+
+  let assignedCount = 0;
+  scenes.forEach(sc => {
+    const textLower = (sc.text || "").toLowerCase();
+    
+    for (const sfx of userSfxList) {
+      const sfxNameClean = sfx.name.toLowerCase().replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      const keywords = sfxNameClean.split(/\s+/).filter(w => w.length > 2);
+      
+      let matched = false;
+      for (const kw of keywords) {
+        if (textLower.includes(kw)) {
+          matched = true;
+          break;
+        }
+      }
+
+      if (matched) {
+        sc.sfxId = sfx.id;
+        sc.sfxStart = 1.0;
+        sc.sfxEnd = 2.5;
+        assignedCount++;
+        break;
+      }
+    }
+  });
+
+  renderSceneListUI();
+  const logEl = document.getElementById("aiSfxLog");
+  if (logEl) {
+    logEl.style.display = "block";
+    logEl.innerHTML = `🤖 <b>IA Completada:</b> Se han asignado automáticamente efectos de sonido a ${assignedCount} escena(s) basándose en las palabras clave del guion.`;
+  }
 }
 
 let autoVideoReferenceImageData = "";
@@ -725,7 +772,7 @@ function loadImageCrossOrigin(url, timeoutMs = 45000) {
       } catch (e) {
         settled = true;
         clearTimeout(timeoutId);
-        reject(new Error("Error CORS en imagen."));
+        reject(new Error("Error al preparar imagen."));
       }
     };
     img.onerror = () => {
@@ -942,8 +989,8 @@ function renderSceneListUI() {
       <div style="display:flex; flex-direction:column; gap:3px;">
         <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:0.75rem;">${sfxOptions}</select>
         <div style="font-size:0.68rem; color:var(--text-muted); display:flex; gap:2px;">
-          <span>Emp:<input type="number" step="0.1" value="${sc.sfxStart || 2.0}" onchange="scenes[${idx}].sfxStart=Number(this.value)" style="width:36px; font-size:0.68rem; padding:1px;"></span>
-          <span>Acab:<input type="number" step="0.1" value="${sc.sfxEnd || 3.0}" onchange="scenes[${idx}].sfxEnd=Number(this.value)" style="width:36px; font-size:0.68rem; padding:1px;"></span>
+          <span>Emp:<input type="number" step="0.1" value="${sc.sfxStart !== undefined ? sc.sfxStart : 2.0}" onchange="scenes[${idx}].sfxStart=Number(this.value)" style="width:36px; font-size:0.68rem; padding:1px;"></span>
+          <span>Acab:<input type="number" step="0.1" value="${sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0}" onchange="scenes[${idx}].sfxEnd=Number(this.value)" style="width:36px; font-size:0.68rem; padding:1px;"></span>
         </div>
       </div>
       <button class="btn" onclick="scenes.splice(${idx},1); renderSceneListUI(); renderCurrentFrame()" style="padding:6px 9px;">🗑️</button>
@@ -1210,7 +1257,6 @@ async function exportVideoYouTubeMaster() {
       gainNode.connect(audioCtx.destination);
     }
 
-    // Inyectar SFX personalizados en la exportación con segundo de inicio y fin exactos
     const exportSfxNodes = [];
     scenes.forEach(sc => {
       if (sc.sfxId) {
@@ -1261,7 +1307,6 @@ async function exportVideoYouTubeMaster() {
       exportBgmNode.start(0, Math.max(0, offsetVal));
     }
 
-    // Programar la ejecución de los SFX en la exportación con inicio y fin exactos
     exportSfxNodes.forEach(sfx => {
       try {
         sfx.node.start(sfx.time, 0, sfx.duration);
