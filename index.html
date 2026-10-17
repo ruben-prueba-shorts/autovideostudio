@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AutoVideo Faceless Studio — IA Adaptativa</title>
+<title>AutoVideo Faceless Studio — IA Adaptativa + SFX</title>
 <style>
   :root {
     --bg-dark: #0b0f17;
@@ -139,16 +139,16 @@
 
 <div class="format-gate" id="formatGate" role="dialog" aria-modal="true" aria-labelledby="formatGateTitle">
   <div class="format-panel">
-    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · NUEVO PROYECTO</div>
+    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · NUEVO PROYECTO + SFX</div>
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
-    <p class="sub">Primero elige el formato. Después pegarás tu guion y AutoVideo lo dividirá en escenas para generar únicamente las imágenes con IA.</p>
+    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias sin texto y añadirá efectos de sonido automáticos (SFX) tipo Reel/Short.</p>
     <div class="format-options">
-      <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido, imágenes más frecuentes y narración directa.</div></label>
-      <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo más pausado, escenas variadas y narración extensa.</div></label>
+      <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido, efectos SFX dinámicos y subtítulos palabra por palabra.</div></label>
+      <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado, transiciones limpias y narración extensa.</div></label>
     </div>
     <div style="max-width:440px;margin-bottom:18px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg-input);">
-      <strong>🎞️ Escenas e imágenes automáticas</strong>
-      <p class="sub" style="margin:6px 0 0;">Como referencia, las escenas se plantean para cambiar aproximadamente cada 4–5 segundos en Shorts y algo más despacio en vídeos largos. La división se adapta a las frases y a la longitud del guion; no se genera ni se reescribe el texto.</p>
+      <strong>✨ Efectos de Sonido Automáticos (SFX)</strong>
+      <p class="sub" style="margin:6px 0 0;">Incluye sonido sintético de alta calidad para transiciones de escena y aparición de palabras, sin necesidad de descargar archivos externos.</p>
     </div>
     <div id="formatGateError" role="alert" style="display:none;color:#fca5a5;margin-bottom:12px;"></div>
     <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
@@ -159,8 +159,8 @@
   <div class="brand">
     <div class="brand-icon">🤖</div>
     <div>
-      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">ULTIMATE AI</span></div>
-      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Guion propio · Imágenes IA · Subtítulos y edición</div>
+      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">ULTIMATE AI + SFX</span></div>
+      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Imágenes IA limpias · Subtítulos palabra por palabra · Efectos SFX</div>
     </div>
   </div>
   <div class="header-actions">
@@ -177,8 +177,8 @@
       <span class="step-status ai-badge" id="st0">IA Lista</span>
     </button>
     <button class="step-btn" onclick="switchTab(1)" id="nav1">
-      <span>1. Audio opcional</span>
-      <span class="step-status" id="st1">Pendiente</span>
+      <span>1. Audio y SFX</span>
+      <span class="step-status" id="st1">SFX Activo</span>
     </button>
     <button class="step-btn" onclick="switchTab(2)" id="nav2">
       <span>2. Guion y Prompts</span>
@@ -196,9 +196,8 @@
     <div class="sidebar-box">
       <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">💡 Guía Rápida:</strong>
       1. Pega tu guion en <b>Guion y Prompts</b>.<br>
-      2. AutoVideo lo divide en escenas cortas.<br>
-      3. Genera una imagen IA por escena.<br>
-      4. Añade audio opcional y revisa subtítulos y línea de tiempo.
+      2. Genera imágenes limpias sin texto.<br>
+      3. Disfruta de los efectos SFX automáticos al cambiar de palabra/escena.
     </div>
   </aside>
 
@@ -206,8 +205,8 @@
     <!-- PESTAÑA 0: ESTUDIO IA -->
     <div class="tab-View active" id="tab0">
       <div class="card ai-card">
-        <h2>📝 1. Tu guion e imágenes con IA</h2>
-        <p class="sub">Pega tu guion. AutoVideo lo dividirá automáticamente en escenas según las frases y la narración. No reescribe ni genera el guion: solo crea las imágenes con tu Worker de imágenes de Cloudflare.</p>
+        <h2>📝 1. Tu guion e imágenes limpias con IA</h2>
+        <p class="sub">Pega tu guion. AutoVideo lo dividirá automáticamente en escenas y aplicará un filtro estricto para que las imágenes salgan 100% limpias de texto y letras.</p>
 
         <div class="settings-grid" style="margin-bottom:12px;">
           <div>
@@ -216,12 +215,12 @@
               <option value="cloudflare" selected>Cloudflare FLUX.1 Schnell</option>
             </select>
             <div id="aiImageModelHint" style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:6px;">
-              Generación de imágenes con Cloudflare Workers AI. No hay alternativa automática a Puter.
+              Generación de imágenes con Cloudflare Workers AI.
             </div>
             <div style="margin-top:10px; display:flex; flex-direction:column; gap:7px;">
-              <label for="cloudflareWorkerUrl">URL del Worker de imágenes (ya configurada)</label>
+              <label for="cloudflareWorkerUrl">URL del Worker de imágenes</label>
               <input type="text" id="cloudflareWorkerUrl" value="https://autovideo-image-worker.jarambedioszz.workers.dev" placeholder="https://autovideo-image-worker.jarambedioszz.workers.dev" autocomplete="url" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
-              <label for="cloudflareAccessKey">Clave de acceso del Worker (no es una API key de Cloudflare)</label>
+              <label for="cloudflareAccessKey">Clave de acceso del Worker (APP_SECRET)</label>
               <input type="password" id="cloudflareAccessKey" placeholder="La clave que guardaste como APP_SECRET" autocomplete="new-password" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button type="button" class="btn" onclick="testCloudflareWorker()">🔌 Comprobar Cloudflare</button>
@@ -230,14 +229,14 @@
             </div>
           </div>
           <div>
-            <label for="aiVisualStyle">Estilo visual (escríbelo como quieras)</label>
-            <textarea id="aiVisualStyle" rows="4" placeholder="Ejemplo: documental cinematográfico realista, iluminación dramática, colores naturales, ambientación histórica fiel, planos variados"></textarea>
+            <label for="aiVisualStyle">Estilo visual (Ej: Stickmans)</label>
+            <textarea id="aiVisualStyle" rows="4" placeholder="Ejemplo: 2D minimalist vector animation style, simple stickman characters with expressive poses, clean black outlines, vibrant flat color backgrounds"></textarea>
             <div style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:6px;">
-              Este estilo se añadirá a los prompts de todas las imágenes. Puedes dejarlo vacío si prefieres usar solo una imagen de referencia.
+              El sistema añadirá automáticamente restricciones estrictas para evitar que aparezca texto en el fondo.
             </div>
             <div style="margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:10px; background:var(--bg-input);">
               <label for="aiReferenceImage">🖼️ Imagen de referencia (opcional)</label>
-              <p style="font-size:0.78rem; line-height:1.45; color:var(--text-muted); margin:6px 0 10px;">Sube una imagen que muestre el aspecto que buscas: por ejemplo, un stickman, un estilo de dibujo, una paleta de colores o un personaje. Es independiente del campo de estilo visual; puedes usar uno, el otro o ambos.</p>
+              <p style="font-size:0.78rem; line-height:1.45; color:var(--text-muted); margin:6px 0 10px;">Sube una imagen de referencia para mantener el mismo diseño de personajes.</p>
               <input type="file" id="aiReferenceImage" accept="image/png,image/jpeg,image/webp" onchange="handleReferenceImageSelection(event)" style="width:100%; color:var(--text-main); font-size:0.82rem;">
               <div id="aiReferencePreviewWrap" style="display:none; margin-top:10px; align-items:center; gap:12px;">
                 <img id="aiReferencePreview" alt="Vista previa de imagen de referencia" style="width:100px; height:100px; object-fit:contain; background:#080c14; border:1px solid var(--border); border-radius:8px;">
@@ -246,14 +245,14 @@
                   <button type="button" class="btn" onclick="clearReferenceImage()" style="margin-top:8px;">Quitar imagen</button>
                 </div>
               </div>
-              <div id="aiReferenceStatus" style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:8px;">Sin imagen de referencia. El campo es opcional.</div>
+              <div id="aiReferenceStatus" style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:8px;">Sin imagen de referencia.</div>
             </div>
           </div>
         </div>
 
         <div style="margin-bottom:12px; padding:16px; border:1px solid var(--border); border-radius:12px; background:var(--bg-input);">
-          <h3 style="margin:0 0 6px;">✍️ Tu guion, tus imágenes</h3>
-          <p class="sub" style="margin-bottom:12px;">Pega el texto que has escrito. AutoVideo no crea ni transcribe el guion: prepara las escenas y genera las imágenes con tu Worker de Cloudflare.</p>
+          <h3 style="margin:0 0 6px;">✍️ Tu guion, tus imágenes limpias</h3>
+          <p class="sub" style="margin-bottom:12px;">Pega tu texto y genera las imágenes sin temor a textos basura.</p>
           <button class="btn btn-primary" id="btnGenerateAllImagesAI" onclick="switchTab(2)">📝 Ir a pegar el guion</button>
         </div>
         <textarea id="aiTopicInput" rows="1" style="display:none" aria-hidden="true"></textarea>
@@ -262,17 +261,26 @@
       </div>
     </div>
 
-    <!-- PESTAÑA 1: AUDIO -->
+    <!-- PESTAÑA 1: AUDIO Y SFX -->
     <div class="tab-View" id="tab1">
       <div class="card">
-        <h2>🎙️ Audio opcional (voz y música)</h2>
-        <p class="sub">La generación de imágenes no necesita audio. Si ya tienes una voz en off, puedes cargarla aquí para usarla en la edición y la línea de tiempo.</p>
+        <h2>🎙️ Audio y Efectos de Sonido Automáticos (SFX)</h2>
+        <p class="sub">Carga tu voz en off y configura los efectos de sonido dinámicos para tus subtítulos.</p>
         <div class="dropzone" onclick="document.getElementById('voiceInput').click()">
           <div style="font-size:1.8rem; margin-bottom:6px;">🎵</div>
           <div id="voiceLabel" style="font-weight:600;">Haz clic aquí o arrastra tu archivo MP3 de Voz en Off</div>
           <input type="file" id="voiceInput" accept="audio/*" style="display:none" onchange="handleVoiceUpload(this.files[0])">
         </div>
-        <p class="sub" style="margin-top:12px;">No necesitas un Worker de transcripción: las imágenes se generan a partir del guion que escribas en la pestaña siguiente.</p>
+        <div style="margin-top:16px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-input); padding:12px; border-radius:10px; border:1px solid var(--border);">
+          <div>
+            <strong>🔊 Efectos SFX Automáticos (Whoosh & Pop)</strong>
+            <p class="sub" style="margin:2px 0 0;">Reproduce sonidos de estilo Reel al cambiar de palabra o de escena.</p>
+          </div>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="sfxEnabledToggle" checked style="width:18px; height:18px; accent-color:var(--accent);">
+            <span style="font-weight:600; font-size:0.85rem;">Activar SFX</span>
+          </label>
+        </div>
         <canvas id="waveformCanvas" width="700" height="64" style="width:100%; height:64px; margin-top:12px; background:#090d16; border-radius:8px; border:1px solid var(--border);"></canvas>
       </div>
 
@@ -295,22 +303,22 @@
     <div class="tab-View" id="tab2">
       <div class="card">
         <h2>📝 2. Tu guion</h2>
-        <p class="sub">Pega aquí el guion definitivo. AutoVideo no lo reescribe: lo divide en escenas visuales y genera una imagen para cada una. Como referencia, busca escenas de unos 4–5 segundos en Shorts y algo más largas en vídeos largos.</p>
-        <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo. Puedes escribir una frase por línea o pegar varios párrafos..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
+        <p class="sub">Pega aquí tu guion completo. AutoVideo lo dividirá en escenas y generará imágenes limpias y sin texto.</p>
+        <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
           <button class="btn" style="padding:4px 10px; font-size:0.76rem;" onclick="splitLongParagraphs()">✂️ Dividir párrafos largos</button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-          <button class="btn btn-primary" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes para todas las escenas</button>
-          <button class="btn" onclick="switchTab(1)">🎙️ Audio opcional</button>
+          <button class="btn btn-primary" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes limpias</button>
+          <button class="btn" onclick="switchTab(1)">🎙️ Audio y SFX</button>
         </div>
       </div>
 
       <div class="card">
-        <h2>🎨 Instrucciones visuales generadas automáticamente</h2>
-        <p class="sub">La aplicación crea una instrucción visual para cada fragmento del guion y la envía directamente al Worker de imágenes. No necesitas escribir prompts ni utilizar otro servicio de IA.</p>
-        <textarea id="promptsArea" rows="6" placeholder="Aquí aparecerán las instrucciones visuales al generar las imágenes..." readonly></textarea>
+        <h2>🎨 Instrucciones visuales (Sin texto)</h2>
+        <p class="sub">Prompts limpios enviados al Worker de Cloudflare.</p>
+        <textarea id="promptsArea" rows="6" placeholder="Aquí aparecerán las instrucciones visuales..." readonly></textarea>
       </div>
     </div>
 
@@ -323,7 +331,7 @@
             <p class="sub" style="margin-bottom:0;">Usa ◀ ▶ o arrastra con el ratón para reordenar.</p>
           </div>
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes directamente</button>
+            <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
             <button class="btn" onclick="clearAllImages()">🗑️ Vaciar</button>
           </div>
         </div>
@@ -418,24 +426,13 @@
             </select>
           </div>
         </div>
-        <div style="grid-column:1/-1;">
-          <label>Estilo de edición (aplicar a todas las escenas)</label>
-          <select id="editingPresetSelect" onchange="applyEditingPreset(this.value)">
-            <option value="auto">Automático variado</option>
-            <option value="cinematic">Documental cinematográfico</option>
-            <option value="dynamic">Short dinámico</option>
-            <option value="smooth">Movimiento suave</option>
-            <option value="static">Sin movimiento</option>
-          </select>
-          <small style="display:block;color:var(--text-muted);margin-top:6px;line-height:1.4;">Puedes cambiar este estilo cuando quieras. También puedes elegir una animación distinta en cada escena de la línea de tiempo.</small>
-        </div>
       </div>
     </div>
 
     <div class="card" style="padding:14px; margin-top:auto;">
-      <h3 style="font-size:0.88rem; margin-bottom:8px;">🚀 Exportar Vídeo para YouTube</h3>
+      <h3 style="font-size:0.88rem; margin-bottom:8px;">🚀 Exportar Vídeo con SFX</h3>
       <div id="exportStatus" class="status-banner" style="margin-bottom:10px;">
-        Listo para exportar vídeo con audio sincronizado.
+        Listo para exportar vídeo con audio y efectos SFX.
       </div>
       <div class="progress-outer" id="exportProgressOuter" style="margin-bottom:10px;">
         <div class="progress-inner" id="exportProgressInner"></div>
@@ -466,10 +463,10 @@ let isDemoSynthMode = false;
 let animFrameId = null;
 let lastFrameTimestamp = 0;
 
-let detectedPauses = [];
 let loadedImages = [];
 let scenes = [];
-let draggedIndex = null;
+let lastPlayedWordIndex = -1;
+let lastPlayedSceneIndex = -1;
 
 const EFFECTS = [
   "Sin movimiento", "Zoom In Suave", "Zoom Out Suave", "Zoom In Dramático",
@@ -481,26 +478,73 @@ function isValidHex(hex) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
 }
 
-function applyEditingPreset(preset) {
-  if (!scenes.length) return;
-  const cinematic = ["Zoom In Suave", "Pan Derecha", "Zoom Out Suave", "Pan Izquierda", "Movimiento Ken Burns"];
-  const dynamic = ["Zoom In Dramático", "Pan Derecha", "Zoom In Dramático", "Pan Izquierda", "Pulso Suave", "Zoom + Pan"];
-  const smooth = ["Movimiento Ken Burns", "Zoom In Suave", "Pan Arriba", "Zoom Out Suave", "Pan Abajo"];
-  scenes.forEach((scene, index) => {
-    if (preset === "static") scene.effect = "Sin movimiento";
-    else if (preset === "cinematic") scene.effect = cinematic[index % cinematic.length];
-    else if (preset === "dynamic") scene.effect = dynamic[index % dynamic.length];
-    else if (preset === "smooth") scene.effect = smooth[index % smooth.length];
-    else scene.effect = EFFECTS[index % EFFECTS.length];
-  });
-  renderSceneListUI();
-  renderCurrentFrame();
+// SFX WEB AUDIO API
+function playPopSFX() {
+  const toggle = document.getElementById("sfxEnabledToggle");
+  if (toggle && !toggle.checked) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
+    
+    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+  } catch(e) {}
+}
+
+function playWhooshSFX() {
+  const toggle = document.getElementById("sfxEnabledToggle");
+  if (toggle && !toggle.checked) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    
+    const bufferSize = audioCtx.sampleRate * 0.15;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(300, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(1800, audioCtx.currentTime + 0.07);
+    filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
+    filter.Q.value = 3;
+    
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.06);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    noise.start();
+    noise.stop(audioCtx.currentTime + 0.15);
+  } catch(e) {}
 }
 
 function startProjectWithFormat() {
   const selected = document.querySelector('input[name="videoFormat"]:checked');
   selectedVideoFormat = selected ? selected.value : "short";
-  selectedSceneSeconds = selectedVideoFormat === "short" ? 4.5 : 6.5;
   const defaultAspect = selectedVideoFormat === "short" ? "9:16" : "16:9";
   const aspectSelect = document.getElementById("aspectSelect");
   if (aspectSelect) aspectSelect.value = defaultAspect;
@@ -508,42 +552,7 @@ function startProjectWithFormat() {
   const gate = document.getElementById("formatGateError");
   if (gate) gate.style.display = "none";
   document.getElementById("formatGate").classList.add("hidden");
-  try { localStorage.setItem("autovideo_video_format", selectedVideoFormat); localStorage.removeItem("autovideo_scene_seconds"); } catch (_) {}
   switchTab(2);
-}
-
-function getExpectedDurationRange() {
-  return selectedVideoFormat === "short" ? { min: 40, max: 120, label: "Short (40 segundos–2 minutos)" } : { min: 360, max: 1080, label: "vídeo largo (6–18 minutos)" };
-}
-
-function splitTranscriptForSceneCount(rawText, targetCount) {
-  const text = String(rawText || "").replace(/\r/g, " ").replace(/\s+/g, " ").trim();
-  if (!text) return [];
-  const sentences = (text.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [text]).map(x => x.trim()).filter(Boolean);
-  targetCount = Math.max(1, Math.min(Math.round(targetCount), 500));
-  const totalWords = text.split(/\s+/).filter(Boolean).length;
-  const targetWords = Math.max(1, totalWords / targetCount);
-  const result = [];
-  let current = [];
-  let words = 0;
-  for (let i = 0; i < sentences.length; i++) {
-    const sentence = sentences[i];
-    const count = sentence.split(/\s+/).filter(Boolean).length;
-    if (current.length && words + count > targetWords && result.length < targetCount - 1) {
-      result.push(current.join(" ")); current = []; words = 0;
-    }
-    current.push(sentence); words += count;
-  }
-  if (current.length) result.push(current.join(" "));
-  while (result.length < targetCount) {
-    let longestIndex = 0, longestWords = 0;
-    for (let i = 0; i < result.length; i++) { const n = result[i].split(/\s+/).length; if (n > longestWords) { longestWords = n; longestIndex = i; } }
-    if (longestWords < 2) break;
-    const wordsArray = result[longestIndex].split(/\s+/);
-    const mid = Math.ceil(wordsArray.length / 2);
-    result.splice(longestIndex, 1, wordsArray.slice(0, mid).join(" "), wordsArray.slice(mid).join(" "));
-  }
-  return result;
 }
 
 function switchTab(num) {
@@ -555,8 +564,6 @@ function switchTab(num) {
   }
 }
 
-function toggleGeminiKeyBox() {}
-
 function showAILog(msg, isError = false) {
   const el = document.getElementById("aiStatusLog");
   if (!el) return;
@@ -567,9 +574,7 @@ function showAILog(msg, isError = false) {
 }
 
 const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
-let voiceFileForTranscription = null;
 let selectedVideoFormat = "short";
-let selectedSceneSeconds = 5;
 
 function escapeHtml(value) {
   return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({
@@ -629,10 +634,8 @@ function loadImageCrossOrigin(url, timeoutMs = 45000) {
   });
 }
 
-function getSelectedImageModel() { return "cloudflare"; }
 function setImageModelPreference(value) {
   try { localStorage.setItem("autovideo_image_provider", "cloudflare"); } catch (_) {}
-  updateImageModelHint();
 }
 
 function getCloudflareWorkerUrl() {
@@ -661,14 +664,8 @@ function saveCloudflareSettings() {
   } catch (_) {}
 }
 
-function updateImageModelHint() {
-  const hint = document.getElementById("aiImageModelHint");
-  if (!hint) return;
-  hint.textContent = "Las imágenes se generan exclusivamente con Cloudflare FLUX.1 Schnell.";
-}
-
 function showCloudflareSetupHelp() {
-  showAILog("<b>Configuración de AutoVideo:</b><br>• Solo se necesita el Worker de imágenes: <code>https://autovideo-image-worker.jarambedioszz.workers.dev</code>.<br>• Introduce la clave APP_SECRET.");
+  showAILog("<b>Configuración:</b><br>• URL del Worker de imágenes configurada.<br>• Introduce tu clave APP_SECRET.");
 }
 
 async function testCloudflareWorker() {
@@ -740,10 +737,9 @@ async function generateImagesFromPromptsAI() {
     return;
   }
   const styleInput = document.getElementById("aiVisualStyle").value.trim();
-  const styleDesc = styleInput || "cinematic documentary, natural lighting";
+  const styleDesc = styleInput || "2D minimalist vector animation style, simple stickman characters";
   const targetCount = scriptLines.length;
   
-  // SOLUCIÓN CLAVE: NO incluir NUNCA el texto del guion en el prompt de la imagen.
   const negativeConstraint = ", strictly no text, no words, no letters, no numbers, no typography, no captions, pure visual graphics";
   const imagePrompts = scriptLines.map((_, i) => "Scene illustration " + (i + 1) + " of " + targetCount + ". Style: " + styleDesc + negativeConstraint);
   document.getElementById("promptsArea").value = imagePrompts.join("\n\n");
@@ -813,10 +809,8 @@ async function generateImagesFromPromptsAI() {
 
 async function handleVoiceUpload(file) {
   if (!file) return;
-  voiceFileForTranscription = file;
-  isDemoSynthMode = false;
   document.getElementById("voiceLabel").textContent = "✅ " + file.name;
-  document.getElementById("st1").textContent = "Audio listo";
+  document.getElementById("st1").textContent = "Voz lista";
   document.getElementById("st1").classList.add("ok");
 
   const arrayBuf = await file.arrayBuffer();
@@ -1012,7 +1006,7 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
   }
 }
 
-// SUBTÍTULOS MOSTRANDO EXACTAMENTE 1 SOLA PALABRA (LA ACTUAL DEL NARRADOR)
+// SUBTÍTULOS DE 1 PALABRA + DISPARO DE SFX (POP Y WHOOSH)
 function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const subsMode = document.getElementById("subsSelect").value;
   if (subsMode === "none" || !scene || !scene.text) return;
@@ -1026,20 +1020,25 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const wordDuration = sceneDuration / words.length;
   const activeWordIndex = Math.min(words.length - 1, Math.floor(timeInScene / wordDuration));
 
+  if (isPlaying && activeWordIndex !== lastPlayedWordIndex) {
+    lastPlayedWordIndex = activeWordIndex;
+    playPopSFX();
+  }
+
   ctx.save();
   const fontSize = Math.round(h * 0.055);
   ctx.font = `700 ${fontSize}px 'Segoe UI', sans-serif`; 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  const customColorInput = document.getElementById("subColorText");
-  const subColor = customColorInput && isValidHex(customColorInput.value.trim()) ? customColorInput.value.trim() : (customColorInput ? customColorInput.value.trim() : "#ffffff");
+  const subColorText = document.getElementById("subColorText");
+  const subColor = subColorText && isValidHex(subColorText.value.trim()) ? subColorText.value.trim() : "#ffffff";
 
   const currentWord = words[activeWordIndex];
   const baseY = h * 0.82;
   const wordW = ctx.measureText(currentWord).width;
 
-  if (subsMode === "box") {
+  if (subsMode === "box" || subsMode === "stroke" || true) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     ctx.beginPath();
     ctx.roundRect(w / 2 - wordW / 2 - 28, baseY - fontSize * 0.7 - 10, wordW + 56, fontSize * 1.4 + 20, 14);
@@ -1061,10 +1060,16 @@ function renderCurrentFrame() {
   const ctx = canvas.getContext("2d"); const w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
   const idx = findSceneIndexAtTime(currentTime);
+  
+  if (isPlaying && idx !== lastPlayedSceneIndex) {
+    lastPlayedSceneIndex = idx;
+    playWhooshSFX();
+  }
+
   if (idx < 0 || !scenes[idx]) {
     ctx.fillStyle = "#131b2e"; ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = "#a78bfa"; ctx.font = "bold 24px 'Segoe UI'"; ctx.textAlign = "center";
-    ctx.fillText("🤖 AutoVideo Faceless Studio", w / 2, h / 2 - 10);
+    ctx.fillText("🤖 AutoVideo Faceless Studio + SFX", w / 2, h / 2 - 10);
     return;
   }
   const sc = scenes[idx];
@@ -1140,7 +1145,7 @@ async function exportVideoYouTubeMaster() {
   const progInner = document.getElementById("exportProgressInner");
   const btn = document.getElementById("exportVideoBtn");
   btn.disabled = true; progOuter.style.display = "block"; progInner.style.width = "0%";
-  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio...";
+  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio + SFX...";
 
   try {
     const canvas = document.getElementById("previewCanvas");
@@ -1179,7 +1184,7 @@ async function exportVideoYouTubeMaster() {
       const a = document.createElement("a"); a.href = url; a.download = "video_faceless_youtube_master.webm";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       btn.disabled = false; progInner.style.width = "100%";
-      statusEl.innerHTML = "✅ <b>¡Vídeo descargado con éxito!</b>";
+      statusEl.innerHTML = "✅ <b>¡Vídeo con SFX descargado con éxito!</b>";
     };
 
     currentTime = 0; recorder.start(100);
@@ -1193,7 +1198,7 @@ async function exportVideoYouTubeMaster() {
       updateTimeUI(); renderCurrentFrame();
       let pct = Math.min(100, Math.round((currentTime / totalDuration) * 100));
       progInner.style.width = pct + "%";
-      statusEl.textContent = `⏳ Renderizando: ${pct}%...`;
+      statusEl.textContent = `⏳ Renderizando con SFX: ${pct}%...`;
       if (elapsed < totalDuration) { requestAnimationFrame(step); } else {
         if (exportVoiceNode) { try{exportVoiceNode.stop();}catch(e){} }
         if (exportBgmNode) { try{exportBgmNode.stop();}catch(e){} }
@@ -1230,7 +1235,6 @@ function downloadProjectJSON() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  toggleGeminiKeyBox();
   const imageModelSelect = document.getElementById("aiImageModel");
   if (imageModelSelect) {
     try {
@@ -1240,7 +1244,6 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("cloudflareWorkerUrl").value = workerUrl;
       document.getElementById("cloudflareAccessKey").value = accessKey;
     } catch (_) {}
-    updateImageModelHint();
   }
   renderCurrentFrame();
   updateScriptStatus();
