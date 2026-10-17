@@ -741,9 +741,7 @@ async function generateImagesFromPromptsAI() {
   
   const negativeConstraint = ", strictly no text, no words, no letters, no numbers, no typography, pure visual graphics";
   const imagePrompts = scriptLines.map((_, i) => "Scene " + (i + 1) + ". Style: " + styleDesc + negativeConstraint);
-  document.getElementById("promptsArea").value = imagePrompts.join("
-
-");
+  document.getElementById("promptsArea").value = imagePrompts.join("\n\n");
 
   loadedImages = [];
   renderMediaGrid();
@@ -814,10 +812,7 @@ function updateBgmVol(val) {
 }
 
 function splitScriptIntoScenes(rawText) {
-  const paragraphs = String(rawText || "").replace(/
-/g, "
-").split(/
-+/).map(p => p.trim()).filter(Boolean);
+  const paragraphs = String(rawText || "").replace(/\r/g, "\n").split(/\n+/).map(p => p.trim()).filter(Boolean);
   const sentences = [];
   for (const paragraph of paragraphs) {
     const parts = paragraph.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [paragraph];
@@ -838,9 +833,7 @@ function updateScriptStatus() {
 }
 
 function splitLongParagraphs() {
-  document.getElementById("scriptArea").value = getScriptLines().join("
-
-");
+  document.getElementById("scriptArea").value = getScriptLines().join("\n\n");
   updateScriptStatus();
 }
 
@@ -1114,11 +1107,7 @@ function playbackLoop(now) {
 function loadBuiltInDemo() {
   pausePlayback(); isDemoSynthMode = true; totalDuration = 15.0; currentTime = 0.0;
   document.getElementById("seekSlider").max = totalDuration;
-  document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.
-En septiembre, completamente verde.
-Ningún rey lo ordenó. Lo hizo un viento.
-El monzón trae el 70% de la lluvia del país en solo cuatro meses.
-Casi 1.500 millones de personas viven de él.";
+  document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas viven de él.";
   updateScriptStatus();
   loadedImages = [
     createProceduralSceneImage("001_Mayo", "#451a03", "#78350f", "#f59e0b", "🌍🏜️"),
@@ -1237,11 +1226,7 @@ function toSrtTime(sec) {
 
 function downloadSRT() {
   if (scenes.length === 0) return;
-  const srt = scenes.map((sc, i) => `${i+1}
-${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}
-${sc.text}
-`).join("
-");
+  const srt = scenes.map((sc, i) => `${i+1}\n${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}\n${sc.text}\n`).join("\n");
   const blob = new Blob([srt], { type: "text/plain;charset=utf-8" });
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "subtitulos.srt";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
