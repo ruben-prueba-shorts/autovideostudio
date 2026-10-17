@@ -237,7 +237,7 @@
             </div>
             <div style="margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:10px; background:var(--bg-input);">
               <label for="aiReferenceImage">🖼️ Imagen de referencia (opcional)</label>
-              <p style="font-size:0.78rem; line-height:1.45; color:var(--text-muted); margin:6px 0 10px;">Sube una imagen que muestre el aspecto que buscas: por ejemplo, un stickman, un estilo de dibujo, una paleta de colores o un personaje. Es independiente del campo de estilo visual; puedes usar one, el otro o ambos.</p>
+              <p style="font-size:0.78rem; line-height:1.45; color:var(--text-muted); margin:6px 0 10px;">Sube una imagen que muestre el aspecto que buscas: por ejemplo, un stickman, un estilo de dibujo, una paleta de colores o un personaje. Es independiente del campo de estilo visual; puedes usar uno, el otro o ambos.</p>
               <input type="file" id="aiReferenceImage" accept="image/png,image/jpeg,image/webp" onchange="handleReferenceImageSelection(event)" style="width:100%; color:var(--text-main); font-size:0.82rem;">
               <div id="aiReferencePreviewWrap" style="display:none; margin-top:10px; align-items:center; gap:12px;">
                 <img id="aiReferencePreview" alt="Vista previa de imagen de referencia" style="width:100px; height:100px; object-fit:contain; background:#080c14; border:1px solid var(--border); border-radius:8px;">
@@ -742,9 +742,11 @@ async function generateImagesFromPromptsAI() {
   const styleInput = document.getElementById("aiVisualStyle").value.trim();
   const styleDesc = styleInput || "cinematic documentary, natural lighting";
   const targetCount = scriptLines.length;
-  // MEJORA: Instrucción estricta para que la IA NO ponga texto ni letras flotantes en el fondo
-  const negativeConstraint = ", absolutely no text, no words, no letters, no watermark, no logo, pure visual image";
-  const imagePrompts = scriptLines.map((narration, i) => "Scene " + (i + 1) + " of " + targetCount + ". Narration: " + JSON.stringify(narration) + ". Style: " + styleDesc + negativeConstraint);
+  
+  // SOLUCIÓN CLAVE: NO incluir NUNCA el texto del guion en el prompt de la imagen. 
+  // Solo pasamos el estilo visual del usuario y una descripción genérica abstracta + restricciones estrictas anti-texto.
+  const negativeConstraint = ", strictly no text, no words, no letters, no numbers, no typography, no captions, pure visual graphics";
+  const imagePrompts = scriptLines.map((_, i) => "Scene illustration " + (i + 1) + " of " + targetCount + ". Style: " + styleDesc + negativeConstraint);
   document.getElementById("promptsArea").value = imagePrompts.join("\n\n");
 
   const allImageButtons = Array.from(document.querySelectorAll('button[onclick="generateImagesFromPromptsAI()"]'));
@@ -752,7 +754,7 @@ async function generateImagesFromPromptsAI() {
   
   loadedImages = [];
   renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes con Cloudflare...</b>");
+  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias con Cloudflare...</b>");
 
   let completed = 0;
   const failures = [];
@@ -803,7 +805,7 @@ async function generateImagesFromPromptsAI() {
   updateTimeUI();
 
   if (failures.length === 0) {
-    showAILog("✅ <b>Generación completada:</b> " + loadedImages.length + " imágenes creadas con éxito.");
+    showAILog("✅ <b>Generación completada:</b> " + loadedImages.length + " imágenes limpias creadas con éxito.");
   } else {
     showAILog("⚠️ Se generaron " + loadedImages.length + " de " + targetCount + " imágenes, pero hubo fallos en algunas escenas.", true);
   }
@@ -1011,7 +1013,7 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
   }
 }
 
-// MEJORA: SUBTÍTULOS MOSTRANDO EXACTAMENTE 1 SOLA PALABRA (LA ACTUAL DEL NARRADOR)
+// SUBTÍTULOS MOSTRANDO EXACTAMENTE 1 SOLA PALABRA (LA ACTUAL DEL NARRADOR)
 function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const subsMode = document.getElementById("subsSelect").value;
   if (subsMode === "none" || !scene || !scene.text) return;
@@ -1026,7 +1028,7 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const activeWordIndex = Math.min(words.length - 1, Math.floor(timeInScene / wordDuration));
 
   ctx.save();
-  const fontSize = Math.round(h * 0.055); // Un poco más grande al ser una sola palabra
+  const fontSize = Math.round(h * 0.055);
   ctx.font = `700 ${fontSize}px 'Segoe UI', sans-serif`; 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -1034,7 +1036,6 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const customColorInput = document.getElementById("subColorText");
   const subColor = customColorInput && isValidHex(customColorInput.value.trim()) ? customColorInput.value.trim() : (customColorInput ? customColorInput.value.trim() : "#ffffff");
 
-  // Obtener únicamente la palabra que se está diciendo en este instante
   const currentWord = words[activeWordIndex];
   const baseY = h * 0.82;
   const wordW = ctx.measureText(currentWord).width;
@@ -1046,7 +1047,6 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
     ctx.fill();
   }
 
-  // Dibujar con borde negro grueso para máxima legibilidad estilo Reel
   ctx.lineWidth = 6;
   ctx.strokeStyle = "#000000";
   ctx.strokeText(currentWord, w / 2, baseY);
