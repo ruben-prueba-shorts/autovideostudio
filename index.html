@@ -289,7 +289,7 @@
 
       <div class="card">
         <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, Avispas...)</h2>
-        <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) para que la IA los detecte automáticamente.</p>
+        <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) y la IA los detectará automáticamente. Debajo de cada efecto puedes añadir más palabras que lo activen (ej. <i>teclado, teclear, escribir</i>).</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
           <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX</button>
           <input type="file" id="sfxFileInput" accept="audio/*" multiple style="display:none" onchange="handleSfxUpload(this.files)">
@@ -537,6 +537,76 @@ function isValidHex(hex) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(hex) || /^(white|black|red|green|blue|yellow|purple|orange)$/i.test(hex);
 }
 
+// ===== UTILIDADES PARA LA DETECCIÓN AUTOMÁTICA DE SFX =====
+const SFX_STOPWORDS = new Set([
+  "de","del","la","el","los","las","un","una","y","en","con","sfx","fx","sound","sonido","sonidos",
+  "efecto","efectos","audio","mp3","wav","ogg","final","copy","copia","new","nuevo"
+]);
+
+function escapeHtml(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function normalizeText(s) {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+// Raíz simple de la palabra: "avispas"/"avispa" -> "avisp", "teclados"/"teclado" -> "teclad"
+function stemWord(w) {
+  let s = normalizeText(w);
+  if (s.length >= 5) s = s.replace(/(es|s)$/, "");
+  if (s.length >= 4) s = s.replace(/[aeo]$/, "");
+  return s;
+}
+
+function stemsMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const shorter = a.length <= b.length ? a : b;
+  const longer = a.length <= b.length ? b : a;
+  return shorter.length >= 5 && longer.startsWith(shorter);
+}
+
+function parseKeywords(str) {
+  return String(str || "")
+    .split(/[,;\n]+/)
+    .map(k => normalizeText(k).trim())
+    .filter(k => k.length >= 3);
+}
+
+function defaultKeywordsFromName(fileName) {
+  const base = normalizeText(String(fileName || "").replace(/\.[^/.]+$/, ""));
+  const words = base.replace(/[-_.\d]+/g, " ").split(/\s+/)
+    .filter(w => w.length > 2 && !SFX_STOPWORDS.has(w));
+  return Array.from(new Set(words)).join(", ");
+}
+
+function updateSfxKeywords(id, value) {
+  const item = userSfxList.find(x => x.id === id);
+  if (item) item.keywords = value;
+}
+
+// Devuelve la posición (en caracteres del texto normalizado) de la primera coincidencia, o -1
+function findSfxMatchPosition(sfx, normText, wordList) {
+  const keywords = parseKeywords(sfx.keywords);
+  let best = -1;
+  for (const kw of keywords) {
+    let pos = -1;
+    if (/\s/.test(kw)) {
+      pos = normText.indexOf(kw);
+    } else {
+      const kwStem = stemWord(kw);
+      for (const wd of wordList) {
+        if (stemsMatch(kwStem, wd.stem)) { pos = wd.index; break; }
+      }
+    }
+    if (pos >= 0 && (best < 0 || pos < best)) best = pos;
+  }
+  return best;
+}
+
 async function handleSfxUpload(fileList) {
   if (!fileList || fileList.length === 0) return;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -549,7 +619,8 @@ async function handleSfxUpload(fileList) {
       userSfxList.push({
         id: "sfx_" + Date.now() + "_" + i,
         name: file.name,
-        buffer: decodedBuf
+        buffer: decodedBuf,
+        keywords: defaultKeywordsFromName(file.name)
       });
     } catch(e) {
       console.error("Error al cargar SFX:", e);
@@ -567,9 +638,15 @@ function renderSfxLibraryUI() {
     return;
   }
   container.innerHTML = userSfxList.map((sfx, idx) => `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:8px 12px; border:1px solid var(--border); border-radius:8px;">
-      <span style="font-size:0.85rem; font-weight:600;">🔊 ${sfx.name}</span>
-      <button class="btn" onclick="playPreviewSfx('${sfx.id}')" style="padding:4px 8px; font-size:0.75rem;">▶ Probar</button>
+    <div style="display:flex; flex-direction:column; gap:8px; background:var(--bg-input); padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <span style="font-size:0.85rem; font-weight:600; overflow-wrap:anywhere;">🔊 ${escapeHtml(sfx.name)}</span>
+        <button class="btn" onclick="playPreviewSfx('${sfx.id}')" style="padding:4px 8px; font-size:0.75rem; flex-shrink:0;">▶ Probar</button>
+      </div>
+      <div>
+        <label style="font-size:0.76rem; color:var(--text-muted); display:block; margin-bottom:4px;">Palabras que activan este sonido (separadas por comas)</label>
+        <input type="text" value="${escapeHtml(sfx.keywords)}" placeholder="Ej: teclado, teclear, escribir, ordenador" oninput="updateSfxKeywords('${sfx.id}', this.value)">
+      </div>
     </div>
   `).join("");
 }
@@ -616,36 +693,49 @@ function autoDetectAndAssignSFXWithAI() {
   }
 
   let assignedCount = 0;
-  scenes.forEach(sc => {
-    const textLower = (sc.text || "").toLowerCase();
-    
-    for (const sfx of userSfxList) {
-      const sfxNameClean = sfx.name.toLowerCase().replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-      const keywords = sfxNameClean.split(/\s+/).filter(w => w.length > 2);
-      
-      let matched = false;
-      for (const kw of keywords) {
-        if (textLower.includes(kw)) {
-          matched = true;
-          break;
-        }
-      }
+  const report = [];
 
-      if (matched) {
-        sc.sfxId = sfx.id;
-        sc.sfxStart = 1.0;
-        sc.sfxEnd = 2.5;
-        assignedCount++;
-        break;
-      }
+  scenes.forEach((sc, sceneIdx) => {
+    const normText = normalizeText(sc.text || "");
+    const wordList = [];
+    const re = /[a-z0-9]+/g;
+    let m;
+    while ((m = re.exec(normText)) !== null) {
+      wordList.push({ index: m.index, stem: stemWord(m[0]) });
     }
+
+    // Se elige el efecto cuya palabra aparece antes en la escena
+    let best = null;
+    for (const sfx of userSfxList) {
+      const pos = findSfxMatchPosition(sfx, normText, wordList);
+      if (pos >= 0 && (best === null || pos < best.pos)) best = { sfx, pos };
+    }
+    if (!best) return;
+
+    const sceneDur = Math.max(0.1, sc.end - sc.start);
+    const frac = best.pos / Math.max(1, normText.length);
+    let startRel = Math.round(frac * sceneDur * 10) / 10;
+    startRel = Math.max(0, Math.min(startRel, Math.max(0, sceneDur - 0.3)));
+    const sfxLen = Math.min(best.sfx.buffer ? best.sfx.buffer.duration : 2.0, 4.0);
+    const endRel = Math.round((startRel + Math.max(0.1, sfxLen)) * 10) / 10;
+
+    sc.sfxId = best.sfx.id;
+    sc.sfxStart = startRel;
+    sc.sfxEnd = endRel;
+    assignedCount++;
+    report.push(`Escena ${sceneIdx + 1} → ${escapeHtml(best.sfx.name)} (a los ${startRel}s)`);
   });
 
   renderSceneListUI();
+  renderCurrentFrame();
   const logEl = document.getElementById("aiSfxLog");
   if (logEl) {
     logEl.style.display = "block";
-    logEl.innerHTML = `🤖 <b>IA Completada:</b> Se han asignado automáticamente efectos de sonido a ${assignedCount} escena(s) basándose en las palabras clave del guion.`;
+    if (assignedCount > 0) {
+      logEl.innerHTML = `🤖 <b>IA Completada:</b> se han asignado efectos de sonido a ${assignedCount} escena(s):<br>` + report.join("<br>");
+    } else {
+      logEl.innerHTML = `🤖 <b>IA Completada:</b> no se ha encontrado ninguna coincidencia entre el guion y tus efectos. Añade más palabras clave a cada efecto en la Pestaña 1 (ej. <i>teclado, teclear, escribir</i>).`;
+    }
   }
 }
 
