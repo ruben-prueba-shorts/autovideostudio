@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoVideo Faceless Studio — IA Adaptativa</title>
+<style>
+  :root {
+    --bg-dark: #0b0f17;
+    --bg-panel: #131b2e;
+    --bg-card: #1c263f;
+    --bg-input: #0e1525;
+    --border: #2a395c;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-purple: #8b5cf6;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    height: 58px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.1rem; }
+  .brand-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+  }
+  .badge-local {
+    background: rgba(139, 92, 246, 0.18); color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.45); font-size: 0.75rem;
+    padding: 4px 10px; border-radius: 999px; font-weight: 600;
+  }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .btn {
+    background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover:not(:disabled) { background: #263354; border-color: #435b91; }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-ai { background: linear-gradient(135deg, #6366f1, #8b5cf6); border-color: #8b5cf6; color: #fff; }
+  .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: #052e16; }
+  .btn-success:hover:not(:disabled) { background: #059669; color: #fff; }
+  .btn-amber { background: rgba(245, 158, 11, 0.18); border-color: var(--accent-amber); color: #fbbf24; }
+
+  .workspace { display: grid; grid-template-columns: 240px 1fr 440px; flex: 1; overflow: hidden; }
+  .format-gate { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
+  .format-gate.hidden { display:none; }
+  .format-panel { width:min(760px,100%); background:var(--bg-card,#111827); border:1px solid var(--border); border-radius:18px; padding:clamp(20px,4vw,36px); box-shadow:0 25px 80px #0009; }
+  .format-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:22px 0; }
+  .format-option { display:block; border:1px solid var(--border); background:var(--bg-input); border-radius:14px; padding:18px; cursor:pointer; }
+  .format-option:has(input:checked) { border:2px solid #8b5cf6; background:rgba(139,92,246,.12); }
+  .format-option input { margin-right:8px; }
+  @media(max-width:600px){.format-options{grid-template-columns:1fr}.format-panel{padding:20px}}
+  .sidebar { background: var(--bg-panel); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .step-btn {
+    width: 100%; text-align: left; padding: 11px 14px; border-radius: 8px;
+    border: 1px solid transparent; background: transparent; color: var(--text-muted);
+    font-size: 0.88rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: 0.15s;
+  }
+  .step-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-main); }
+  .step-btn.active { background: rgba(59, 130, 246, 0.16); color: #60a5fa; border-color: rgba(59, 130, 246, 0.45); }
+  .step-btn.ai-step.active { background: rgba(139, 92, 246, 0.18); color: #c4b5fd; border-color: rgba(139, 92, 246, 0.5); }
+  .step-status { font-size: 0.72rem; padding: 2px 7px; border-radius: 10px; background: var(--bg-card); color: var(--text-muted); }
+  .step-status.ok { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+  .step-status.ai-badge { background: rgba(139, 92, 246, 0.25); color: #ddd6fe; }
+  .sidebar-box { margin-top: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; }
+
+  .center-panel { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+  .tab-View { display: none; flex-direction: column; gap: 16px; }
+  .tab-View.active { display: flex; }
+
+  .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .card.ai-card { border-color: rgba(139, 92, 246, 0.45); background: linear-gradient(180deg, rgba(139, 92, 246, 0.07) 0%, var(--bg-panel) 100%); }
+  .card h2 { font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .card p.sub { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 14px; }
+
+  .dropzone { border: 2px dashed var(--border); background: var(--bg-input); border-radius: 10px; padding: 22px; text-align: center; cursor: pointer; transition: 0.2s; }
+  .dropzone:hover { border-color: var(--accent); background: rgba(59, 130, 246, 0.08); }
+  textarea, input[type="text"], input[type="password"], input[type="number"], select {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); border-radius: 8px; padding: 10px 12px; font-size: 0.88rem; font-family: inherit;
+  }
+  textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; margin-top: 12px; }
+  .media-item { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; cursor: grab; }
+  .media-item img { width: 100%; height: 82px; object-fit: cover; display: block; }
+  .media-item .m-label { font-size: 0.72rem; padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
+  .media-item .m-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: #60a5fa; font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .media-item .m-delete { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 4px; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .media-item .m-controls { display: flex; background: rgba(0,0,0,0.6); justify-content: space-between; padding: 2px 4px; }
+  .media-item .m-controls button { background: transparent; border: none; color: #cbd5e1; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; }
+
+  .scene-list { display: flex; flex-direction: column; gap: 10px; }
+  .scene-row { display: grid; grid-template-columns: 78px 130px 145px 1fr 40px; gap: 10px; align-items: center; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .scene-row.playing { border-color: var(--accent-green); box-shadow: 0 0 0 1px var(--accent-green); }
+  .scene-thumb { width: 74px; height: 46px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background: #000; }
+  .time-pair { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--text-muted); }
+  .time-pair input { padding: 4px 6px; font-size: 0.8rem; }
+
+  .right-panel { background: var(--bg-panel); border-left: 1px solid var(--border); padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+  .canvas-wrapper { background: #05070b; border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; min-height: 235px; max-height: 360px; }
+  canvas#previewCanvas { max-width: 100%; max-height: 340px; width: auto; height: auto; display: block; }
+  .player-controls { display: flex; flex-direction: column; gap: 8px; background: var(--bg-input); padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
+  .player-bar { display: flex; align-items: center; gap: 10px; }
+  .time-code { font-family: monospace; font-size: 0.85rem; color: #60a5fa; min-width: 95px; }
+  input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; }
+  .settings-grid label { display: block; color: var(--text-muted); margin-bottom: 4px; }
+  .status-banner { padding: 10px 12px; border-radius: 8px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.82rem; color: #93c5fd; }
+  .ai-log { padding: 10px 12px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.35); font-size: 0.82rem; color: #ddd6fe; margin-top: 10px; display: none; }
+  .progress-outer { width: 100%; height: 10px; background: var(--bg-input); border-radius: 99px; overflow: hidden; display: none; }
+  .progress-inner { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.1s; }
+</style>
+</head>
+<body>
+
+<div class="format-gate" id="formatGate" role="dialog" aria-modal="true" aria-labelledby="formatGateTitle">
+  <div class="format-panel">
+    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · NUEVO PROYECTO</div>
+    <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
+    <p class="sub">Primero elige el formato. Después pegarás tu guion y AutoVideo lo dividirá en escenas para generar únicamente las imágenes con IA.</p>
+    <div class="format-options">
+      <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido, imágenes más frecuentes y narración directa.</div></label>
+      <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo más pausado, escenas variadas y narración extensa.</div></label>
+    </div>
+    <div style="max-width:440px;margin-bottom:18px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg-input);">
+      <strong>🎞️ Escenas e imágenes automáticas</strong>
+      <p class="sub" style="margin:6px 0 0;">Como referencia, las escenas se plantean para cambiar aproximadamente cada 4–5 segundos en Shorts y algo más despacio en vídeos largos. La división se adapta a las frases y a la longitud del guion; no se genera ni se reescribe el texto.</p>
+    </div>
+    <div id="formatGateError" role="alert" style="display:none;color:#fca5a5;margin-bottom:12px;"></div>
+    <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
+  </div>
+</div>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">🤖</div>
+    <div>
+      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">ULTIMATE AI</span></div>
+      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Guion propio · Imágenes IA · Subtítulos y edición</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <span class="badge-local">⚡ SIN CLAVES</span>
+    <button class="btn btn-amber" onclick="loadBuiltInDemo()">✨ Cargar Demo</button>
+    <button class="btn btn-primary" onclick="autoSyncProject()">🔄 Sincronizar Todo</button>
+  </div>
+</header>
+
+<div class="workspace">
+  <aside class="sidebar">
+    <button class="step-btn ai-step active" onclick="switchTab(0)" id="nav0">
+      <span>🤖 0. Estudio IA</span>
+      <span class="step-status ai-badge" id="st0">IA Lista</span>
+    </button>
+    <button class="step-btn" onclick="switchTab(1)" id="nav1">
+      <span>1. Audio opcional</span>
+      <span class="step-status" id="st1">Pendiente</span>
+    </button>
+    <button class="step-btn" onclick="switchTab(2)" id="nav2">
+      <span>2. Guion y Prompts</span>
+      <span class="step-status" id="st2">Pendiente</span>
+    </button>
+    <button class="step-btn" onclick="switchTab(3)" id="nav3">
+      <span>3. Recursos Visuales</span>
+      <span class="step-status" id="st3">0 imgs</span>
+    </button>
+    <button class="step-btn" onclick="switchTab(4)" id="nav4">
+      <span>4. Línea de Tiempo</span>
+      <span class="step-status" id="st4">0 escenas</span>
+    </button>
+
+    <div class="sidebar-box">
+      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">💡 Guía Rápida:</strong>
+      1. Pega tu guion en <b>Guion y Prompts</b>.<br>
+      2. AutoVideo lo divide en escenas cortas.<br>
+      3. Genera una imagen IA por escena.<br>
+      4. Añade audio opcional y revisa subtítulos y línea de tiempo.
+    </div>
+  </aside>
+
+  <main class="center-panel">
+    <!-- PESTAÑA 0: ESTUDIO IA -->
+    <div class="tab-View active" id="tab0">
+      <div class="card ai-card">
+        <h2>📝 1. Tu guion e imágenes con IA</h2>
+        <p class="sub">Pega tu guion. AutoVideo lo dividirá automáticamente en escenas según las frases y la narración. No reescribe ni genera el guion: solo crea las imágenes con tu Worker de imágenes de Cloudflare.</p>
+
+        <div class="settings-grid" style="margin-bottom:12px;">
+          <div>
+            <label for="aiImageModel">Motor de generación de imágenes</label>
+            <select id="aiImageModel" onchange="setImageModelPreference(this.value)">
+              <option value="cloudflare" selected>Cloudflare FLUX.1 Schnell</option>
+            </select>
+            <div id="aiImageModelHint" style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:6px;">
+              Generación de imágenes con Cloudflare Workers AI. No hay alternativa automática a Puter.
+            </div>
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:7px;">
+              <label for="cloudflareWorkerUrl">URL del Worker de imágenes (ya configurada)</label>
+              <input type="text" id="cloudflareWorkerUrl" value="https://autovideo-image-worker.jarambedioszz.workers.dev" placeholder="https://autovideo-image-worker.jarambedioszz.workers.dev" autocomplete="url" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
+              <label for="cloudflareAccessKey">Clave de acceso del Worker (no es una API key de Cloudflare)</label>
+              <input type="password" id="cloudflareAccessKey" placeholder="La clave que guardaste como APP_SECRET" autocomplete="new-password" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="btn" onclick="testCloudflareWorker()">🔌 Comprobar Cloudflare</button>
+                <button type="button" class="btn" onclick="showCloudflareSetupHelp()">❔ Cómo configurarlo</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label for="aiVisualStyle">Estilo visual (escríbelo como quieras)</label>
+            <textarea id="aiVisualStyle" rows="4" placeholder="Ejemplo: documental cinematográfico realista, iluminación dramática, colores naturales, ambientación histórica fiel, planos variados"></textarea>
+            <div style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:6px;">
+              Este estilo se añadirá a los prompts de todas las imágenes. Puedes dejarlo vacío si prefieres usar solo una imagen de referencia.
+            </div>
+            <div style="margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:10px; background:var(--bg-input);">
+              <label for="aiReferenceImage">🖼️ Imagen de referencia (opcional)</label>
+              <p style="font-size:0.78rem; line-height:1.45; color:var(--text-muted); margin:6px 0 10px;">Sube una imagen que muestre el aspecto que buscas: por ejemplo, un stickman, un estilo de dibujo, una paleta de colores o un personaje. Es independiente del campo de estilo visual; puedes usar uno, el otro o ambos.</p>
+              <input type="file" id="aiReferenceImage" accept="image/png,image/jpeg,image/webp" onchange="handleReferenceImageSelection(event)" style="width:100%; color:var(--text-main); font-size:0.82rem;">
+              <div id="aiReferencePreviewWrap" style="display:none; margin-top:10px; align-items:center; gap:12px;">
+                <img id="aiReferencePreview" alt="Vista previa de imagen de referencia" style="width:100px; height:100px; object-fit:contain; background:#080c14; border:1px solid var(--border); border-radius:8px;">
+                <div style="flex:1; min-width:0;">
+                  <div id="aiReferenceFileName" style="font-size:0.82rem; overflow-wrap:anywhere;"></div>
+                  <button type="button" class="btn" onclick="clearReferenceImage()" style="margin-top:8px;">Quitar imagen</button>
+                </div>
+              </div>
+              <div id="aiReferenceStatus" style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:8px;">Sin imagen de referencia. El campo es opcional.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px; padding:16px; border:1px solid var(--border); border-radius:12px; background:var(--bg-input);">
+          <h3 style="margin:0 0 6px;">✍️ Tu guion, tus imágenes</h3>
+          <p class="sub" style="margin-bottom:12px;">Pega el texto que has escrito. AutoVideo no crea ni transcribe el guion: prepara las escenas y genera las imágenes con tu Worker de Cloudflare.</p>
+          <button class="btn btn-primary" id="btnGenerateAllImagesAI" onclick="switchTab(2)">📝 Ir a pegar el guion</button>
+        </div>
+        <textarea id="aiTopicInput" rows="1" style="display:none" aria-hidden="true"></textarea>
+
+        <div id="aiStatusLog" class="ai-log"></div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 1: AUDIO -->
+    <div class="tab-View" id="tab1">
+      <div class="card">
+        <h2>🎙️ Audio opcional (voz y música)</h2>
+        <p class="sub">La generación de imágenes no necesita audio. Si ya tienes una voz en off, puedes cargarla aquí para usarla en la edición y la línea de tiempo.</p>
+        <div class="dropzone" onclick="document.getElementById('voiceInput').click()">
+          <div style="font-size:1.8rem; margin-bottom:6px;">🎵</div>
+          <div id="voiceLabel" style="font-weight:600;">Haz clic aquí o arrastra tu archivo MP3 de Voz en Off</div>
+          <input type="file" id="voiceInput" accept="audio/*" style="display:none" onchange="handleVoiceUpload(this.files[0])">
+        </div>
+        <p class="sub" style="margin-top:12px;">No necesitas un Worker de transcripción: las imágenes se generan a partir del guion que escribas en la pestaña siguiente.</p>
+        <canvas id="waveformCanvas" width="700" height="64" style="width:100%; height:64px; margin-top:12px; background:#090d16; border-radius:8px; border:1px solid var(--border);"></canvas>
+      </div>
+
+      <div class="card">
+        <h2>🎶 Música de Fondo Opcional</h2>
+        <div style="display:flex; gap:14px; align-items:center;">
+          <button class="btn" onclick="document.getElementById('bgmInput').click()">📂 Seleccionar Música</button>
+          <span id="bgmLabel" style="font-size:0.83rem; color:var(--text-muted);">Ninguna pista</span>
+          <input type="file" id="bgmInput" accept="audio/*" style="display:none" onchange="handleBgmUpload(this.files[0])">
+        </div>
+        <div style="margin-top:12px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:0.82rem; color:var(--text-muted);">Volumen:</span>
+          <input type="range" id="bgmVolSlider" min="0" max="60" value="14" oninput="updateBgmVol(this.value)">
+          <span id="bgmVolText" style="font-size:0.82rem; font-weight:600;">14%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 2: GUION -->
+    <div class="tab-View" id="tab2">
+      <div class="card">
+        <h2>📝 2. Tu guion</h2>
+        <p class="sub">Pega aquí el guion definitivo. AutoVideo no lo reescribe: lo divide en escenas visuales y genera una imagen para cada una. Como referencia, busca escenas de unos 4–5 segundos en Shorts y algo más largas en vídeos largos.</p>
+        <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo. Puedes escribir una frase por línea o pegar varios párrafos..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
+          <span id="lineCountInfo">0 escenas estimadas</span>
+          <button class="btn" style="padding:4px 10px; font-size:0.76rem;" onclick="splitLongParagraphs()">✂️ Dividir párrafos largos</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <button class="btn btn-primary" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes para todas las escenas</button>
+          <button class="btn" onclick="switchTab(1)">🎙️ Audio opcional</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎨 Instrucciones visuales generadas automáticamente</h2>
+        <p class="sub">La aplicación crea una instrucción visual para cada fragmento del guion y la envía directamente al Worker de imágenes. No necesitas escribir prompts ni utilizar otro servicio de IA.</p>
+        <textarea id="promptsArea" rows="6" placeholder="Aquí aparecerán las instrucciones visuales al generar las imágenes..." readonly></textarea>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 3: IMÁGENES -->
+    <div class="tab-View" id="tab3">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <h2>🖼️ 3. Recursos Visuales (Galería)</h2>
+            <p class="sub" style="margin-bottom:0;">Usa ◀ ▶ o arrastra con el ratón para reordenar.</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes directamente</button>
+            <button class="btn" onclick="clearAllImages()">🗑️ Vaciar</button>
+          </div>
+        </div>
+        <div class="dropzone" onclick="document.getElementById('imgInput').click()">
+          <div style="font-size:1.8rem; margin-bottom:6px;">🖼️</div>
+          <div style="font-weight:600;">Haz clic o arrastra tus imágenes aquí</div>
+          <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImagesUpload(this.files)">
+        </div>
+        <div class="media-grid" id="mediaGrid"></div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 4: TIMELINE -->
+    <div class="tab-View" id="tab4">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <h2>⏱️ 4. Línea de Tiempo Interactiva</h2>
+            <p class="sub" style="margin-bottom:0;">Modifica tiempos, imágenes, efectos y subtítulos libremente.</p>
+          </div>
+          <button class="btn" onclick="addBlankScene()">➕ Añadir Escena</button>
+        </div>
+        <div class="scene-list" id="sceneList"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- PANEL DERECHO -->
+  <aside class="right-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:0.95rem;">👁️ Vista Previa en Tiempo Real</h3>
+      <span id="currentSceneBadge" style="font-size:0.75rem; color:#34d399; font-weight:600;">Escena 1</span>
+    </div>
+
+    <div class="canvas-wrapper">
+      <canvas id="previewCanvas" width="1280" height="720"></canvas>
+    </div>
+
+    <div class="player-controls">
+      <div class="player-bar">
+        <button class="btn btn-primary" id="playBtn" onclick="togglePlay()" style="min-width:90px; justify-content:center;">▶ Play</button>
+        <input type="range" id="seekSlider" min="0" max="20" step="0.04" value="0" oninput="seekTo(this.value)">
+        <span class="time-code" id="timeDisplay">00:00 / 00:20</span>
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px;">
+      <h3 style="font-size:0.88rem; margin-bottom:10px;">⚙️ Estilo de Edición</h3>
+      <div class="settings-grid">
+        <div>
+          <label>Formato</label>
+          <select id="aspectSelect" onchange="changeAspectRatio(this.value)">
+            <option value="9:16">9:16 Vertical (Shorts)</option>
+            <option value="16:9">16:9 Horizontal (YouTube)</option>
+          </select>
+        </div>
+        <div>
+          <label>Fondo</label>
+          <select id="fitSelect" onchange="renderCurrentFrame()">
+            <option value="blur">Desenfocado (Blur)</option>
+            <option value="crop">Recortar (Crop)</option>
+          </select>
+        </div>
+        <div>
+          <label>Transición</label>
+          <select id="transSelect" onchange="renderCurrentFrame()">
+            <option value="fade">Fundido Suave</option>
+            <option value="cut">Corte Directo</option>
+          </select>
+        </div>
+        <div>
+          <label>Subtítulos</label>
+          <select id="subsSelect" onchange="renderCurrentFrame()">
+            <option value="box">Caja Oscura</option>
+            <option value="stroke">Borde Negro</option>
+            <option value="none">Desactivados</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label>🎨 Color de los Subtítulos (Hex o Básico)</label>
+          <div style="display:flex; gap:8px; align-items:center; margin-top:4px;">
+            <input type="color" id="subColorPicker" value="#ffffff" style="width:40px; height:38px; padding:2px; cursor:pointer; background:var(--bg-input); border:1px solid var(--border); border-radius:8px;" oninput="document.getElementById('subColorText').value = this.value; renderCurrentFrame();">
+            <input type="text" id="subColorText" value="#ffffff" placeholder="#ffffff o white" style="flex:1;" oninput="document.getElementById('subColorPicker').value = isValidHex(this.value) ? this.value : '#ffffff'; renderCurrentFrame();">
+            <select id="subColorPreset" style="width:110px;" onchange="if(this.value){document.getElementById('subColorText').value = this.value; document.getElementById('subColorPicker').value = isValidHex(this.value)?this.value:'#ffffff'; renderCurrentFrame();}">
+              <option value="">Básicos...</option>
+              <option value="#ffffff">Blanco</option>
+              <option value="#ffff00">Amarillo</option>
+              <option value="#3b82f6">Azul</option>
+              <option value="#10b981">Verde</option>
+              <option value="#ef4444">Rojo</option>
+              <option value="#a78bfa">Morado</option>
+            </select>
+          </div>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label>Estilo de edición (aplicar a todas las escenas)</label>
+          <select id="editingPresetSelect" onchange="applyEditingPreset(this.value)">
+            <option value="auto">Automático variado</option>
+            <option value="cinematic">Documental cinematográfico</option>
+            <option value="dynamic">Short dinámico</option>
+            <option value="smooth">Movimiento suave</option>
+            <option value="static">Sin movimiento</option>
+          </select>
+          <small style="display:block;color:var(--text-muted);margin-top:6px;line-height:1.4;">Puedes cambiar este estilo cuando quieras. También puedes elegir una animación distinta en cada escena de la línea de tiempo.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px; margin-top:auto;">
+      <h3 style="font-size:0.88rem; margin-bottom:8px;">🚀 Exportar Vídeo para YouTube</h3>
+      <div id="exportStatus" class="status-banner" style="margin-bottom:10px;">
+        Listo para exportar vídeo con audio sincronizado.
+      </div>
+      <div class="progress-outer" id="exportProgressOuter" style="margin-bottom:10px;">
+        <div class="progress-inner" id="exportProgressInner"></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn btn-success" id="exportVideoBtn" onclick="exportVideoYouTubeMaster()" style="justify-content:center; padding:11px;">
+          🎬 Descargar Vídeo YouTube (.WEBM)
+        </button>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <button class="btn" onclick="downloadSRT()" style="justify-content:center;">📥 Subtítulos (.SRT)</button>
+          <button class="btn" onclick="downloadProjectJSON()" style="justify-content:center;">💾 Proyecto (.JSON)</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+let audioCtx = null;
+let voiceBuffer = null;
+let voiceAudioNode = null;
+let bgmBuffer = null;
+
+let totalDuration = 15.0;
+let currentTime = 0.0;
+let isPlaying = false;
+let isDemoSynthMode = false;
+let animFrameId = null;
+let lastFrameTimestamp = 0;
+
+let detectedPauses = [];
+let loadedImages = [];
+let scenes = [];
+let draggedIndex = null;
+
+const EFFECTS = [
+  "Sin movimiento", "Zoom In Suave", "Zoom Out Suave", "Zoom In Dramático",
+  "Pan Derecha", "Pan Izquierda", "Pan Arriba", "Pan Abajo",
+  "Zoom + Pan", "Movimiento Ken Burns", "Pulso Suave"
+];
+
+function isValidHex(hex) {
+  return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
+}
+
+function applyEditingPreset(preset) {
+  if (!scenes.length) return;
+  const cinematic = ["Zoom In Suave", "Pan Derecha", "Zoom Out Suave", "Pan Izquierda", "Movimiento Ken Burns"];
+  const dynamic = ["Zoom In Dramático", "Pan Derecha", "Zoom In Dramático", "Pan Izquierda", "Pulso Suave", "Zoom + Pan"];
+  const smooth = ["Movimiento Ken Burns", "Zoom In Suave", "Pan Arriba", "Zoom Out Suave", "Pan Abajo"];
+  scenes.forEach((scene, index) => {
+    if (preset === "static") scene.effect = "Sin movimiento";
+    else if (preset === "cinematic") scene.effect = cinematic[index % cinematic.length];
+    else if (preset === "dynamic") scene.effect = dynamic[index % dynamic.length];
+    else if (preset === "smooth") scene.effect = smooth[index % smooth.length];
+    else scene.effect = EFFECTS[index % EFFECTS.length];
+  });
+  renderSceneListUI();
+  renderCurrentFrame();
+}
+
+function startProjectWithFormat() {
+  const selected = document.querySelector('input[name="videoFormat"]:checked');
+  selectedVideoFormat = selected ? selected.value : "short";
+  selectedSceneSeconds = selectedVideoFormat === "short" ? 4.5 : 6.5;
+  const defaultAspect = selectedVideoFormat === "short" ? "9:16" : "16:9";
+  const aspectSelect = document.getElementById("aspectSelect");
+  if (aspectSelect) aspectSelect.value = defaultAspect;
+  changeAspectRatio(defaultAspect);
+  const gate = document.getElementById("formatGateError");
+  if (gate) gate.style.display = "none";
+  document.getElementById("formatGate").classList.add("hidden");
+  try { localStorage.setItem("autovideo_video_format", selectedVideoFormat); localStorage.removeItem("autovideo_scene_seconds"); } catch (_) {}
+  switchTab(2);
+}
+
+function getExpectedDurationRange() {
+  return selectedVideoFormat === "short" ? { min: 40, max: 120, label: "Short (40 segundos–2 minutos)" } : { min: 360, max: 1080, label: "vídeo largo (6–18 minutos)" };
+}
+
+function splitTranscriptForSceneCount(rawText, targetCount) {
+  const text = String(rawText || "").replace(/\r/g, " ").replace(/\s+/g, " ").trim();
+  if (!text) return [];
+  const sentences = (text.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [text]).map(x => x.trim()).filter(Boolean);
+  targetCount = Math.max(1, Math.min(Math.round(targetCount), 500));
+  const totalWords = text.split(/\s+/).filter(Boolean).length;
+  const targetWords = Math.max(1, totalWords / targetCount);
+  const result = [];
+  let current = [];
+  let words = 0;
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i];
+    const count = sentence.split(/\s+/).filter(Boolean).length;
+    if (current.length && words + count > targetWords && result.length < targetCount - 1) {
+      result.push(current.join(" ")); current = []; words = 0;
+    }
+    current.push(sentence); words += count;
+  }
+  if (current.length) result.push(current.join(" "));
+  while (result.length < targetCount) {
+    let longestIndex = 0, longestWords = 0;
+    for (let i = 0; i < result.length; i++) { const n = result[i].split(/\s+/).length; if (n > longestWords) { longestWords = n; longestIndex = i; } }
+    if (longestWords < 2) break;
+    const wordsArray = result[longestIndex].split(/\s+/);
+    const mid = Math.ceil(wordsArray.length / 2);
+    result.splice(longestIndex, 1, wordsArray.slice(0, mid).join(" "), wordsArray.slice(mid).join(" "));
+  }
+  return result;
+}
+
+function switchTab(num) {
+  for (let i = 0; i <= 4; i++) {
+    const tabEl = document.getElementById("tab" + i);
+    const navEl = document.getElementById("nav" + i);
+    if (tabEl) tabEl.classList.toggle("active", i === num);
+    if (navEl) navEl.classList.toggle("active", i === num);
+  }
+}
+
+function toggleGeminiKeyBox() {}
+
+function showAILog(msg, isError = false) {
+  const el = document.getElementById("aiStatusLog");
+  if (!el) return;
+  el.style.display = "block";
+  el.style.borderColor = isError ? "#ef4444" : "rgba(139, 92, 246, 0.45)";
+  el.style.color = isError ? "#fca5a5" : "#ddd6fe";
+  el.innerHTML = msg;
+}
+
+const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
+let voiceFileForTranscription = null;
+let selectedVideoFormat = "short";
+let selectedSceneSeconds = 5;
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+function loadImageCrossOrigin(url, timeoutMs = 45000) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      img.onload = null;
+      img.onerror = null;
+      reject(new Error("Tiempo agotado esperando la imagen remota."));
+    }, timeoutMs);
+
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (settled) return;
+      try {
+        const c = document.createElement("canvas");
+        c.width = img.naturalWidth || img.width || 1280;
+        c.height = img.naturalHeight || img.height || 720;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        const safeDataUrl = c.toDataURL("image/jpeg", 0.92);
+        const localImg = new Image();
+        localImg.onload = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          resolve({ dataUrl: safeDataUrl, imgObj: localImg });
+        };
+        localImg.onerror = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          reject(new Error("No se pudo preparar la imagen para el editor."));
+        };
+        localImg.src = safeDataUrl;
+      } catch (e) {
+        settled = true;
+        clearTimeout(timeoutId);
+        reject(new Error("El navegador no ha permitido incorporar la imagen remota al vídeo (CORS)."));
+      }
+    };
+    img.onerror = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      reject(new Error("El servicio no ha devuelto una imagen accesible."));
+    };
+    img.src = url;
+  });
+}
+
+function getSelectedImageModel() { return "cloudflare"; }
+function setImageModelPreference(value) {
+  try { localStorage.setItem("autovideo_image_provider", "cloudflare"); } catch (_) {}
+  updateImageModelHint();
+}
+
+function getCloudflareWorkerUrl() {
+  const input = document.getElementById("cloudflareWorkerUrl");
+  let value = input ? input.value.trim() : "";
+  if (!value) { try { value = localStorage.getItem("autovideo_cloudflare_worker_url") || ""; } catch (_) {} }
+  if (!value) value = IMAGE_WORKER_DEFAULT_URL;
+  return value.replace(/\/+$/, "");
+}
+
+function getCloudflareAccessKey() {
+  const input = document.getElementById("cloudflareAccessKey");
+  let value = input ? input.value.trim() : "";
+  if (!value) { try { value = localStorage.getItem("autovideo_cloudflare_access_key") || ""; } catch (_) {} }
+  return value;
+}
+
+function saveCloudflareSettings() {
+  try {
+    const url = document.getElementById("cloudflareWorkerUrl").value.trim().replace(/\/+$/, "");
+    const key = document.getElementById("cloudflareAccessKey").value.trim();
+    if (url) localStorage.setItem("autovideo_cloudflare_worker_url", url);
+    else localStorage.removeItem("autovideo_cloudflare_worker_url");
+    if (key) localStorage.setItem("autovideo_cloudflare_access_key", key);
+    else localStorage.removeItem("autovideo_cloudflare_access_key");
+  } catch (_) {}
+}
+
+function updateImageModelHint() {
+  const hint = document.getElementById("aiImageModelHint");
+  if (!hint) return;
+  hint.textContent = "Las imágenes se generan exclusivamente con Cloudflare FLUX.1 Schnell.";
+}
+
+function showCloudflareSetupHelp() {
+  showAILog("<b>Configuración de AutoVideo:</b><br>• Solo se necesita el Worker de imágenes: <code>https://autovideo-image-worker.jarambedioszz.workers.dev</code>.<br>• Introduce la clave APP_SECRET.");
+}
+
+async function testCloudflareWorker() {
+  const workerUrl = getCloudflareWorkerUrl();
+  if (!workerUrl) { showAILog("Añade primero la URL https de tu Worker.", true); return; }
+  try {
+    const accessKey = getCloudflareAccessKey();
+    if (!accessKey) throw new Error("Introduce la clave de acceso guardada como APP_SECRET.");
+    const res = await fetch(workerUrl + "/health", { method: "GET", mode: "cors", headers: { "X-AutoVideo-Key": accessKey } });
+    let data = {};
+    try { data = await res.json(); } catch (_) {}
+    if (!res.ok || !data.ok) throw new Error(data.error || ("HTTP " + res.status));
+    showAILog("✅ <b>Cloudflare está conectado.</b>");
+  } catch (err) {
+    showAILog("❌ <b>Error de conexión:</b> " + escapeHtml(err.message), true);
+  }
+}
+
+let autoVideoReferenceImageData = "";
+let autoVideoReferenceImageMime = "";
+
+function handleReferenceImageSelection(event) {
+  const file = event && event.target && event.target.files ? event.target.files[0] : null;
+  if (!file) return;
+  const status = document.getElementById("aiReferenceStatus");
+  const reader = new FileReader();
+  reader.onload = () => {
+    autoVideoReferenceImageData = String(reader.result || "");
+    autoVideoReferenceImageMime = file.type;
+    document.getElementById("aiReferencePreview").src = autoVideoReferenceImageData;
+    document.getElementById("aiReferenceFileName").textContent = file.name;
+    document.getElementById("aiReferencePreviewWrap").style.display = "flex";
+    status.textContent = "Imagen cargada.";
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearReferenceImage() {
+  autoVideoReferenceImageData = "";
+  autoVideoReferenceImageMime = "";
+  document.getElementById("aiReferenceImage").value = "";
+  document.getElementById("aiReferencePreviewWrap").style.display = "none";
+  document.getElementById("aiReferenceStatus").textContent = "Sin imagen de referencia.";
+}
+
+async function fetchCloudflareImage(prompt, aspectRatio) {
+  const workerUrl = getCloudflareWorkerUrl();
+  const accessKey = getCloudflareAccessKey();
+  if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave de tu Worker de imágenes.");
+  const response = await fetch(workerUrl + "/generate", {
+    method: "POST",
+    mode: "cors",
+    headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
+    body: JSON.stringify({ prompt, aspectRatio, steps: 4, referenceImage: autoVideoReferenceImageData || null, referenceImageMimeType: autoVideoReferenceImageMime || null })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || ("HTTP " + response.status));
+  const dataUrl = data.dataURI || data.dataUrl || (data.image ? "data:image/jpeg;base64," + data.image : "");
+  return await loadImageCrossOrigin(dataUrl, 180000);
+}
+
+async function generateImagesFromPromptsAI() {
+  const pastedScript = document.getElementById("aiTopicInput").value.trim();
+  if (pastedScript) document.getElementById("scriptArea").value = pastedScript;
+  const scriptLines = getScriptLines();
+  if (scriptLines.length === 0) {
+    showAILog("Primero pega tu guion.", true);
+    switchTab(0);
+    return;
+  }
+  const styleInput = document.getElementById("aiVisualStyle").value.trim();
+  const styleDesc = styleInput || "cinematic documentary, natural lighting";
+  const targetCount = scriptLines.length;
+  const imagePrompts = scriptLines.map((narration, i) => "Scene " + (i + 1) + " of " + targetCount + ". Narration: " + JSON.stringify(narration) + ". Style: " + styleDesc);
+  document.getElementById("promptsArea").value = imagePrompts.join("\n\n");
+
+  loadedImages = [];
+  renderMediaGrid();
+  showAILog("🎨 <b>Generando " + targetCount + " imágenes...</b>");
+
+  for (let i = 0; i < targetCount; i++) {
+    try {
+      const res = await fetchCloudflareImage(imagePrompts[i], document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9");
+      loadedImages.push({
+        name: String(i + 1).padStart(3, "0") + "_IA.jpg",
+        url: res.dataUrl,
+        imgObj: res.imgObj,
+        sceneIndex: i
+      });
+      renderMediaGrid();
+      showAILog(`🎨 Generadas ${i + 1}/${targetCount} imágenes...`);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const weights = scriptLines.map(t => Math.max(String(t).length, 12));
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  let acc = 0;
+  const cuts = [0];
+  for (const weight of weights) {
+    acc += weight;
+    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
+  }
+  scenes = scriptLines.map((text, idx) => ({
+    start: cuts[idx], end: cuts[idx + 1], text,
+    imgIndex: loadedImages.findIndex(img => img.sceneIndex === idx),
+    effect: EFFECTS[idx % EFFECTS.length]
+  }));
+  renderSceneListUI();
+  renderCurrentFrame();
+  updateTimeUI();
+  showAILog("✅ <b>Generación completada.</b>");
+  switchTab(3);
+}
+
+async function handleVoiceUpload(file) {
+  if (!file) return;
+  voiceFileForTranscription = file;
+  isDemoSynthMode = false;
+  document.getElementById("voiceLabel").textContent = "✅ " + file.name;
+  document.getElementById("st1").textContent = "Audio listo";
+  document.getElementById("st1").classList.add("ok");
+
+  const arrayBuf = await file.arrayBuffer();
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
+  totalDuration = voiceBuffer.duration;
+  document.getElementById("seekSlider").max = totalDuration.toFixed(2);
+  updateTimeUI();
+}
+
+async function handleBgmUpload(file) {
+  if (!file) return;
+  document.getElementById("bgmLabel").textContent = "🎵 " + file.name;
+  const arrayBuf = await file.arrayBuffer();
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  bgmBuffer = await audioCtx.decodeAudioData(arrayBuf);
+}
+
+function updateBgmVol(val) {
+  document.getElementById("bgmVolText").textContent = val + "%";
+}
+
+function splitScriptIntoScenes(rawText) {
+  const targetWords = selectedVideoFormat === "short" ? 11 : 15;
+  const paragraphs = String(rawText || "").replace(/\r/g, "\n").split(/\n+/).map(p => p.trim()).filter(Boolean);
+  const sentences = [];
+  for (const paragraph of paragraphs) {
+    const parts = paragraph.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [paragraph];
+    for (const part of parts) {
+      if (part.trim()) sentences.push(part.trim());
+    }
+  }
+  return sentences.length > 0 ? sentences : ["Escena inicial"];
+}
+
+function getScriptLines() {
+  return splitScriptIntoScenes(document.getElementById("scriptArea").value);
+}
+
+function updateScriptStatus() {
+  const lines = getScriptLines();
+  document.getElementById("lineCountInfo").textContent = lines.length + " escenas estimadas";
+  const st2 = document.getElementById("st2");
+  if (lines.length > 0) { st2.textContent = lines.length + " escenas"; st2.classList.add("ok"); }
+}
+
+function splitLongParagraphs() {
+  document.getElementById("scriptArea").value = getScriptLines().join("\n\n");
+  updateScriptStatus();
+}
+
+function handleImagesUpload(fileList) {
+  if (!fileList || fileList.length === 0) return;
+  Array.from(fileList).forEach(file => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { renderMediaGrid(); };
+    img.src = url;
+    loadedImages.push({ name: file.name, url, imgObj: img });
+  });
+}
+
+function clearAllImages() {
+  loadedImages = [];
+  renderMediaGrid();
+}
+
+function removeImage(index) {
+  loadedImages.splice(index, 1);
+  renderMediaGrid();
+}
+
+function renderMediaGrid() {
+  const grid = document.getElementById("mediaGrid");
+  grid.innerHTML = "";
+  loadedImages.forEach((item, idx) => {
+    const div = document.createElement("div");
+    div.className = "media-item";
+    div.innerHTML = `
+      <span class="m-badge">#${String(idx + 1).padStart(3, "0")}</span>
+      <button class="m-delete" onclick="removeImage(${idx})">×</button>
+      <img src="${item.url}" alt="">
+      <div class="m-controls"><span class="m-label">${item.name}</span></div>
+    `;
+    grid.appendChild(div);
+  });
+  const st3 = document.getElementById("st3");
+  st3.textContent = loadedImages.length + " imgs";
+  if (loadedImages.length > 0) st3.classList.add("ok"); else st3.classList.remove("ok");
+}
+
+function autoSyncProject(goToTimeline = true) {
+  let lines = getScriptLines();
+  if (lines.length === 0) lines = loadedImages.map((_, i) => "Escena " + (i + 1));
+  if (!voiceBuffer && !isDemoSynthMode) {
+    totalDuration = Math.max(lines.length * 3.2, 4.0);
+    document.getElementById("seekSlider").max = totalDuration.toFixed(2);
+  }
+  const weights = lines.map(l => Math.max(l.length, 12));
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  let acc = 0; const cuts = [0.0];
+  for (let w of weights) { acc += w; cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2))); }
+  scenes = lines.map((text, idx) => ({
+    start: cuts[idx], end: cuts[idx + 1], text,
+    imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
+    effect: EFFECTS[idx % EFFECTS.length]
+  }));
+  document.getElementById("st4").textContent = scenes.length + " escenas";
+  document.getElementById("st4").classList.add("ok");
+  renderSceneListUI();
+  if (goToTimeline) switchTab(4);
+}
+
+function renderSceneListUI() {
+  const container = document.getElementById("sceneList");
+  container.innerHTML = "";
+  scenes.forEach((sc, idx) => {
+    const row = document.createElement("div");
+    row.className = "scene-row";
+    const thumbUrl = (sc.imgIndex >= 0 && loadedImages[sc.imgIndex]) ? loadedImages[sc.imgIndex].url : "";
+    let imgOptions = loadedImages.map((im, iIdx) => `<option value="${iIdx}" ${iIdx === sc.imgIndex ? "selected" : ""}>#${String(iIdx+1).padStart(3,"0")}</option>`).join("");
+    if (!imgOptions) imgOptions = `<option value="-1">Sin imagen</option>`;
+    let effectOptions = EFFECTS.map(ef => `<option value="${ef}" ${ef === sc.effect ? "selected" : ""}>${ef}</option>`).join("");
+    row.innerHTML = `
+      <img class="scene-thumb" src="${thumbUrl}" onclick="seekTo(${sc.start})" style="cursor:pointer;">
+      <div class="time-pair">
+        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" style="width:68px">s</div>
+        <div>Fin: &nbsp;&nbsp;&nbsp;<input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:68px">s</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderCurrentFrame()">${imgOptions}</select>
+        <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
+      </div>
+      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
+      <button class="btn" onclick="scenes.splice(${idx},1); renderSceneListUI(); renderCurrentFrame()" style="padding:6px 9px;">🗑️</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function addBlankScene() {
+  const lastEnd = scenes.length > 0 ? scenes[scenes.length - 1].end : 0;
+  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length > 0 ? 0 : -1, effect: EFFECTS[0] });
+  renderSceneListUI(); renderCurrentFrame();
+}
+
+function changeAspectRatio(ratio) {
+  const canvas = document.getElementById("previewCanvas");
+  if (ratio === "9:16") { canvas.width = 720; canvas.height = 1280; } else { canvas.width = 1280; canvas.height = 720; }
+  renderCurrentFrame();
+}
+
+function findSceneIndexAtTime(t) {
+  if (scenes.length === 0) return -1;
+  for (let i = 0; i < scenes.length; i++) { if (t >= scenes[i].start && t <= scenes[i].end) return i; }
+  return scenes.length - 1;
+}
+
+function drawSceneLayer(ctx, w, h, scene, progress) {
+  const imgEntry = (scene && scene.imgIndex >= 0) ? loadedImages[scene.imgIndex] : null;
+  if (!imgEntry || !imgEntry.imgObj) {
+    ctx.fillStyle = "#1e293b"; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#94a3b8"; ctx.font = "bold 22px 'Segoe UI'"; ctx.textAlign = "center"; ctx.fillText("Sin imagen", w / 2, h / 2);
+    return;
+  }
+  const img = imgEntry.imgObj;
+  const fitMode = document.getElementById("fitSelect").value;
+  let zoom = 1.0, offsetX = 0, offsetY = 0;
+  const p = Math.max(0, Math.min(1, progress));
+  if (scene.effect === "Zoom In Suave") zoom = 1.0 + 0.12 * p;
+  else if (scene.effect === "Zoom Out Suave") zoom = 1.12 - 0.12 * p;
+  else if (scene.effect === "Zoom In Dramático") zoom = 1.0 + 0.24 * p;
+  else if (scene.effect === "Pan Derecha") { zoom = 1.12; offsetX = (p - 0.5) * w * 0.12; }
+  else if (scene.effect === "Pan Izquierda") { zoom = 1.12; offsetX = (0.5 - p) * w * 0.12; }
+  else if (scene.effect === "Pan Arriba") { zoom = 1.12; offsetY = (0.5 - p) * h * 0.12; }
+  else if (scene.effect === "Pan Abajo") { zoom = 1.12; offsetY = (p - 0.5) * h * 0.12; }
+  else if (scene.effect === "Zoom + Pan") { zoom = 1.0 + 0.16 * p; offsetX = (p - 0.5) * w * 0.06; }
+  else if (scene.effect === "Movimiento Ken Burns") { zoom = 1.04 + 0.08 * p; offsetX = (p - 0.5) * w * 0.045; offsetY = (0.5 - p) * h * 0.025; }
+  else if (scene.effect === "Pulso Suave") zoom = 1.04 + 0.035 * Math.sin(p * Math.PI * 2);
+
+  const imgRatio = img.width / img.height; const canvasRatio = w / h;
+  if (fitMode === "blur") {
+    ctx.save(); ctx.filter = "blur(22px) brightness(0.6)";
+    const bgScale = Math.max(w / img.width, h / img.height) * 1.2;
+    ctx.drawImage(img, (w - img.width * bgScale) / 2, (h - img.height * bgScale) / 2, img.width * bgScale, img.height * bgScale);
+    ctx.restore();
+    let baseW = imgRatio > canvasRatio ? w : h * imgRatio;
+    let baseH = imgRatio > canvasRatio ? w / imgRatio : h;
+    ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
+  } else {
+    const scale = Math.max(w / img.width, h / img.height) * zoom;
+    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - img.height * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+  }
+}
+
+// NUEVA FUNCIÓN: SUBTÍTULOS PALABRA POR PALABRA Y COLOR PERSONALIZADO
+function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
+  const subsMode = document.getElementById("subsSelect").value;
+  if (subsMode === "none" || !scene || !scene.text) return;
+
+  const words = scene.text.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return;
+
+  const sceneDuration = Math.max(0.1, scene.end - scene.start);
+  const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
+  
+  // Calcular qué palabra debe estar activa en este exacto instante
+  const wordDuration = sceneDuration / words.length;
+  const activeWordIndex = Math.min(words.length - 1, Math.floor(timeInScene / wordDuration));
+
+  ctx.save();
+  const fontSize = Math.round(h * 0.046);
+  ctx.font = `700 ${fontSize}px 'Segoe UI', sans-serif`; 
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const customColorInput = document.getElementById("subColorText");
+  const subColor = customColorInput && isValidHex(customColorInput.value.trim()) ? customColorInput.value.trim() : (customColorInput ? customColorInput.value.trim() : "#ffffff");
+
+  // Agrupar en bloques de máximo 4-5 palabras para que quede estético como subtítulo dinámico en pantalla
+  const maxWordsPerLine = 4;
+  let lines = [];
+  for (let i = 0; i < words.length; i += maxWordsPerLine) {
+    lines.push(words.slice(i, i + maxWordsPerLine));
+  }
+
+  // Buscar en qué línea está la palabra activa actualmente
+  let currentLineIndex = 0;
+  let wordCountSoFar = 0;
+  for (let lIdx = 0; lIdx < lines.length; lIdx++) {
+    if (activeWordIndex >= wordCountSoFar && activeWordIndex < wordCountSoFar + lines[lIdx].length) {
+      currentLineIndex = lIdx;
+      break;
+    }
+    wordCountSoFar += lines[lIdx].length;
+  }
+
+  const activeLineWords = lines[currentLineIndex];
+  const lineHeight = fontSize * 1.35;
+  const baseY = h * 0.82;
+
+  // Medir ancho total de la línea activa para dibujar la caja oscura de fondo si está activa
+  let lineTextString = activeLineWords.join(" ");
+  let metrics = ctx.measureText(lineTextString);
+  let textWidth = metrics.width;
+
+  if (subsMode === "box") {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
+    ctx.beginPath();
+    ctx.roundRect((w - textWidth) / 2 - 24, baseY - fontSize * 0.7 - 8, textWidth + 48, lineHeight + 16, 12);
+    ctx.fill();
+  }
+
+  // Dibujar palabra por palabra con separación exacta, resaltando la palabra actual
+  let totalLineWidth = 0;
+  let wordWidths = activeLineWords.map(wrd => {
+    let mw = ctx.measureText(wrd + " ").width;
+    totalLineWidth += mw;
+    return mw;
+  });
+
+  let startX = (w - totalLineWidth) / 2;
+  let currentX = startX;
+
+  activeLineWords.forEach((wrd, wInLineIdx) => {
+    let globalWordIdx = 0;
+    for (let prevL = 0; prevL < currentLineIndex; prevL++) globalWordIdx += lines[prevL].length;
+    globalWordIdx += wInLineIdx;
+
+    const isActive = (globalWordIdx === activeWordIndex);
+    const wordW = ctx.measureText(wrd).width;
+    const spaceW = ctx.measureText(" ").width;
+
+    let drawX = currentX + wordW / 2;
+
+    // Sombra/Borde negro para legibilidad
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#000000";
+    ctx.strokeText(wrd, drawX, baseY);
+
+    // Color de la palabra (activa con el color elegido por el usuario, inactiva en blanco translúcido o gris)
+    ctx.fillStyle = isActive ? subColor : "rgba(255, 255, 255, 0.75)";
+    ctx.fillText(wrd, drawX, baseY);
+
+    currentX += wordW + spaceW;
+  });
+
+  ctx.restore();
+}
+
+function renderCurrentFrame() {
+  const canvas = document.getElementById("previewCanvas");
+  const ctx = canvas.getContext("2d"); const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const idx = findSceneIndexAtTime(currentTime);
+  if (idx < 0 || !scenes[idx]) {
+    ctx.fillStyle = "#131b2e"; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#a78bfa"; ctx.font = "bold 24px 'Segoe UI'"; ctx.textAlign = "center";
+    ctx.fillText("🤖 AutoVideo Faceless Studio", w / 2, h / 2 - 10);
+    return;
+  }
+  const sc = scenes[idx];
+  const progress = (currentTime - sc.start) / Math.max(0.1, sc.end - sc.start);
+  drawSceneLayer(ctx, w, h, sc, progress);
+  drawSubtitlesOnCanvas(ctx, w, h, sc, currentTime);
+  document.getElementById("currentSceneBadge").textContent = `Escena ${idx + 1} / ${scenes.length}`;
+}
+
+function formatMMSS(sec) { let s = Math.floor(sec); return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; }
+function updateTimeUI() { document.getElementById("seekSlider").value = currentTime; document.getElementById("timeDisplay").textContent = `${formatMMSS(currentTime)} / ${formatMMSS(totalDuration)}`; }
+function seekTo(val) { currentTime = Number(val); if (voiceAudioNode && voiceAudioNode.stop) { try{voiceAudioNode.stop();}catch(e){} } updateTimeUI(); renderCurrentFrame(); }
+function togglePlay() { if (scenes.length === 0) { alert("Primero sincroniza."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
+
+function startPlayback() {
+  if (currentTime >= totalDuration - 0.1) seekTo(0);
+  isPlaying = true; document.getElementById("playBtn").textContent = "⏸ Pausa";
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (voiceBuffer && !isDemoSynthMode) {
+    if (voiceAudioNode) { try{voiceAudioNode.stop();}catch(e){} }
+    voiceAudioNode = audioCtx.createBufferSource(); voiceAudioNode.buffer = voiceBuffer;
+    voiceAudioNode.connect(audioCtx.destination); voiceAudioNode.start(0, currentTime);
+  }
+  lastFrameTimestamp = performance.now(); animFrameId = requestAnimationFrame(playbackLoop);
+}
+
+function pausePlayback() {
+  isPlaying = false; document.getElementById("playBtn").textContent = "▶ Play";
+  if (voiceAudioNode) { try{voiceAudioNode.stop();}catch(e){} voiceAudioNode = null; }
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+}
+
+function playbackLoop(now) {
+  if (!isPlaying) return;
+  let dt = (now - lastFrameTimestamp) / 1000; lastFrameTimestamp = now; currentTime += dt;
+  if (currentTime >= totalDuration) { currentTime = totalDuration; updateTimeUI(); renderCurrentFrame(); pausePlayback(); return; }
+  updateTimeUI(); renderCurrentFrame(); animFrameId = requestAnimationFrame(playbackLoop);
+}
+
+function loadBuiltInDemo() {
+  pausePlayback(); isDemoSynthMode = true; totalDuration = 15.0; currentTime = 0.0;
+  document.getElementById("seekSlider").max = totalDuration;
+  document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas viven de él.";
+  updateScriptStatus();
+  loadedImages = [
+    createProceduralSceneImage("001_Mayo", "#451a03", "#78350f", "#f59e0b", "🌍🏜️"),
+    createProceduralSceneImage("002_Septiembre", "#064e3b", "#065f46", "#10b981", "🌏🌿"),
+    createProceduralSceneImage("003_Viento", "#1e1b4b", "#312e81", "#60a5fa", "👑💨"),
+    createProceduralSceneImage("004_Lluvia", "#0f172a", "#1e3a8a", "#38bdf8", "⛈️🌧️"),
+    createProceduralSceneImage("005_Personas", "#3b0764", "#581c87", "#c084fc", "🇮🇳🌾")
+  ];
+  renderMediaGrid(); autoSyncProject(true); startPlayback();
+}
+
+function createProceduralSceneImage(title, topColor, bottomColor, accentColor, iconText) {
+  const c = document.createElement("canvas"); c.width = 1280; c.height = 720;
+  const ctx = c.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 0, 720); g.addColorStop(0, topColor); g.addColorStop(1, bottomColor);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 1280, 720);
+  ctx.fillStyle = accentColor; ctx.globalAlpha = 0.22; ctx.beginPath(); ctx.arc(640, 320, 230, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0;
+  ctx.font = "130px 'Segoe UI Emoji'"; ctx.textAlign = "center"; ctx.fillText(iconText, 640, 320);
+  ctx.font = "700 34px 'Segoe UI'"; ctx.fillStyle = "#fff"; ctx.fillText(title, 640, 460);
+  const url = c.toDataURL("image/png"); const img = new Image(); img.src = url;
+  return { name: title + ".png", url, imgObj: img };
+}
+
+async function exportVideoYouTubeMaster() {
+  if (scenes.length === 0) { alert("Sincroniza el guion antes de exportar."); return; }
+  pausePlayback();
+  const statusEl = document.getElementById("exportStatus");
+  const progOuter = document.getElementById("exportProgressOuter");
+  const progInner = document.getElementById("exportProgressInner");
+  const btn = document.getElementById("exportVideoBtn");
+  btn.disabled = true; progOuter.style.display = "block"; progInner.style.width = "0%";
+  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio...";
+
+  try {
+    const canvas = document.getElementById("previewCanvas");
+    const canvasStream = canvas.captureStream(30);
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") await audioCtx.resume();
+
+    const dest = audioCtx.createMediaStreamDestination();
+    let exportVoiceNode = null; let exportBgmNode = null;
+
+    if (voiceBuffer && !isDemoSynthMode) {
+      exportVoiceNode = audioCtx.createBufferSource();
+      exportVoiceNode.buffer = voiceBuffer;
+      exportVoiceNode.connect(dest); exportVoiceNode.connect(audioCtx.destination);
+    }
+    if (bgmBuffer) {
+      exportBgmNode = audioCtx.createBufferSource();
+      exportBgmNode.buffer = bgmBuffer; exportBgmNode.loop = true;
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
+      exportBgmNode.connect(gainNode); gainNode.connect(dest); gainNode.connect(audioCtx.destination);
+    }
+
+    const combinedTracks = [...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()];
+    const combinedStream = new MediaStream(combinedTracks);
+
+    let mimeType = "video/webm;codecs=vp9,opus";
+    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "video/webm";
+    const recorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 12000000 });
+    const chunks = [];
+
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "video_faceless_youtube_master.webm";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      btn.disabled = false; progInner.style.width = "100%";
+      statusEl.innerHTML = "✅ <b>¡Vídeo descargado con éxito!</b>";
+    };
+
+    currentTime = 0; recorder.start(100);
+    if (exportVoiceNode) exportVoiceNode.start(0);
+    if (exportBgmNode) exportBgmNode.start(0);
+
+    const startTime = performance.now();
+    function step(now) {
+      let elapsed = (now - startTime) / 1000;
+      currentTime = Math.min(elapsed, totalDuration);
+      updateTimeUI(); renderCurrentFrame();
+      let pct = Math.min(100, Math.round((currentTime / totalDuration) * 100));
+      progInner.style.width = pct + "%";
+      statusEl.textContent = `⏳ Renderizando: ${pct}%...`;
+      if (elapsed < totalDuration) { requestAnimationFrame(step); } else {
+        if (exportVoiceNode) { try{exportVoiceNode.stop();}catch(e){} }
+        if (exportBgmNode) { try{exportBgmNode.stop();}catch(e){} }
+        recorder.stop();
+      }
+    }
+    requestAnimationFrame(step);
+  } catch (err) {
+    alert("Error: " + err.message); btn.disabled = false; statusEl.textContent = "❌ Error en exportación.";
+  }
+}
+
+function toSrtTime(sec) {
+  const hrs = Math.floor(sec / 3600); const mins = Math.floor((sec % 3600) / 60);
+  const secs = Math.floor(sec % 60); const ms = Math.round((sec - Math.floor(sec)) * 1000);
+  return `${String(hrs).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")},${String(ms).padStart(3,"0")}`;
+}
+
+function downloadSRT() {
+  if (scenes.length === 0) return;
+  const srt = scenes.map((sc, i) => `${i+1}\n${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}
+${sc.text}
+`).join("\n");
+  const blob = new Blob([srt], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "subtitulos.srt";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function downloadProjectJSON() {
+  const data = JSON.stringify({ totalDuration, scenes }, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "proyecto.json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  toggleGeminiKeyBox();
+  const imageModelSelect = document.getElementById("aiImageModel");
+  if (imageModelSelect) {
+    try {
+      imageModelSelect.value = "cloudflare";
+      const workerUrl = localStorage.getItem("autovideo_cloudflare_worker_url") || IMAGE_WORKER_DEFAULT_URL;
+      const accessKey = localStorage.getItem("autovideo_cloudflare_access_key") || "";
+      document.getElementById("cloudflareWorkerUrl").value = workerUrl;
+      document.getElementById("cloudflareAccessKey").value = accessKey;
+    } catch (_) {}
+    updateImageModelHint();
+  }
+  renderCurrentFrame();
+  updateScriptStatus();
+});
+</script>
+</body>
+</html>
