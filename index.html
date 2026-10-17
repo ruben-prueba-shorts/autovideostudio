@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoVideo Faceless Studio — AI Master Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Bebas+Neue&family=Cinzel:wght@700&family=Lobster&family=Montserrat:wght@900&family=Oswald:wght@700&family=Permanent+Marker&family=Poppins:wght@700&family=Roboto:wght@700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg-dark: #0b0f17;
@@ -427,6 +430,24 @@
             </select>
           </div>
         </div>
+        <div style="grid-column:1/-1;">
+          <label for="subFontSelect">🔤 Tipografía subtítulos</label>
+          <select id="subFontSelect" onchange="onSubFontChange(this.value)" style="margin-top:4px;">
+            <option value="segoe">Segoe UI (Por defecto)</option>
+            <option value="montserrat-black">Montserrat Black</option>
+            <option value="bebas">Bebas Neue</option>
+            <option value="cinzel">Cinzel</option>
+            <option value="anton">Anton</option>
+            <option value="oswald">Oswald Bold</option>
+            <option value="poppins">Poppins Bold</option>
+            <option value="roboto">Roboto Bold</option>
+            <option value="bangers">Bangers</option>
+            <option value="lobster">Lobster</option>
+            <option value="marker">Permanent Marker</option>
+            <option value="impact">Impact</option>
+            <option value="arial-black">Arial Black</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -477,6 +498,40 @@ const EFFECTS = [
   "Pan Derecha", "Pan Izquierda", "Pan Arriba", "Pan Abajo",
   "Zoom + Pan", "Movimiento Ken Burns", "Pulso Suave"
 ];
+
+// TIPOGRAFÍAS DE SUBTÍTULOS
+const SUB_FONTS = {
+  "segoe":            { family: "'Segoe UI', sans-serif",          weight: 700, load: null },
+  "montserrat-black": { family: "'Montserrat', sans-serif",        weight: 900, load: "Montserrat" },
+  "bebas":            { family: "'Bebas Neue', sans-serif",        weight: 400, load: "Bebas Neue" },
+  "cinzel":           { family: "'Cinzel', serif",                 weight: 700, load: "Cinzel" },
+  "anton":            { family: "'Anton', sans-serif",             weight: 400, load: "Anton" },
+  "oswald":           { family: "'Oswald', sans-serif",            weight: 700, load: "Oswald" },
+  "poppins":          { family: "'Poppins', sans-serif",           weight: 700, load: "Poppins" },
+  "roboto":           { family: "'Roboto', sans-serif",            weight: 700, load: "Roboto" },
+  "bangers":          { family: "'Bangers', cursive",              weight: 400, load: "Bangers" },
+  "lobster":          { family: "'Lobster', cursive",              weight: 400, load: "Lobster" },
+  "marker":           { family: "'Permanent Marker', cursive",     weight: 400, load: "Permanent Marker" },
+  "impact":           { family: "Impact, 'Arial Narrow Bold', sans-serif", weight: 400, load: null },
+  "arial-black":      { family: "'Arial Black', Gadget, sans-serif", weight: 400, load: null }
+};
+
+function getSubtitleFont() {
+  const sel = document.getElementById("subFontSelect");
+  const key = sel ? sel.value : "segoe";
+  return SUB_FONTS[key] || SUB_FONTS["segoe"];
+}
+
+function loadSubFontAsset(def) {
+  if (!def || !def.load || !document.fonts || !document.fonts.load) return Promise.resolve();
+  return document.fonts.load(`${def.weight} 40px "${def.load}"`).catch(() => {});
+}
+
+function onSubFontChange(key) {
+  const def = SUB_FONTS[key] || SUB_FONTS["segoe"];
+  loadSubFontAsset(def).then(() => renderCurrentFrame());
+  renderCurrentFrame();
+}
 
 function isValidHex(hex) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(hex) || /^(white|black|red|green|blue|yellow|purple|orange)$/i.test(hex);
@@ -1078,7 +1133,8 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
 
   ctx.save();
   const fontSize = Math.round(h * 0.052);
-  ctx.font = `700 ${fontSize}px 'Segoe UI', sans-serif`; 
+  const subFont = getSubtitleFont();
+  ctx.font = `${subFont.weight} ${fontSize}px ${subFont.family}`; 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -1230,6 +1286,7 @@ async function exportVideoYouTubeMaster() {
   statusEl.textContent = "⏳ Codificando vídeo y mezclando audio Master Pro con SFX (inicio/fin exactos)...";
 
   try {
+    await loadSubFontAsset(getSubtitleFont());
     const canvas = document.getElementById("previewCanvas");
     const canvasStream = canvas.captureStream(30);
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1366,6 +1423,8 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("cloudflareAccessKey").value = accessKey;
     } catch (_) {}
   }
+  // Precarga de tipografías de subtítulos para que el canvas las pinte bien
+  Object.values(SUB_FONTS).forEach(def => { loadSubFontAsset(def).then(() => renderCurrentFrame()); });
   renderCurrentFrame();
   updateScriptStatus();
 });
