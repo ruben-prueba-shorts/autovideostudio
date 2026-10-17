@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AutoVideo Faceless Studio — Pro Ultimate</title>
+<title>AutoVideo Faceless Studio — Pro Ultimate Master</title>
 <style>
   :root {
     --bg-dark: #0b0f17;
@@ -114,7 +114,7 @@
   .media-item .m-controls button { background: transparent; border: none; color: #cbd5e1; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; }
 
   .scene-list { display: flex; flex-direction: column; gap: 10px; }
-  .scene-row { display: grid; grid-template-columns: 78px 110px 130px 1fr 100px 40px; gap: 8px; align-items: center; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .scene-row { display: grid; grid-template-columns: 78px 110px 130px 1fr 110px 40px; gap: 8px; align-items: center; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
   @media(max-width:1100px){.scene-row{grid-template-columns:1fr}}
   .scene-row.playing { border-color: var(--accent-green); box-shadow: 0 0 0 1px var(--accent-green); }
   .scene-thumb { width: 74px; height: 46px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background: #000; }
@@ -140,9 +140,9 @@
 
 <div class="format-gate" id="formatGate" role="dialog" aria-modal="true" aria-labelledby="formatGateTitle">
   <div class="format-panel">
-    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · STUDIO PRO ULTIMATE</div>
+    <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · STUDIO MASTER PRO</div>
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
-    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos perfectamente sincronizados y control exacto de audio/SFX.</p>
+    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos perfectamente sincronizados y control exacto de audio, música y SFX por segundo.</p>
     <div class="format-options">
       <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
       <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
@@ -155,8 +155,8 @@
   <div class="brand">
     <div class="brand-icon">🤖</div>
     <div>
-      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">PRO ULTIMATE</span></div>
-      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Sincronización Perfecta · Colores de Subtítulos · Audio con Offset</div>
+      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">PRO MASTER</span></div>
+      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Galería Corregida · Música de Fondo en Bucle · SFX por Segundo Exacto</div>
     </div>
   </div>
   <div class="header-actions">
@@ -173,7 +173,7 @@
       <span class="step-status ai-badge" id="st0">IA Lista</span>
     </button>
     <button class="step-btn" onclick="switchTab(1)" id="nav1">
-      <span>1. Audio y SFX con Offset</span>
+      <span>1. Audio, BGM y SFX</span>
       <span class="step-status" id="st1">Configurado</span>
     </button>
     <button class="step-btn" onclick="switchTab(2)" id="nav2">
@@ -190,10 +190,10 @@
     </button>
 
     <div class="sidebar-box">
-      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">💡 Novedades Pro:</strong>
-      1. Sincronización de subtítulos mejorada por proporción de palabras.<br>
-      2. Colores básicos y personalizados de subtítulos restaurados.<br>
-      3. Elige el segundo exacto de inicio (Offset) para tus MP3 de fondo.
+      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">💡 Guía Master:</strong>
+      1. Genera tus imágenes con IA (compatible con foto de referencia).<br>
+      2. Sube tu voz (en Off) y tu música de fondo (BGM con volumen bajo ajustable).<br>
+      3. Sube archivos MP3 de risas/teclado y colócalos en el segundo exacto que elijas en la Pestaña 4.
     </div>
   </aside>
 
@@ -202,7 +202,7 @@
     <div class="tab-View active" id="tab0">
       <div class="card ai-card">
         <h2>📝 1. Tu guion e imágenes limpias con IA</h2>
-        <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y generará imágenes limpias. La imagen de referencia se optimiza automáticamente para evitar errores.</p>
+        <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y añadirá automáticamente las imágenes a la galería.</p>
 
         <div class="settings-grid" style="margin-bottom:12px;">
           <div>
@@ -251,33 +251,33 @@
       </div>
     </div>
 
-    <!-- PESTAÑA 1: AUDIO Y BANCO SFX CON OFFSET -->
+    <!-- PESTAÑA 1: AUDIO, BGM Y SFX -->
     <div class="tab-View" id="tab1">
       <div class="card">
-        <h2>🎙️ Audio de Voz en Off</h2>
+        <h2>🎙️ Audio Principal (Voz en Off del Guion)</h2>
         <div class="dropzone" onclick="document.getElementById('voiceInput').click()">
           <div style="font-size:1.8rem; margin-bottom:6px;">🎵</div>
-          <div id="voiceLabel" style="font-weight:600;">Haz clic aquí o arrastra tu archivo MP3 de Voz en Off</div>
+          <div id="voiceLabel" style="font-weight:600;">Haz clic aquí o arrastra tu archivo MP3 principal de Voz en Off</div>
           <input type="file" id="voiceInput" accept="audio/*" style="display:none" onchange="handleVoiceUpload(this.files[0])">
         </div>
         <canvas id="waveformCanvas" width="700" height="64" style="width:100%; height:64px; margin-top:12px; background:#090d16; border-radius:8px; border:1px solid var(--border);"></canvas>
       </div>
 
       <div class="card">
-        <h2>🎶 Música de Fondo y Offset Personalizado</h2>
-        <p class="sub">Sube tu MP3 de música y elige exactamente en qué segundo (offset) quieres que empiece a sonar dentro del vídeo.</p>
+        <h2>🎶 Música de Fondo (BGM - Suena de fondo en todo el vídeo)</h2>
+        <p class="sub">Sube tu MP3 musical. Sonará de fondo a volumen bajo durante todo el vídeo y se repetirá en bucle.</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
-          <button class="btn" onclick="document.getElementById('bgmInput').click()">📂 Seleccionar Música MP3</button>
+          <button class="btn" onclick="document.getElementById('bgmInput').click()">📂 Seleccionar Música BGM</button>
           <span id="bgmLabel" style="font-size:0.83rem; color:var(--text-muted);">Ninguna pista</span>
           <input type="file" id="bgmInput" accept="audio/*" style="display:none" onchange="handleBgmUpload(this.files[0])">
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
           <div>
-            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Inicio del MP3 (Segundo / Offset):</label>
-            <input type="number" id="bgmOffsetInput" min="0" step="0.1" value="0" style="width:100%;" placeholder="Ej: 5.0 (empieza a los 5 segundos)">
+            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Inicio de la Música (Offset en segundos):</label>
+            <input type="number" id="bgmOffsetInput" min="0" step="0.1" value="0" style="width:100%;" placeholder="Ej: 0">
           </div>
           <div>
-            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Volumen de la música:</label>
+            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Volumen de la música (Recomendado 10-20%):</label>
             <div style="display:flex; align-items:center; gap:8px;">
               <input type="range" id="bgmVolSlider" min="0" max="60" value="14" oninput="updateBgmVol(this.value)">
               <span id="bgmVolText" style="font-size:0.82rem; font-weight:600;">14%</span>
@@ -287,10 +287,10 @@
       </div>
 
       <div class="card">
-        <h2>🔊 Banco de Efectos de Sonido (SFX Propios)</h2>
-        <p class="sub">Sube tus archivos de audio (.mp3 o .wav) para asignarlos en la línea de tiempo.</p>
+        <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, etc.)</h2>
+        <p class="sub">Sube tus archivos MP3/WAV de efectos especiales. Podrás asignarlos a cualquier escena indicando el segundo exacto.</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
-          <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX</button>
+          <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX (Risas, etc.)</button>
           <input type="file" id="sfxFileInput" accept="audio/*" multiple style="display:none" onchange="handleSfxUpload(this.files)">
         </div>
         <div id="sfxLibraryList" style="display:flex; flex-direction:column; gap:8px;">
@@ -327,7 +327,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
           <div>
             <h2>🖼️ 3. Recursos Visuales (Galería)</h2>
-            <p class="sub" style="margin-bottom:0;">Usa ◀ ▶ o arrastra con el ratón para reordenar.</p>
+            <p class="sub" style="margin-bottom:0;">Aquí aparecen las imágenes generadas por la IA o subidas por ti.</p>
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
@@ -348,8 +348,8 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
           <div>
-            <h2>⏱️ 4. Línea de Tiempo e Interruptor SFX por Escena</h2>
-            <p class="sub" style="margin-bottom:0;">Asigna efectos de sonido personalizados a cada escena.</p>
+            <h2>⏱️ 4. Línea de Tiempo, Tiempos y SFX por Segundo Exacto</h2>
+            <p class="sub" style="margin-bottom:0;">Elige qué efecto sonoro (risas, teclado) suena en cada escena y en qué segundo exacto de la escena se dispara.</p>
           </div>
           <button class="btn" onclick="addBlankScene()">➕ Añadir Escena</button>
         </div>
@@ -429,9 +429,9 @@
     </div>
 
     <div class="card" style="padding:14px; margin-top:auto;">
-      <h3 style="font-size:0.88rem; margin-bottom:8px;">🚀 Exportar Vídeo Pro</h3>
+      <h3 style="font-size:0.88rem; margin-bottom:8px;">🚀 Exportar Vídeo Master Pro</h3>
       <div id="exportStatus" class="status-banner" style="margin-bottom:10px;">
-        Listo para exportar vídeo con SFX, offset de música y subtítulos perfectamente sincronizados.
+        Listo para exportar vídeo con BGM de fondo, SFX precisos por segundo y subtítulos exactos.
       </div>
       <div class="progress-outer" id="exportProgressOuter" style="margin-bottom:10px;">
         <div class="progress-inner" id="exportProgressInner"></div>
@@ -454,6 +454,7 @@ let audioCtx = null;
 let voiceBuffer = null;
 let voiceAudioNode = null;
 let bgmBuffer = null;
+let activeBgmSource = null;
 
 let totalDuration = 15.0;
 let currentTime = 0.0;
@@ -467,6 +468,7 @@ let scenes = [];
 let userSfxList = [];
 let lastPlayedSceneIndex = -1;
 let lastPlayedChunkIndex = -1;
+let triggeredSfxInCurrentScene = {};
 
 const EFFECTS = [
   "Sin movimiento", "Zoom In Suave", "Zoom Out Suave", "Zoom In Dramático",
@@ -775,7 +777,8 @@ async function generateImagesFromPromptsAI() {
     start: cuts[idx], end: cuts[idx + 1], text,
     imgIndex: loadedImages.findIndex(img => img.sceneIndex === idx),
     effect: EFFECTS[idx % EFFECTS.length],
-    sfxId: ""
+    sfxId: "",
+    sfxSecond: 0.0
   }));
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
@@ -893,7 +896,8 @@ function autoSyncProject(goToTimeline = true) {
     start: cuts[idx], end: cuts[idx + 1], text,
     imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
     effect: EFFECTS[idx % EFFECTS.length],
-    sfxId: ""
+    sfxId: "",
+    sfxSecond: 0.0
   }));
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
@@ -917,16 +921,17 @@ function renderSceneListUI() {
     row.innerHTML = `
       <img class="scene-thumb" src="${thumbUrl}" onclick="seekTo(${sc.start})" style="cursor:pointer;">
       <div class="time-pair">
-        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" style="width:50px">s</div>
-        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:50px">s</div>
+        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
       </div>
-      <div style="display:flex; flex-direction:column; gap:5px;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
         <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderCurrentFrame()">${imgOptions}</select>
         <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
       </div>
       <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
-      <div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
         <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:0.75rem;">${sfxOptions}</select>
+        <div style="font-size:0.7rem; color:var(--text-muted);">Seg: <input type="number" step="0.1" value="${sc.sfxSecond || 0}" onchange="scenes[${idx}].sfxSecond=Number(this.value)" style="width:44px; font-size:0.7rem; padding:1px;">s</div>
       </div>
       <button class="btn" onclick="scenes.splice(${idx},1); renderSceneListUI(); renderCurrentFrame()" style="padding:6px 9px;">🗑️</button>
     `;
@@ -936,7 +941,7 @@ function renderSceneListUI() {
 
 function addBlankScene() {
   const lastEnd = scenes.length > 0 ? scenes[scenes.length - 1].end : 0;
-  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length > 0 ? 0 : -1, effect: EFFECTS[0], sfxId: "" });
+  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length > 0 ? 0 : -1, effect: EFFECTS[0], sfxId: "", sfxSecond: 0.0 });
   renderSceneListUI(); renderCurrentFrame();
 }
 
@@ -985,11 +990,10 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
     ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
   } else {
     const scale = Math.max(w / img.width, h / img.height) * zoom;
-    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - img.height * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - baseH * scale) / 2 + offsetY, img.width * scale, img.height * scale);
   }
 }
 
-// SUBTÍTULOS SINCRONIZADOS POR PESO DE PALABRAS (EVITA ADELANTOS Y ATRASOS)
 function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const subsMode = document.getElementById("subsSelect").value;
   if (subsMode === "none" || !scene || !scene.text) return;
@@ -997,7 +1001,6 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const words = scene.text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return;
 
-  // Agrupar en bloques de 3 palabras de forma perfectamente proporcional al tiempo de la escena
   const chunks = [];
   for (let i = 0; i < words.length; i += 3) {
     chunks.push(words.slice(i, i + 3).join(" "));
@@ -1006,7 +1009,6 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const sceneDuration = Math.max(0.1, scene.end - scene.start);
   const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
   
-  // Calcular índice activo basado en la duración exacta proporcional por caracteres/palabras
   const chunkDuration = sceneDuration / chunks.length;
   const activeChunkIndex = Math.min(chunks.length - 1, Math.floor(timeInScene / chunkDuration));
 
@@ -1050,17 +1052,27 @@ function renderCurrentFrame() {
   ctx.clearRect(0, 0, w, h);
   const idx = findSceneIndexAtTime(currentTime);
   
-  if (isPlaying && idx !== lastPlayedSceneIndex) {
-    lastPlayedSceneIndex = idx;
-    if (scenes[idx] && scenes[idx].sfxId) {
-      playAssignedSfx(scenes[idx].sfxId);
+  if (isPlaying && idx >= 0 && scenes[idx]) {
+    const sc = scenes[idx];
+    if (sc.sfxId) {
+      const targetSec = sc.sfxId ? (sc.sfxSecond || 0) : 0;
+      const timeInScene = currentTime - sc.start;
+      const key = idx + "_" + sc.sfxId;
+      if (Math.abs(timeInScene - targetSec) < 0.08) {
+        if (!triggeredSfxInCurrentScene[key]) {
+          triggeredSfxInCurrentScene[key] = true;
+          playAssignedSfx(sc.sfxId);
+        }
+      } else if (timeInScene < targetSec - 0.2) {
+        triggeredSfxInCurrentScene[key] = false;
+      }
     }
   }
 
   if (idx < 0 || !scenes[idx]) {
     ctx.fillStyle = "#131b2e"; ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = "#a78bfa"; ctx.font = "bold 24px 'Segoe UI'"; ctx.textAlign = "center";
-    ctx.fillText("🤖 AutoVideo Faceless Studio Pro", w / 2, h / 2 - 10);
+    ctx.fillText("🤖 AutoVideo Faceless Studio Master Pro", w / 2, h / 2 - 10);
     return;
   }
   const sc = scenes[idx];
@@ -1088,12 +1100,26 @@ function startPlayback() {
     voiceAudioNode.connect(audioCtx.destination); 
     voiceAudioNode.start(0, currentTime);
   }
+
+  if (bgmBuffer && !activeBgmSource) {
+    activeBgmSource = audioCtx.createBufferSource();
+    activeBgmSource.buffer = bgmBuffer;
+    activeBgmSource.loop = true;
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
+    activeBgmSource.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
+    activeBgmSource.start(0, Math.max(0, offsetVal + currentTime));
+  }
+
   lastFrameTimestamp = performance.now(); animFrameId = requestAnimationFrame(playbackLoop);
 }
 
 function pausePlayback() {
   isPlaying = false; document.getElementById("playBtn").textContent = "▶ Play";
   if (voiceAudioNode) { try{voiceAudioNode.stop();}catch(e){} voiceAudioNode = null; }
+  if (activeBgmSource) { try{activeBgmSource.stop();}catch(e){} activeBgmSource = null; }
   if (animFrameId) cancelAnimationFrame(animFrameId);
 }
 
@@ -1139,7 +1165,7 @@ async function exportVideoYouTubeMaster() {
   const progInner = document.getElementById("exportProgressInner");
   const btn = document.getElementById("exportVideoBtn");
   btn.disabled = true; progOuter.style.display = "block"; progInner.style.width = "0%";
-  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio con offset...";
+  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio Master Pro...";
 
   try {
     const canvas = document.getElementById("previewCanvas");
@@ -1184,7 +1210,7 @@ async function exportVideoYouTubeMaster() {
       const a = document.createElement("a"); a.href = url; a.download = "video_faceless_youtube_master.webm";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       btn.disabled = false; progInner.style.width = "100%";
-      statusEl.innerHTML = "✅ <b>¡Vídeo con Offset y SFX descargado con éxito!</b>";
+      statusEl.innerHTML = "✅ <b>¡Vídeo Master Pro descargado con éxito!</b>";
     };
 
     currentTime = 0; 
@@ -1194,7 +1220,6 @@ async function exportVideoYouTubeMaster() {
     
     if (exportBgmNode) {
       const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
-      // start(when, offset)
       exportBgmNode.start(0, Math.max(0, offsetVal));
     }
 
