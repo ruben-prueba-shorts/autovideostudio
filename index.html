@@ -296,7 +296,7 @@
       <div class="card">
         <h2>📝 2. Tu guion</h2>
         <p class="sub">Pega aquí el guion definitivo. AutoVideo no lo reescribe: lo divide en escenas visuales y genera una imagen para cada una. Como referencia, busca escenas de unos 4–5 segundos en Shorts y algo más largas en vídeos largos.</p>
-        <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo. Puedes escribir una frase por línea o pegar varios párrafos..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
+        <textarea id="scriptArea" rows="8" placeholder="Pega hier tu guion completo. Puedes escribir una frase por línea o pegar varios párrafos..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
           <button class="btn" style="padding:4px 10px; font-size:0.76rem;" onclick="splitLongParagraphs()">✂️ Dividir párrafos largos</button>
@@ -735,8 +735,8 @@ async function generateImagesFromPromptsAI() {
   if (pastedScript) document.getElementById("scriptArea").value = pastedScript;
   const scriptLines = getScriptLines();
   if (scriptLines.length === 0) {
-    showAILog("Primero pega tu guion.", true);
-    switchTab(0);
+    showAILog("Primero pega tu guion en la pestaña correspondiente.", true);
+    switchTab(2);
     return;
   }
   const styleInput = document.getElementById("aiVisualStyle").value.trim();
@@ -745,24 +745,40 @@ async function generateImagesFromPromptsAI() {
   const imagePrompts = scriptLines.map((narration, i) => "Scene " + (i + 1) + " of " + targetCount + ". Narration: " + JSON.stringify(narration) + ". Style: " + styleDesc);
   document.getElementById("promptsArea").value = imagePrompts.join("\n\n");
 
+  const allImageButtons = Array.from(document.querySelectorAll('button[onclick="generateImagesFromPromptsAI()"]'));
+  allImageButtons.forEach(b => b.disabled = true);
+  
   loadedImages = [];
   renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes...</b>");
+  showAILog("🎨 <b>Generando " + targetCount + " imágenes con Cloudflare...</b>");
+
+  let completed = 0;
+  const failures = [];
 
   for (let i = 0; i < targetCount; i++) {
+    const sceneNumber = i + 1;
     try {
+      showAILog(`🎨 Generando imagen ${sceneNumber} de ${targetCount}...`);
       const res = await fetchCloudflareImage(imagePrompts[i], document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9");
       loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA.jpg",
+        name: String(sceneNumber).padStart(3, "0") + "_IA.jpg",
         url: res.dataUrl,
         imgObj: res.imgObj,
         sceneIndex: i
       });
       renderMediaGrid();
-      showAILog(`🎨 Generadas ${i + 1}/${targetCount} imágenes...`);
     } catch (err) {
-      console.error(err);
+      console.error(`Error en escena ${sceneNumber}:`, err);
+      failures.push({ scene: sceneNumber, message: err.message || String(err) });
     }
+    completed++;
+  }
+
+  allImageButtons.forEach(b => b.disabled = false);
+
+  if (loadedImages.length === 0) {
+    showAILog("❌ <b>Error al generar las imágenes.</b><br>" + (failures.length > 0 ? failures[0].message : "Comprueba la clave APP_SECRET y la URL del Worker."), true);
+    return;
   }
 
   const weights = scriptLines.map(t => Math.max(String(t).length, 12));
@@ -778,10 +794,17 @@ async function generateImagesFromPromptsAI() {
     imgIndex: loadedImages.findIndex(img => img.sceneIndex === idx),
     effect: EFFECTS[idx % EFFECTS.length]
   }));
+  document.getElementById("st4").textContent = scenes.length + " escenas";
+  document.getElementById("st4").classList.add("ok");
   renderSceneListUI();
   renderCurrentFrame();
   updateTimeUI();
-  showAILog("✅ <b>Generación completada.</b>");
+
+  if (failures.length === 0) {
+    showAILog("✅ <b>Generación completada:</b> " + loadedImages.length + " imágenes creadas con éxito.");
+  } else {
+    showAILog("⚠️ Se generaron " + loadedImages.length + " de " + targetCount + " imágenes, pero hubo fallos en algunas escenas.", true);
+  }
   switchTab(3);
 }
 
@@ -986,7 +1009,6 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
   }
 }
 
-// NUEVA FUNCIÓN: SUBTÍTULOS PALABRA POR PALABRA Y COLOR PERSONALIZADO
 function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const subsMode = document.getElementById("subsSelect").value;
   if (subsMode === "none" || !scene || !scene.text) return;
@@ -997,7 +1019,6 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const sceneDuration = Math.max(0.1, scene.end - scene.start);
   const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
   
-  // Calcular qué palabra debe estar activa en este exacto instante
   const wordDuration = sceneDuration / words.length;
   const activeWordIndex = Math.min(words.length - 1, Math.floor(timeInScene / wordDuration));
 
@@ -1010,14 +1031,12 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const customColorInput = document.getElementById("subColorText");
   const subColor = customColorInput && isValidHex(customColorInput.value.trim()) ? customColorInput.value.trim() : (customColorInput ? customColorInput.value.trim() : "#ffffff");
 
-  // Agrupar en bloques de máximo 4-5 palabras para que quede estético como subtítulo dinámico en pantalla
   const maxWordsPerLine = 4;
   let lines = [];
   for (let i = 0; i < words.length; i += maxWordsPerLine) {
     lines.push(words.slice(i, i + maxWordsPerLine));
   }
 
-  // Buscar en qué línea está la palabra activa actualmente
   let currentLineIndex = 0;
   let wordCountSoFar = 0;
   for (let lIdx = 0; lIdx < lines.length; lIdx++) {
@@ -1032,7 +1051,6 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const lineHeight = fontSize * 1.35;
   const baseY = h * 0.82;
 
-  // Medir ancho total de la línea activa para dibujar la caja oscura de fondo si está activa
   let lineTextString = activeLineWords.join(" ");
   let metrics = ctx.measureText(lineTextString);
   let textWidth = metrics.width;
@@ -1044,7 +1062,6 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
     ctx.fill();
   }
 
-  // Dibujar palabra por palabra con separación exacta, resaltando la palabra actual
   let totalLineWidth = 0;
   let wordWidths = activeLineWords.map(wrd => {
     let mw = ctx.measureText(wrd + " ").width;
@@ -1066,12 +1083,10 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
 
     let drawX = currentX + wordW / 2;
 
-    // Sombra/Borde negro para legibilidad
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#000000";
     ctx.strokeText(wrd, drawX, baseY);
 
-    // Color de la palabra (activa con el color elegido por el usuario, inactiva en blanco translúcido o gris)
     ctx.fillStyle = isActive ? subColor : "rgba(255, 255, 255, 0.75)";
     ctx.fillText(wrd, drawX, baseY);
 
