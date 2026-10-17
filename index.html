@@ -142,7 +142,7 @@
   <div class="format-panel">
     <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · STUDIO MASTER ULTIMATE</div>
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
-    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos perfectamente sincronizados y control exacto de audio, música y SFX.</p>
+    <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos sincronizados y control exacto de audio, música y SFX.</p>
     <div class="format-options">
       <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
       <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
@@ -288,7 +288,7 @@
 
       <div class="card">
         <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, etc.)</h2>
-        <p class="sub">Sube tus archivos MP3/WAV de efectos especiales. Podrás asignarlos a cualquier escena indicando el segundo exacto.</p>
+        <p class="sub">Sube tus archivos MP3/WAV de efectos especiales. Podrás asignarlos a cualquier escena indicando cuándo empiezan y cuánto duran.</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
           <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX (Risas, etc.)</button>
           <input type="file" id="sfxFileInput" accept="audio/*" multiple style="display:none" onchange="handleSfxUpload(this.files)">
@@ -348,8 +348,8 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
           <div>
-            <h2>⏱️ 4. Línea de Tiempo, Tiempos y SFX por Segundo Exacto</h2>
-            <p class="sub" style="margin-bottom:0;">Elige qué efecto sonoro (risas, teclado) suena en cada escena y en qué segundo exacto de la escena se dispara.</p>
+            <h2>⏱️ 4. Línea de Tiempo, Tiempos y SFX (Inicio y Duración)</h2>
+            <p class="sub" style="margin-bottom:0;">Elige el efecto (ej: risas), el segundo exacto donde <b>empieza</b> y cuántos segundos <b>dura</b>.</p>
           </div>
           <button class="btn" onclick="addBlankScene()">➕ Añadir Escena</button>
         </div>
@@ -530,7 +530,7 @@ function playPreviewSfx(id) {
   } catch(e) {}
 }
 
-function playAssignedSfx(id) {
+function playAssignedSfx(id, durationSec = 0) {
   if (!id) return;
   const item = userSfxList.find(x => x.id === id);
   if (!item) return;
@@ -540,7 +540,11 @@ function playAssignedSfx(id) {
     const src = audioCtx.createBufferSource();
     src.buffer = item.buffer;
     src.connect(audioCtx.destination);
-    src.start(0);
+    if (durationSec && durationSec > 0) {
+      src.start(0, 0, durationSec);
+    } else {
+      src.start(0);
+    }
   } catch(e) {}
 }
 
@@ -783,7 +787,8 @@ async function generateImagesFromPromptsAI() {
     imgIndex: loadedImages.findIndex(img => img.sceneIndex === idx),
     effect: EFFECTS[idx % EFFECTS.length],
     sfxId: "",
-    sfxSecond: 0.0
+    sfxStart: 0.0,
+    sfxDuration: 1.0
   }));
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
@@ -902,7 +907,8 @@ function autoSyncProject(goToTimeline = true) {
     imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
     effect: EFFECTS[idx % EFFECTS.length],
     sfxId: "",
-    sfxSecond: 0.0
+    sfxStart: 0.0,
+    sfxDuration: 1.0
   }));
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
@@ -934,9 +940,12 @@ function renderSceneListUI() {
         <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
       </div>
       <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
-      <div style="display:flex; flex-direction:column; gap:4px;">
+      <div style="display:flex; flex-direction:column; gap:3px;">
         <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:0.75rem;">${sfxOptions}</select>
-        <div style="font-size:0.7rem; color:var(--text-muted);">Seg: <input type="number" step="0.1" value="${sc.sfxSecond || 0}" onchange="scenes[${idx}].sfxSecond=Number(this.value)" style="width:44px; font-size:0.7rem; padding:1px;">s</div>
+        <div style="font-size:0.68rem; color:var(--text-muted); display:flex; gap:2px;">
+          <span>Ini:<input type="number" step="0.1" value="${sc.sfxStart || 0}" onchange="scenes[${idx}].sfxStart=Number(this.value)" style="width:38px; font-size:0.68rem; padding:1px;"></span>
+          <span>Dur:<input type="number" step="0.1" value="${sc.sfxDuration || 1.0}" onchange="scenes[${idx}].sfxDuration=Number(this.value)" style="width:38px; font-size:0.68rem; padding:1px;"></span>
+        </div>
       </div>
       <button class="btn" onclick="scenes.splice(${idx},1); renderSceneListUI(); renderCurrentFrame()" style="padding:6px 9px;">🗑️</button>
     `;
@@ -946,7 +955,7 @@ function renderSceneListUI() {
 
 function addBlankScene() {
   const lastEnd = scenes.length > 0 ? scenes[scenes.length - 1].end : 0;
-  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length > 0 ? 0 : -1, effect: EFFECTS[0], sfxId: "", sfxSecond: 0.0 });
+  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length > 0 ? 0 : -1, effect: EFFECTS[0], sfxId: "", sfxStart: 0.0, sfxDuration: 1.0 });
   renderSceneListUI(); renderCurrentFrame();
 }
 
@@ -1060,15 +1069,17 @@ function renderCurrentFrame() {
   if (isPlaying && idx >= 0 && scenes[idx]) {
     const sc = scenes[idx];
     if (sc.sfxId) {
-      const targetSec = sc.sfxId ? (sc.sfxSecond || 0) : 0;
+      const targetStart = sc.sfxStart || 0;
+      const targetDuration = sc.sfxDuration || 1.0;
       const timeInScene = currentTime - sc.start;
       const key = idx + "_" + sc.sfxId;
-      if (Math.abs(timeInScene - targetSec) < 0.08) {
+      
+      if (timeInScene >= targetStart && timeInScene <= (targetStart + 0.1)) {
         if (!triggeredSfxInCurrentScene[key]) {
           triggeredSfxInCurrentScene[key] = true;
-          playAssignedSfx(sc.sfxId);
+          playAssignedSfx(sc.sfxId, targetDuration);
         }
-      } else if (timeInScene < targetSec - 0.2) {
+      } else if (timeInScene < targetStart - 0.2) {
         triggeredSfxInCurrentScene[key] = false;
       }
     }
@@ -1170,7 +1181,7 @@ async function exportVideoYouTubeMaster() {
   const progInner = document.getElementById("exportProgressInner");
   const btn = document.getElementById("exportVideoBtn");
   btn.disabled = true; progOuter.style.display = "block"; progInner.style.width = "0%";
-  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio Master Pro...";
+  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio Master Pro con SFX (inicio/duración)...";
 
   try {
     const canvas = document.getElementById("previewCanvas");
@@ -1200,20 +1211,20 @@ async function exportVideoYouTubeMaster() {
       gainNode.connect(audioCtx.destination);
     }
 
-    // Mezclar también todos los SFX personalizados programados en las escenas para la exportación
+    // Inyectar SFX personalizados en la exportación con inicio y duración exactos
+    const exportSfxNodes = [];
     scenes.forEach(sc => {
       if (sc.sfxId) {
-        const sfxItem = userSfxList.find(x => x.id === sc.sfxId);
-        if (sfxItem && sfxItem.buffer) {
+        const item = userSfxList.find(x => x.id === sc.sfxId);
+        if (item && item.buffer) {
           try {
             const sfxNode = audioCtx.createBufferSource();
-            sfxNode.buffer = sfxItem.buffer;
+            sfxNode.buffer = item.buffer;
             sfxNode.connect(dest);
             sfxNode.connect(audioCtx.destination);
-            const triggerTime = sc.start + (sc.sfxSecond || 0);
-            if (triggerTime >= 0 && triggerTime < totalDuration) {
-              sfxNode.start(triggerTime);
-            }
+            const triggerTime = sc.start + (sc.sfxStart || 0);
+            const dur = sc.sfxDuration || 1.0;
+            exportSfxNodes.push({ node: sfxNode, time: triggerTime, duration: dur });
           } catch(e) {}
         }
       }
@@ -1247,6 +1258,13 @@ async function exportVideoYouTubeMaster() {
       exportBgmNode.start(0, Math.max(0, offsetVal));
     }
 
+    // Programar la ejecución de los SFX en la exportación con duración exacta
+    exportSfxNodes.forEach(sfx => {
+      try {
+        sfx.node.start(sfx.time, 0, sfx.duration);
+      } catch(e) {}
+    });
+
     const startTime = performance.now();
     function step(now) {
       let elapsed = (now - startTime) / 1000;
@@ -1258,6 +1276,7 @@ async function exportVideoYouTubeMaster() {
       if (elapsed < totalDuration) { requestAnimationFrame(step); } else {
         if (exportVoiceNode) { try{exportVoiceNode.stop();}catch(e){} }
         if (exportBgmNode) { try{exportBgmNode.stop();}catch(e){} }
+        exportSfxNodes.forEach(s => { try{s.node.stop();}catch(e){} });
         recorder.stop();
       }
     }
