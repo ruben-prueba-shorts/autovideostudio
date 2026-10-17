@@ -768,31 +768,40 @@ async function testCloudflareWorker() {
   }
 }
 
-async function fetchCloudflareImage(prompt, aspectRatio) {
+async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
   const workerUrl = getCloudflareWorkerUrl();
   const accessKey = getCloudflareAccessKey();
   if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave de tu Worker.");
   
-  let cleanRefImage = autoVideoReferenceImageData || null;
-  if (cleanRefImage && cleanRefImage.includes("base64,")) {
-    cleanRefImage = cleanRefImage.split("base64,")[1];
+  let cleanRefImage = null;
+  let refMime = null;
+  if (useReference && autoVideoReferenceImageData) {
+    cleanRefImage = autoVideoReferenceImageData;
+    if (cleanRefImage.includes("base64,")) {
+      cleanRefImage = cleanRefImage.split("base64,")[1];
+    }
+    refMime = autoVideoReferenceImageMime || "image/jpeg";
+  }
+
+  const payload = { prompt, aspectRatio, steps: 4 };
+  if (cleanRefImage) {
+    payload.referenceImage = cleanRefImage;
+    payload.referenceImageMimeType = refMime;
   }
 
   const response = await fetch(workerUrl + "/generate", {
     method: "POST",
     mode: "cors",
     headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
-    body: JSON.stringify({ 
-      prompt, 
-      aspectRatio, 
-      steps: 4, 
-      referenceImage: cleanRefImage, 
-      referenceImageMimeType: autoVideoReferenceImageMime || null 
-    })
+    body: JSON.stringify(payload)
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || ("HTTP " + response.status));
+  if (!response.ok) {
+    const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : "");
+    throw new Error(msg || ("HTTP " + response.status));
+  }
   const dataUrl = data.dataURI || data.dataUrl || (data.image ? "data:image/jpeg;base64," + data.image : "");
+  if (!dataUrl) throw new Error("El Worker no devolvió ninguna imagen.");
   return await loadImageCrossOrigin(dataUrl, 180000);
 }
 
@@ -859,10 +868,32 @@ async function generateImagesFromPromptsAI() {
   renderMediaGrid();
   showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias...</b>");
 
+  const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
+  let failedCount = 0;
+  let refFallbackCount = 0;
+  let lastError = "";
+
   for (let i = 0; i < targetCount; i++) {
+    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount}...`);
+    let res = null;
     try {
-      showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount}...`);
-      const res = await fetchCloudflareImage(imagePrompts[i], document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9");
+      res = await fetchCloudflareImage(imagePrompts[i], aspect, true);
+    } catch (err) {
+      console.error(`Error en escena ${i + 1}:`, err);
+      lastError = err.message;
+      if (autoVideoReferenceImageData) {
+        try {
+          showAILog(`⚠️ Falló con la imagen de referencia. Reintentando la imagen ${i + 1} sin ella...`);
+          res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
+          refFallbackCount++;
+        } catch (err2) {
+          console.error(`Error (sin referencia) en escena ${i + 1}:`, err2);
+          lastError = err2.message;
+        }
+      }
+    }
+
+    if (res) {
       loadedImages.push({
         name: String(i + 1).padStart(3, "0") + "_IA.jpg",
         url: res.dataUrl,
@@ -870,8 +901,8 @@ async function generateImagesFromPromptsAI() {
         sceneIndex: i
       });
       renderMediaGrid();
-    } catch (err) {
-      console.error(`Error en escena ${i + 1}:`, err);
+    } else {
+      failedCount++;
     }
   }
 
@@ -896,6 +927,16 @@ async function generateImagesFromPromptsAI() {
   renderSceneListUI();
   renderCurrentFrame();
   updateTimeUI();
+
+  if (failedCount > 0) {
+    showAILog(`❌ <b>${failedCount} de ${targetCount} imágenes fallaron.</b> Último error: ${lastError}`, true);
+    alert(`${failedCount} de ${targetCount} imágenes fallaron.\nÚltimo error: ${lastError}`);
+  } else if (refFallbackCount > 0) {
+    showAILog(`⚠️ Imágenes generadas, pero ${refFallbackCount} se hicieron SIN la imagen de referencia porque el Worker la rechazó. Último error: ${lastError}`, true);
+    alert(`${refFallbackCount} imágenes se generaron sin la imagen de referencia porque el Worker la rechazó.\nError: ${lastError}`);
+  } else {
+    showAILog("✅ <b>Imágenes generadas con éxito.</b>");
+  }
   switchTab(3);
 }
 
