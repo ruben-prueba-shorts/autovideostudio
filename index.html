@@ -915,13 +915,22 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
     headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
     body: JSON.stringify(payload)
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : "");
-    throw new Error(msg || ("HTTP " + response.status));
+  
+  const rawText = await response.text();
+  let data = {};
+  try {
+    data = JSON.parse(rawText);
+  } catch (e) {
+    throw new Error("Respuesta inválida del Worker (no es JSON): " + rawText.substring(0, 100));
   }
-  const dataUrl = data.dataURI || data.dataUrl || (data.image ? "data:image/jpeg;base64," + data.image : "");
-  if (!dataUrl) throw new Error("El Worker no devolvió ninguna imagen.");
+
+  if (!response.ok) {
+    const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : ("HTTP " + response.status));
+    throw new Error(msg);
+  }
+
+  const dataUrl = data.dataURI || data.dataUrl || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
+  if (!dataUrl) throw new Error("El Worker respondió OK pero no devolvió ninguna imagen.");
   return await loadImageCrossOrigin(dataUrl, 180000);
 }
 
@@ -1025,14 +1034,12 @@ async function generateImagesFromPromptsAI() {
       switchTab(0);
       return;
     }
-    // Respeta todas las imágenes de la lista exacta en su orden estricto (1, 2, 3...)
     const extraStyle = styleInput ? `, ${styleInput}` : "";
     imagePrompts = manualLines.map((lineContent) => {
       const cleanLine = lineContent.replace(/\.+$/, "").trim();
       return `${cleanLine}${extraStyle}, ${styleSuffix}`;
     });
   } else {
-    // Si el usuario pegó una lista numerada en el cuadro de Estilo Visual General, la usamos en orden
     const styleAsList = parseManualList(styleInput);
     const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|\n)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
 
@@ -1079,14 +1086,15 @@ async function generateImagesFromPromptsAI() {
       success = true;
     } catch (err) {
       console.error(`Error en escena ${i + 1}:`, err);
+      showAILog(`⚠️ Error en imagen ${i + 1}: ${escapeHtml(err.message)}. Reintentando sin referencia...`, true);
       if (autoVideoReferenceImageData) {
         try {
-          showAILog(`⚠️ Falló con la imagen de referencia en la imagen ${i + 1}. Reintentando sin ella...`);
           res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
           success = true;
           refFallbackIndices.push(i + 1);
         } catch (err2) {
           console.error(`Error (sin referencia) en escena ${i + 1}:`, err2);
+          showAILog(`❌ Falló definitivamente la imagen ${i + 1}: ${escapeHtml(err2.message)}`, true);
         }
       }
     }
@@ -1099,7 +1107,6 @@ async function generateImagesFromPromptsAI() {
         sceneIndex: i
       });
     } else {
-      // Mantiene el hueco exacto con un placeholder para no desfasar el orden del resto de imágenes
       const fallbackPlaceholder = createProceduralSceneImage(
         String(i + 1).padStart(3, "0") + "_Reintentar",
         "#1e1b4b", "#0f172a", "#ef4444", "⚠️"
@@ -1119,8 +1126,7 @@ async function generateImagesFromPromptsAI() {
 
   if (failedIndices.length > 0) {
     const failedStr = failedIndices.join(", ");
-    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>.`, true);
-    alert(`No se pudieron generar las imágenes de la(s) escena(s) número: #${failedStr}. Revisa tu conexión o vuelve a intentarlo.`);
+    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>. Revisa la consola (F12) para ver el error exacto del Worker.`, true);
   } else if (refFallbackIndices.length > 0) {
     showAILog(`⚠️ Imágenes generadas en orden, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
   } else {
@@ -1496,7 +1502,7 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
     ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
   } else {
     const scale = Math.max(w / img.width, h / img.height) * zoom;
-    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - img.height * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - baseH * scale) / 2 + offsetY, img.width * scale, img.height * scale);
   }
 }
 
