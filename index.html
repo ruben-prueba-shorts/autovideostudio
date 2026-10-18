@@ -1071,18 +1071,17 @@ async function generateImagesFromPromptsAI() {
 
   loadedImages = [];
   renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias en orden (1 a " + targetCount + ")...</b>");
+  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias en orden (1 al " + targetCount + ")...</b>");
 
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
   let failedIndices = [];
   let refFallbackIndices = [];
 
   for (let i = 0; i < targetCount; i++) {
-    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount} en orden...`);
+    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount}...`);
     let res = null;
     let success = false;
     
-    // Pausa de cortesía anti-saturación para vídeos largos y cortos
     if (i > 0) {
       await new Promise(r => setTimeout(r, 600));
     }
@@ -1133,7 +1132,7 @@ async function generateImagesFromPromptsAI() {
 
   if (failedIndices.length > 0) {
     const failedStr = failedIndices.join(", ");
-    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>. Revisa la consola (F12) para ver el error exacto del Worker.`, true);
+    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>.`, true);
   } else if (refFallbackIndices.length > 0) {
     showAILog(`⚠️ Imágenes generadas en orden, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
   } else {
@@ -1395,6 +1394,7 @@ function autoSyncProject(goToTimeline = true) {
   }
   document.getElementById("seekSlider").max = totalDuration.toFixed(2);
 
+  // Sincronización proporcional exacta basada en el peso de pronunciación de cada escena frente al total
   const weights = lines.map(l => Math.max(getSpeechTimingWeight(l), 1));
   const totalWeight = weights.reduce((a, b) => a + b, 0);
   let acc = 0; const cuts = [0.0];
@@ -1402,6 +1402,8 @@ function autoSyncProject(goToTimeline = true) {
     acc += w;
     cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
   }
+  cuts[cuts.length - 1] = Number(totalDuration.toFixed(2)); // Asegura coincidencia milimétrica con el audio real
+
   scenes = lines.map((text, idx) => ({
     start: cuts[idx], end: cuts[idx + 1], text,
     imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
