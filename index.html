@@ -222,10 +222,10 @@
             </div>
           </div>
           <div>
-            <label for="aiVisualStyle">Estilo visual (Opcional)</label>
-            <textarea id="aiVisualStyle" rows="4" placeholder="Ejemplo: 2D minimalist vector animation style, simple stickman characters, clean outlines"></textarea>
+            <label for="aiVisualStyle">Estilo visual o Lista de escenas (Opcional)</label>
+            <textarea id="aiVisualStyle" rows="4" placeholder="Pon un estilo genérico (ej: 2D minimalist vector animation style, stickman) O pega aquí directamente tu lista numerada del 1 al 9 de escenas..."></textarea>
             <div style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:6px;">
-              Puedes dejarlo vacío si usas una imagen de referencia o combinar ambos.
+              💡 <b>Doble modo:</b> Si escribes un estilo general, se aplicará a cada línea de tu guion. Si pegas una lista numerada (1, 2, 3...), se usará cada punto para su escena sin repetirse.
             </div>
             <div style="margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:10px; background:var(--bg-input);">
               <label for="aiReferenceImage">🖼️ Imagen de referencia (Comprimida automáticamente)</label>
@@ -317,8 +317,12 @@
       </div>
 
       <div class="card">
-        <h2>🎨 Instrucciones visuales (Sin texto)</h2>
-        <textarea id="promptsArea" rows="6" placeholder="Aquí aparecerán las instrucciones visuales..." readonly></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+          <h2 style="margin-bottom:0;">🎨 Instrucciones visuales (Sin texto)</h2>
+          <button class="btn" style="padding:4px 10px; font-size:0.75rem;" onclick="clearCustomPrompts()">🧹 Limpiar prompts manuales</button>
+        </div>
+        <p class="sub" style="margin-bottom:10px;">Opcional: Pega aquí tus prompts numerados (1-9) para cada escena, o déjalo vacío para que se generen solos desde el guion y el Estilo Visual.</p>
+        <textarea id="promptsArea" rows="6" placeholder="Aquí aparecerán las instrucciones visuales generadas (o pega aquí tu lista numerada 1, 2, 3... antes de darle a Generar)..." oninput="this.dataset.manual='true'"></textarea>
       </div>
     </div>
 
@@ -500,17 +504,17 @@ const EFFECTS = [
 ];
 
 const SUB_FONTS = {
-  "segoe":             { family: "'Segoe UI', sans-serif",        weight: 700, load: null },
-  "montserrat-black": { family: "'Montserrat', sans-serif",        weight: 900, load: "Montserrat" },
-  "bebas":            { family: "'Bebas Neue', sans-serif",        weight: 400, load: "Bebas Neue" },
-  "cinzel":           { family: "'Cinzel', serif",                 weight: 700, load: "Cinzel" },
-  "anton":            { family: "'Anton', sans-serif",             weight: 400, load: "Anton" },
-  "oswald":           { family: "'Oswald', sans-serif",            weight: 700, load: "Oswald" },
-  "poppins":          { family: "'Poppins', sans-serif",           weight: 700, load: "Poppins" },
-  "roboto":           { family: "'Roboto', sans-serif",            weight: 700, load: "Roboto" },
-  "bangers":          { family: "'Bangers', cursive",              weight: 400, load: "Bangers" },
-  "lobster":          { family: "'Lobster', cursive",              weight: 400, load: "Lobster" },
-  "marker":           { family: "'Permanent Marker', cursive",     weight: 400, load: "Permanent Marker" },
+  "segoe":            { family: "'Segoe UI', sans-serif",         weight: 700, load: null },
+  "montserrat-black": { family: "'Montserrat', sans-serif",       weight: 900, load: "Montserrat" },
+  "bebas":            { family: "'Bebas Neue', sans-serif",       weight: 400, load: "Bebas Neue" },
+  "cinzel":           { family: "'Cinzel', serif",                weight: 700, load: "Cinzel" },
+  "anton":            { family: "'Anton', sans-serif",            weight: 400, load: "Anton" },
+  "oswald":           { family: "'Oswald', sans-serif",           weight: 700, load: "Oswald" },
+  "poppins":          { family: "'Poppins', sans-serif",          weight: 700, load: "Poppins" },
+  "roboto":           { family: "'Roboto', sans-serif",           weight: 700, load: "Roboto" },
+  "bangers":          { family: "'Bangers', cursive",             weight: 400, load: "Bangers" },
+  "lobster":          { family: "'Lobster', cursive",             weight: 400, load: "Lobster" },
+  "marker":           { family: "'Permanent Marker', cursive",    weight: 400, load: "Permanent Marker" },
   "impact":           { family: "Impact, 'Arial Narrow Bold', sans-serif", weight: 400, load: null },
   "arial-black":      { family: "'Arial Black', Gadget, sans-serif", weight: 400, load: null }
 };
@@ -534,6 +538,10 @@ function onSubFontChange(key) {
 
 function isValidHex(hex) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(hex) || /^(white|black|red|green|blue|yellow|purple|orange)$/i.test(hex);
+}
+
+function setImageModelPreference(val) {
+  try { localStorage.setItem("autovideo_image_model", val); } catch (_) {}
 }
 
 const SFX_STOPWORDS = new Set([
@@ -932,6 +940,28 @@ function loadImageCrossOrigin(url, timeoutMs = 45000) {
   });
 }
 
+function clearCustomPrompts() {
+  const el = document.getElementById("promptsArea");
+  if (el) {
+    el.value = "";
+    delete el.dataset.manual;
+  }
+}
+
+function parseCustomPromptsList(rawText) {
+  if (!rawText || !rawText.trim()) return [];
+  const negRegex = /,?\s*strictly no text, no words, no letters, no numbers, no typography, pure visual graphics\.?$/i;
+  return rawText
+    .replace(/\r/g, "\n")
+    .split(/\n+/)
+    .map(l => l.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+    .filter(Boolean)
+    .map(l => l.replace(/^scene\s+\d+[\.:\-\)]\s*/i, "").trim())
+    .map(l => l.replace(/^\d+[\.\)\-:]\s*/, "").trim())
+    .map(l => l.replace(negRegex, "").trim())
+    .filter(Boolean);
+}
+
 async function generateImagesFromPromptsAI() {
   const scriptLines = getScriptLines();
   if (scriptLines.length === 0) {
@@ -939,13 +969,44 @@ async function generateImagesFromPromptsAI() {
     switchTab(2);
     return;
   }
+
   const styleInput = document.getElementById("aiVisualStyle").value.trim();
-  const styleDesc = styleInput || "2D minimalist vector animation style";
+  const styleLines = parseCustomPromptsList(styleInput);
+  // Detecta si en "Estilo visual" se ha pegado una lista de escenas (varias líneas o empieza por "1.")
+  const isMultiLinePromptsInStyle = styleLines.length > 1 || /^\d+[\.\)\-:]/.test(styleInput);
+
+  const styleDesc = isMultiLinePromptsInStyle
+    ? "2D minimalist vector animation style"
+    : (styleInput || "2D minimalist vector animation style");
+
+  const promptsAreaEl = document.getElementById("promptsArea");
+  const useManualPromptsBox = promptsAreaEl && promptsAreaEl.dataset.manual === "true" && promptsAreaEl.value.trim().length > 0;
+  const manualPromptLines = useManualPromptsBox ? parseCustomPromptsList(promptsAreaEl.value) : [];
+
   const targetCount = scriptLines.length;
-  
   const negativeConstraint = ", strictly no text, no words, no letters, no numbers, no typography, pure visual graphics";
-  const imagePrompts = scriptLines.map((_, i) => "Scene " + (i + 1) + ". Style: " + styleDesc + negativeConstraint);
-  document.getElementById("promptsArea").value = imagePrompts.join("\n\n");
+
+  const imagePrompts = scriptLines.map((sceneText, i) => {
+    let specificSceneDesc = "";
+    if (isMultiLinePromptsInStyle && styleLines[i]) {
+      specificSceneDesc = styleLines[i];
+    } else if (manualPromptLines.length > 0 && manualPromptLines[i]) {
+      specificSceneDesc = manualPromptLines[i];
+    } else {
+      specificSceneDesc = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").trim();
+    }
+
+    // Si viene de una lista de escenas en Estilo Visual o ya incluye la etiqueta Style:, no duplicamos el estilo
+    if (isMultiLinePromptsInStyle || /\bstyle\s*:/i.test(specificSceneDesc)) {
+      return `Scene ${i + 1}: ${specificSceneDesc}${negativeConstraint}`;
+    }
+    return `Scene ${i + 1}: ${specificSceneDesc}. Style: ${styleDesc}${negativeConstraint}`;
+  });
+
+  if (promptsAreaEl) {
+    promptsAreaEl.value = imagePrompts.join("\n\n");
+    delete promptsAreaEl.dataset.manual; // Marca que el texto actual es el resumen generado
+  }
 
   loadedImages = [];
   renderMediaGrid();
@@ -1049,10 +1110,22 @@ function updateBgmVol(val) {
 }
 
 function splitScriptIntoScenes(rawText) {
-  const paragraphs = String(rawText || "").replace(/\r/g, "\n").split(/\n+/).map(p => p.trim()).filter(Boolean);
+  const paragraphs = String(rawText || "")
+    .replace(/\r/g, "\n")
+    .split(/\n+/)
+    .map(p => p.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+    .filter(Boolean);
+
+  // Si el usuario pega una lista numerada (ej. 1. ..., 2. ...), cada línea numerada se respeta como 1 escena entera
+  const numberedCount = paragraphs.filter(p => /^\d+[\.\)\-:]\s+/.test(p)).length;
+  if (numberedCount >= 2 && numberedCount >= paragraphs.length * 0.5) {
+    return paragraphs.map(p => p.replace(/^\d+[\.\)\-:]\s+/, "").trim()).filter(Boolean);
+  }
+
   const sentences = [];
   for (const paragraph of paragraphs) {
-    const parts = paragraph.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [paragraph];
+    const cleanedParagraph = paragraph.replace(/^\d+[\.\)\-:]\s+/, "");
+    const parts = cleanedParagraph.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [cleanedParagraph];
     for (const part of parts) {
       if (part.trim()) sentences.push(part.trim());
     }
@@ -1067,6 +1140,8 @@ function getScriptLines() {
 function updateScriptStatus() {
   const lines = getScriptLines();
   document.getElementById("lineCountInfo").textContent = lines.length + " escenas estimadas";
+  document.getElementById("st2").textContent = lines.length + " escenas";
+  document.getElementById("st2").classList.add("ok");
 }
 
 function splitLongParagraphs() {
@@ -1228,7 +1303,7 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
     ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
   } else {
     const scale = Math.max(w / img.width, h / img.height) * zoom;
-    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - baseH * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - img.height * scale) / 2 + offsetY, img.width * scale, img.height * scale);
   }
 }
 
@@ -1344,7 +1419,7 @@ function startPlayback() {
   if (bgmBuffer && !activeBgmSource) {
     activeBgmSource = audioCtx.createBufferSource();
     activeBgmSource.buffer = bgmBuffer;
-    activeBgmSource.loop = true; // <--- AQUÍ SE REPITE EN BUCLE INFINITO
+    activeBgmSource.loop = true;
     const gainNode = audioCtx.createGain();
     gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
     activeBgmSource.connect(gainNode);
@@ -1428,7 +1503,7 @@ async function exportVideoYouTubeMaster() {
     if (bgmBuffer) {
       exportBgmNode = audioCtx.createBufferSource();
       exportBgmNode.buffer = bgmBuffer; 
-      exportBgmNode.loop = true; // <--- AQUÍ TAMBIÉN SE REPITE EN BUCLE DURANTE LA EXPORTACIÓN
+      exportBgmNode.loop = true;
       const gainNode = audioCtx.createGain();
       gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
       exportBgmNode.connect(gainNode); 
