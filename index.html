@@ -324,7 +324,7 @@
         <h2>📝 2. Tu guion</h2>
         <p class="sub">Pega aquí tu guion completo. AutoVideo lo dividirá en escenas proporcionales.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
-        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.80rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
           <button class="btn" style="padding:4px 10px; font-size:0.76rem;" onclick="splitLongParagraphs()">✂️ Dividir párrafos largos</button>
         </div>
@@ -503,6 +503,9 @@ let isPlaying = false;
 let isDemoSynthMode = false;
 let animFrameId = null;
 let lastFrameTimestamp = 0;
+let playbackStartContextTime = null;
+let playbackStartOffset = 0;
+let playbackStartPerfTime = 0;
 
 let loadedImages = [];
 let scenes = [];
@@ -1060,27 +1063,7 @@ async function generateImagesFromPromptsAI() {
     }
   }
 
-  const weights = scriptLines.map(t => Math.max(String(t).length, 12));
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-  let acc = 0;
-  const cuts = [0];
-  for (const weight of weights) {
-    acc += weight;
-    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
-  }
-  scenes = scriptLines.map((text, idx) => ({
-    start: cuts[idx], end: cuts[idx + 1], text,
-    imgIndex: loadedImages.findIndex(img => img.sceneIndex === idx),
-    effect: EFFECTS[idx % EFFECTS.length],
-    sfxId: "",
-    sfxStart: 2.0,
-    sfxEnd: 3.0
-  }));
-  document.getElementById("st4").textContent = scenes.length + " escenas";
-  document.getElementById("st4").classList.add("ok");
-  renderSceneListUI();
-  renderCurrentFrame();
-  updateTimeUI();
+  autoSyncProject(false);
 
   if (failedIndices.length > 0) {
     const failedStr = failedIndices.join(", ");
@@ -1105,6 +1088,7 @@ async function handleVoiceUpload(file) {
   voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
   totalDuration = voiceBuffer.duration;
   document.getElementById("seekSlider").max = totalDuration.toFixed(2);
+  autoSyncProject(false);
   updateTimeUI();
 }
 
@@ -1145,6 +1129,32 @@ function splitScriptIntoScenes(rawText) {
 
 function getScriptLines() {
   return splitScriptIntoScenes(document.getElementById("scriptArea").value);
+}
+
+function getWordSpeechWeight(word) {
+  const raw = String(word || "");
+  const normalized = raw.toLocaleLowerCase("es-ES").normalize("NFD");
+  const plain = normalized.replace(/[\u0300-\u036f]/g, "");
+  const vowelGroups = (plain.match(/[aeiouü]+/g) || []).length;
+  const fallbackUnits = Math.max(1, Math.ceil(plain.replace(/[^a-z0-9]/g, "").length / 4));
+  let weight = Math.max(1, vowelGroups || fallbackUnits);
+
+  if (/[;,]/.test(raw)) weight += raw.includes(";") ? 1.5 : 0.8;
+  if (/:/.test(raw)) weight += 1.1;
+  if (/[.!?…]/.test(raw)) weight += 1.6;
+  if (/[—–]/.test(raw)) weight += 1.0;
+  return weight;
+}
+
+function getSpeechTimingWeights(textOrWords) {
+  const words = Array.isArray(textOrWords)
+    ? textOrWords
+    : String(textOrWords || "").trim().split(/\s+/).filter(Boolean);
+  return words.map(getWordSpeechWeight);
+}
+
+function getSpeechTimingWeight(text) {
+  return getSpeechTimingWeights(text).reduce((sum, weight) => sum + weight, 0);
 }
 
 function updateScriptStatus() {
@@ -1241,11 +1251,15 @@ function renderMediaGrid() {
 function autoSyncProject(goToTimeline = true) {
   let lines = getScriptLines();
   if (lines.length === 0) lines = loadedImages.map((_, i) => "Escena " + (i + 1));
-  if (!voiceBuffer && !isDemoSynthMode) {
+  
+  if (voiceBuffer && !isDemoSynthMode) {
+    totalDuration = voiceBuffer.duration;
+  } else if (!voiceBuffer && !isDemoSynthMode) {
     totalDuration = Math.max(lines.length * 3.2, 4.0);
-    document.getElementById("seekSlider").max = totalDuration.toFixed(2);
   }
-  const weights = lines.map(l => Math.max(l.length, 12));
+  document.getElementById("seekSlider").max = totalDuration.toFixed(2);
+
+  const weights = lines.map(l => Math.max(getSpeechTimingWeight(l), 1));
   const totalWeight = weights.reduce((a, b) => a + b, 0);
   let acc = 0; const cuts = [0.0];
   for (let w of weights) {
@@ -1263,6 +1277,7 @@ function autoSyncProject(goToTimeline = true) {
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
   renderSceneListUI();
+  updateTimeUI();
   if (goToTimeline) switchTab(4);
 }
 
@@ -1317,8 +1332,11 @@ function changeAspectRatio(ratio) {
 
 function findSceneIndexAtTime(t) {
   if (scenes.length === 0) return -1;
-  for (let i = 0; i < scenes.length; i++) { if (t >= scenes[i].start && t <= scenes[i].end) return i; }
-  return scenes.length - 1;
+  for (let i = 0; i < scenes.length; i++) {
+    const isLast = i === scenes.length - 1;
+    if (t >= scenes[i].start && (t < scenes[i].end || (isLast && t <= scenes[i].end))) return i;
+  }
+  return t < scenes[0].start ? 0 : scenes.length - 1;
 }
 
 function drawSceneLayer(ctx, w, h, scene, progress) {
@@ -1365,15 +1383,30 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const words = scene.text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return;
 
-  const chunks = [];
-  for (let i = 0; i < words.length; i += 3) {
-    chunks.push(words.slice(i, i + 3).join(" "));
-  }
-
+  const wordWeights = getSpeechTimingWeights(words);
+  const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0);
   const sceneDuration = Math.max(0.1, scene.end - scene.start);
   const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
-  const chunkDuration = sceneDuration / chunks.length;
-  const activeChunkIndex = Math.min(chunks.length - 1, Math.floor(timeInScene / chunkDuration));
+  const weightedTime = Math.min(
+    Math.max(0, totalSpeechWeight - 0.000001),
+    (timeInScene / sceneDuration) * totalSpeechWeight
+  );
+
+  let activeWordIndex = 0;
+  let accumulatedWeight = 0;
+  for (let i = 0; i < wordWeights.length; i++) {
+    if (weightedTime < accumulatedWeight + wordWeights[i]) {
+      activeWordIndex = i;
+      break;
+    }
+    accumulatedWeight += wordWeights[i];
+    activeWordIndex = Math.min(i + 1, words.length - 1);
+  }
+
+  const activeChunkIndex = Math.floor(activeWordIndex / 3);
+  const chunkStart = activeChunkIndex * 3;
+  const currentChunkWords = words.slice(chunkStart, chunkStart + 3);
+  const activeWordInChunk = activeWordIndex - chunkStart;
 
   if (isPlaying && activeChunkIndex !== lastPlayedChunkIndex) {
     lastPlayedChunkIndex = activeChunkIndex;
@@ -1382,16 +1415,16 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   ctx.save();
   const fontSize = Math.round(h * 0.052);
   const subFont = getSubtitleFont();
-  ctx.font = `${subFont.weight} ${fontSize}px ${subFont.family}`; 
+  ctx.font = `${subFont.weight} ${fontSize}px ${subFont.family}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   const subColorText = document.getElementById("subColorText");
   const subColor = subColorText && isValidHex(subColorText.value.trim()) ? subColorText.value.trim() : "#ffffff";
 
-  const currentChunk = chunks[activeChunkIndex] || chunks[0];
+  const fullChunkStr = currentChunkWords.join(" ");
+  const chunkW = ctx.measureText(fullChunkStr).width;
   const baseY = h * 0.82;
-  const chunkW = ctx.measureText(currentChunk).width;
 
   if (subsMode === "box") {
     ctx.fillStyle = "rgba(0, 0, 0, 0.82)";
@@ -1400,12 +1433,26 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
     ctx.fill();
   }
 
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = "#000000";
-  ctx.strokeText(currentChunk, w / 2, baseY);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  let totalW = 0;
+  currentChunkWords.forEach((word, i) => {
+    totalW += ctx.measureText(word + (i < currentChunkWords.length - 1 ? " " : "")).width;
+  });
+  let cursorX = w / 2 - totalW / 2;
 
-  ctx.fillStyle = subColor;
-  ctx.fillText(currentChunk, w / 2, baseY);
+  currentChunkWords.forEach((word, i) => {
+    const wordWithSpace = word + (i < currentChunkWords.length - 1 ? " " : "");
+    const wordW = ctx.measureText(wordWithSpace).width;
+
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "#000000";
+    ctx.strokeText(wordWithSpace, cursorX, baseY);
+
+    ctx.fillStyle = i === activeWordInChunk ? subColor : "#cbd5e1";
+    ctx.fillText(wordWithSpace, cursorX, baseY);
+    cursorX += wordW;
+  });
 
   ctx.restore();
 }
@@ -1450,24 +1497,37 @@ function renderCurrentFrame() {
 
 function formatMMSS(sec) { let s = Math.floor(sec); return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; }
 function updateTimeUI() { document.getElementById("seekSlider").value = currentTime; document.getElementById("timeDisplay").textContent = `${formatMMSS(currentTime)} / ${formatMMSS(totalDuration)}`; }
-function seekTo(val) { currentTime = Number(val); if (voiceAudioNode && voiceAudioNode.stop) { try{voiceAudioNode.stop();}catch(e){} } updateTimeUI(); renderCurrentFrame(); }
+function seekTo(val) {
+  const resumeAfterSeek = isPlaying;
+  if (resumeAfterSeek) pausePlayback();
+  currentTime = Math.max(0, Math.min(totalDuration, Number(val) || 0));
+  updateTimeUI();
+  renderCurrentFrame();
+  if (resumeAfterSeek) startPlayback();
+}
 function togglePlay() { if (scenes.length === 0) { alert("Sincroniza primero."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
 
-function startPlayback() {
-  if (currentTime >= totalDuration - 0.1) seekTo(0);
-  isPlaying = true; document.getElementById("playBtn").textContent = "⏸ Pausa";
+async function startPlayback() {
+  if (currentTime >= totalDuration - 0.1) currentTime = 0;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
-  
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+
+  playbackStartOffset = currentTime;
+  playbackStartContextTime = audioCtx.currentTime;
+  playbackStartPerfTime = performance.now();
+  isPlaying = true;
+  document.getElementById("playBtn").textContent = "⏸ Pausa";
+
   if (voiceBuffer && !isDemoSynthMode) {
-    if (voiceAudioNode) { try{voiceAudioNode.stop();}catch(e){} }
-    voiceAudioNode = audioCtx.createBufferSource(); 
+    if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} }
+    voiceAudioNode = audioCtx.createBufferSource();
     voiceAudioNode.buffer = voiceBuffer;
-    voiceAudioNode.connect(audioCtx.destination); 
-    voiceAudioNode.start(0, currentTime);
+    voiceAudioNode.connect(audioCtx.destination);
+    voiceAudioNode.start(playbackStartContextTime, playbackStartOffset);
   }
 
-  if (bgmBuffer && !activeBgmSource) {
+  if (bgmBuffer) {
+    if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} }
     activeBgmSource = audioCtx.createBufferSource();
     activeBgmSource.buffer = bgmBuffer;
     activeBgmSource.loop = true;
@@ -1476,24 +1536,47 @@ function startPlayback() {
     activeBgmSource.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
-    activeBgmSource.start(0, Math.max(0, offsetVal + currentTime));
+    activeBgmSource.start(playbackStartContextTime, Math.max(0, offsetVal + playbackStartOffset));
   }
 
-  lastFrameTimestamp = performance.now(); animFrameId = requestAnimationFrame(playbackLoop);
+  lastFrameTimestamp = performance.now();
+  animFrameId = requestAnimationFrame(playbackLoop);
 }
 
 function pausePlayback() {
-  isPlaying = false; document.getElementById("playBtn").textContent = "▶ Play";
-  if (voiceAudioNode) { try{voiceAudioNode.stop();}catch(e){} voiceAudioNode = null; }
-  if (activeBgmSource) { try{activeBgmSource.stop();}catch(e){} activeBgmSource = null; }
+  if (isPlaying && audioCtx && playbackStartContextTime !== null) {
+    const elapsed = Math.max(0, audioCtx.currentTime - playbackStartContextTime);
+    currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + elapsed));
+  }
+  isPlaying = false;
+  playbackStartContextTime = null;
+  document.getElementById("playBtn").textContent = "▶ Play";
+  if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} voiceAudioNode = null; }
+  if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} activeBgmSource = null; }
   if (animFrameId) cancelAnimationFrame(animFrameId);
+  updateTimeUI();
+  renderCurrentFrame();
 }
 
 function playbackLoop(now) {
   if (!isPlaying) return;
-  let dt = (now - lastFrameTimestamp) / 1000; lastFrameTimestamp = now; currentTime += dt;
-  if (currentTime >= totalDuration) { currentTime = totalDuration; updateTimeUI(); renderCurrentFrame(); pausePlayback(); return; }
-  updateTimeUI(); renderCurrentFrame(); animFrameId = requestAnimationFrame(playbackLoop);
+  let elapsed;
+  if (audioCtx && playbackStartContextTime !== null) {
+    elapsed = audioCtx.currentTime - playbackStartContextTime;
+  } else {
+    elapsed = (now - playbackStartPerfTime) / 1000;
+  }
+  currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + Math.max(0, elapsed)));
+  if (currentTime >= totalDuration) {
+    currentTime = totalDuration;
+    updateTimeUI();
+    renderCurrentFrame();
+    pausePlayback();
+    return;
+  }
+  updateTimeUI();
+  renderCurrentFrame();
+  animFrameId = requestAnimationFrame(playbackLoop);
 }
 
 function loadBuiltInDemo() {
@@ -1602,25 +1685,25 @@ async function exportVideoYouTubeMaster() {
       statusEl.innerHTML = "✅ <b>¡Vídeo Master Pro descargado con éxito!</b>";
     };
 
-    currentTime = 0; 
+    currentTime = 0;
     recorder.start(100);
-    
-    if (exportVoiceNode) exportVoiceNode.start(0);
-    
+    const exportStartAt = audioCtx.currentTime;
+
+    if (exportVoiceNode) exportVoiceNode.start(exportStartAt, 0);
+
     if (exportBgmNode) {
       const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
-      exportBgmNode.start(0, Math.max(0, offsetVal));
+      exportBgmNode.start(exportStartAt, Math.max(0, offsetVal));
     }
 
     exportSfxNodes.forEach(sfx => {
       try {
-        sfx.node.start(sfx.time, 0, sfx.duration);
+        sfx.node.start(exportStartAt + sfx.time, 0, sfx.duration);
       } catch(e) {}
     });
 
-    const startTime = performance.now();
-    function step(now) {
-      let elapsed = (now - startTime) / 1000;
+    function step() {
+      let elapsed = Math.max(0, audioCtx.currentTime - exportStartAt);
       currentTime = Math.min(elapsed, totalDuration);
       updateTimeUI(); renderCurrentFrame();
       let pct = Math.min(100, Math.round((currentTime / totalDuration) * 100));
