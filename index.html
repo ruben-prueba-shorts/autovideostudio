@@ -322,7 +322,7 @@
     <div class="tab-View" id="tab2">
       <div class="card">
         <h2>📝 2. Tu guion</h2>
-        <p class="sub">Pega aquí tu guion completo. AutoVideo lo dividirá en escenas proporcionales.</p>
+        <p class="sub">Pega aquí tu guion completo. Con audio cargado, AutoVideo detecta pausas y sincroniza cada escena y palabra con la voz.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
@@ -350,6 +350,7 @@
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
+            <button class="btn btn-amber" id="retryFailedImagesBtn" onclick="retryFailedImages()" disabled>🔁 Reintentar fallidas (0)</button>
             <button class="btn" onclick="clearAllImages()">🗑️ Vaciar</button>
           </div>
         </div>
@@ -494,6 +495,8 @@
 let audioCtx = null;
 let voiceBuffer = null;
 let voiceAudioNode = null;
+let speechActivityMap = null;
+let isExportingVideo = false;
 let bgmBuffer = null;
 let activeBgmSource = null;
 
@@ -510,6 +513,8 @@ let playbackStartPerfTime = 0;
 let loadedImages = [];
 let scenes = [];
 let userSfxList = [];
+let imageGenerationInProgress = false;
+let currentImagePrompts = [];
 let lastPlayedSceneIndex = -1;
 let lastPlayedChunkIndex = -1;
 let triggeredSfxInCurrentScene = {};
@@ -585,7 +590,7 @@ function escapeHtml(str) {
 }
 
 function normalizeText(s) {
-  return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
 function stemWord(w) {
@@ -605,7 +610,8 @@ function stemsMatch(a, b) {
 
 function parseKeywords(str) {
   return String(str || "")
-    .split(/[,;\n]+/)
+    .split(/[,;
+]+/)
     .map(k => normalizeText(k).trim())
     .filter(k => k.length >= 3);
 }
@@ -909,12 +915,25 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
     payload.referenceImageMimeType = refMime;
   }
 
-  const response = await fetch(workerUrl + "/generate", {
-    method: "POST",
-    mode: "cors",
-    headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
-    body: JSON.stringify(payload)
-  });
+  const controller = new AbortController();
+  const requestTimeout = setTimeout(() => controller.abort(), 120000);
+  let response;
+  try {
+    response = await fetch(workerUrl + "/generate", {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw new Error("La solicitud de imagen superó los 120 segundos (timeout del worker).");
+    }
+    throw err;
+  } finally {
+    clearTimeout(requestTimeout);
+  }
   
   const rawText = await response.text();
   let data = {};
@@ -981,8 +1000,11 @@ function loadImageCrossOrigin(url, timeoutMs = 45000) {
 function parseManualList(rawText) {
   if (!rawText || !rawText.trim()) return [];
   const negRegex = /,?\s*strictly no text, no words, no letters, no numbers, no typography, pure visual graphics\.?$/i;
-  const text = rawText.replace(/\r/g, "\n").trim();
-  const lines = text.split("\n");
+  const text = rawText.replace(/
+/g, "
+").trim();
+  const lines = text.split("
+");
 
   const startNumRegex = /^\s*(?:(?:\*\*|__)?(?:scene|escena|imagen|image|prompt|shot|paso)?\s*#?\s*\d+[\.\)\-:]|\d+[\.\)\-:])\s*/i;
   const numberedLinesCount = lines.filter(l => startNumRegex.test(l)).length;
@@ -991,7 +1013,7 @@ function parseManualList(rawText) {
   if (numberedLinesCount >= 2) {
     let current = "";
     for (const rawLine of lines) {
-      const line = rawLine.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim();
+      const line = rawLine.replace(/^[​-‍﻿\s]+/, "").trim();
       if (!line) continue;
       if (startNumRegex.test(line)) {
         if (current) items.push(current.trim());
@@ -1007,7 +1029,7 @@ function parseManualList(rawText) {
     if (current) items.push(current.trim());
   } else {
     items = lines
-      .map(l => l.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+      .map(l => l.replace(/^[​-‍﻿\s]+/, "").trim())
       .filter(Boolean)
       .map(l => l.replace(startNumRegex, "").trim());
   }
@@ -1018,12 +1040,174 @@ function parseManualList(rawText) {
     .filter(Boolean);
 }
 
+function isCloudflareImageQuotaError(error) {
+  const message = normalizeText(error && error.message ? error.message : String(error || ""));
+  return / 4006 /.test(message) ||
+    message.includes("daily free allocation") ||
+    message.includes("used up your daily") ||
+    message.includes("quota exceeded") ||
+    message.includes("daily limit") ||
+    message.includes("neurons") && (message.includes("used up") || message.includes("exceeded"));
+}
+
+function createPendingSceneImage(sceneNumber, prompt, reason) {
+  const c = document.createElement("canvas");
+  c.width = 1280; c.height = 720;
+  const ctx = c.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 1280, 720);
+  g.addColorStop(0, "#111827"); g.addColorStop(0.55, "#172554"); g.addColorStop(1, "#312e81");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.strokeStyle = "rgba(167,139,250,.45)"; ctx.lineWidth = 3;
+  for (let x = -720; x < 1500; x += 90) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 720, 720); ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(15,23,42,.88)";
+  ctx.beginPath(); ctx.roundRect(115, 155, 1050, 405, 28); ctx.fill();
+  ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 4; ctx.stroke();
+  ctx.fillStyle = "#fbbf24"; ctx.font = "800 34px 'Segoe UI', sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("ESCENA " + sceneNumber + " · IMAGEN PENDIENTE", 640, 245);
+  ctx.fillStyle = "#f8fafc"; ctx.font = "700 54px 'Segoe UI', sans-serif";
+  ctx.fillText("REINTENTAR GENERACIÓN", 640, 330);
+  ctx.fillStyle = "#cbd5e1"; ctx.font = "28px 'Segoe UI', sans-serif";
+  const shortPrompt = String(prompt || "").replace(/\s+/g, " ").trim();
+  const label = shortPrompt.length > 72 ? shortPrompt.slice(0, 69) + "…" : shortPrompt;
+  if (label) ctx.fillText(label, 640, 405, 930);
+  ctx.fillStyle = "#94a3b8"; ctx.font = "24px 'Segoe UI', sans-serif";
+  ctx.fillText("No se exportará mientras esta escena siga pendiente", 640, 485);
+  const url = c.toDataURL("image/png");
+  return {
+    name: String(sceneNumber).padStart(3, "0") + "_PENDIENTE_REINTENTAR.png",
+    url, imgObj: c, sceneIndex: sceneNumber - 1,
+    prompt: String(prompt || ""), isPending: true,
+    lastError: String(reason || "La generación no terminó correctamente.")
+  };
+}
+
+function updateRetryFailedButton() {
+  const btn = document.getElementById("retryFailedImagesBtn");
+  if (!btn) return;
+  const count = loadedImages.filter(item => item && item.isPending).length;
+  btn.textContent = `🔁 Reintentar fallidas (${count})`;
+  btn.disabled = imageGenerationInProgress || count === 0;
+}
+
+function waitMs(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function generateImageWithRetries(prompt, aspect, sceneNumber, totalCount) {
+  const maxAttempts = 3;
+  let lastError = null;
+  const hasReference = Boolean(autoVideoReferenceImageData);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const useReference = hasReference && attempt === 1;
+    try {
+      const result = await fetchCloudflareImage(prompt, aspect, useReference);
+      return { result, usedReferenceFallback: hasReference && !useReference };
+    } catch (error) {
+      lastError = error;
+      if (isCloudflareImageQuotaError(error)) throw error;
+      if (attempt < maxAttempts) {
+        showAILog(`⚠️ Escena ${sceneNumber}/${totalCount}: intento ${attempt}/${maxAttempts} fallido. Reintentando automáticamente...`, true);
+        await waitMs(attempt === 1 ? 2000 : 4000);
+      }
+    }
+  }
+  throw lastError || new Error("No se pudo generar la imagen después de varios intentos.");
+}
+
+function replacePendingImage(pendingItem, generated, usedReferenceFallback) {
+  const position = loadedImages.indexOf(pendingItem);
+  if (position < 0) return false;
+  loadedImages[position] = {
+    name: String((pendingItem.sceneIndex ?? position) + 1).padStart(3, "0") + "_IA.jpg",
+    url: generated.dataUrl,
+    imgObj: generated.imgObj,
+    sceneIndex: pendingItem.sceneIndex ?? position,
+    prompt: pendingItem.prompt || "",
+    isPending: false,
+    usedReferenceFallback: Boolean(usedReferenceFallback)
+  };
+  return true;
+}
+
+async function retryPendingImageItems(items) {
+  if (imageGenerationInProgress) return;
+  const pendingItems = items.filter(item => item && item.isPending && item.prompt);
+  if (pendingItems.length === 0) {
+    showAILog("No hay imágenes pendientes con un prompt guardado.");
+    return;
+  }
+
+  imageGenerationInProgress = true;
+  updateRetryFailedButton();
+  let recovered = 0;
+  let quotaError = null;
+  let lastFailure = null;
+  const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
+  try {
+    for (let idx = 0; idx < pendingItems.length; idx++) {
+      const item = pendingItems[idx];
+      if (!loadedImages.includes(item)) continue;
+      const sceneNumber = (item.sceneIndex ?? idx) + 1;
+      showAILog(`🔁 Reintentando imagen pendiente ${sceneNumber} (${idx + 1} de ${pendingItems.length})...`);
+      try {
+        const generated = await generateImageWithRetries(item.prompt, aspect, sceneNumber, pendingItems.length);
+        replacePendingImage(item, generated.result, generated.usedReferenceFallback);
+        recovered++;
+      } catch (error) {
+        lastFailure = error;
+        item.lastError = String(error && error.message ? error.message : error);
+        if (isCloudflareImageQuotaError(error)) {
+          quotaError = error;
+          break;
+        }
+      }
+      renderMediaGrid();
+      renderSceneListUI();
+      renderCurrentFrame();
+      if (idx < pendingItems.length - 1) await waitMs(1200);
+    }
+  } finally {
+    imageGenerationInProgress = false;
+    renderMediaGrid();
+    renderSceneListUI();
+    renderCurrentFrame();
+    updateRetryFailedButton();
+  }
+
+  const stillPending = loadedImages.filter(item => item && item.isPending).length;
+  if (stillPending === 0) {
+    showAILog(`✅ <b>Perfecto:</b> se han recuperado las imágenes pendientes. Ya puedes exportar.`);
+  } else if (quotaError) {
+    showAILog(`❌ <b>Cloudflare ha agotado la cuota diaria.</b> ${stillPending} imagen(es) siguen pendientes. La exportación está bloqueada hasta generar las imágenes correctas.`, true);
+  } else {
+    const detail = lastFailure && lastFailure.message ? ` Detalle: ${escapeHtml(lastFailure.message)}` : "";
+    showAILog(`⚠️ <b>${recovered} imagen(es) recuperadas.</b> Quedan ${stillPending} pendiente(s). Pulsa de nuevo «Reintentar fallidas».${detail}`, true);
+  }
+}
+
+async function retryFailedImages() {
+  await retryPendingImageItems(loadedImages.filter(item => item && item.isPending));
+}
+
+async function retryImageAtSlot(index) {
+  const item = loadedImages[index];
+  if (!item || !item.isPending) return;
+  await retryPendingImageItems([item]);
+}
+
 async function generateImagesFromPromptsAI() {
+  if (imageGenerationInProgress) {
+    showAILog("La generación actual sigue en marcha. Espera a que termine antes de iniciar otra.", true);
+    return;
+  }
+
   const promptMode = document.getElementById("promptGenMode").value;
   const rawScript = document.getElementById("scriptArea").value.trim();
   const manualText = document.getElementById("aiManualPrompts19").value.trim();
   const styleInput = document.getElementById("aiVisualStyle").value.trim();
-
   const styleSuffix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
   let imagePrompts = [];
 
@@ -1035,19 +1219,13 @@ async function generateImagesFromPromptsAI() {
       return;
     }
     const extraStyle = styleInput ? `, ${styleInput}` : "";
-    imagePrompts = manualLines.map((lineContent) => {
-      const cleanLine = lineContent.replace(/\.+$/, "").trim();
-      return `${cleanLine}${extraStyle}, ${styleSuffix}`;
-    });
+    imagePrompts = manualLines.map(lineContent => `${lineContent.replace(/\.+$/, "").trim()}${extraStyle}, ${styleSuffix}`);
   } else {
     const styleAsList = parseManualList(styleInput);
-    const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|\n)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
-
+    const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|
+)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
     if (hasNumberedStyleList) {
-      imagePrompts = styleAsList.map((lineContent) => {
-        const cleanLine = lineContent.replace(/\.+$/, "").trim();
-        return `${cleanLine}, ${styleSuffix}`;
-      });
+      imagePrompts = styleAsList.map(lineContent => `${lineContent.replace(/\.+$/, "").trim()}, ${styleSuffix}`);
     } else {
       if (!rawScript) {
         showAILog("Pega primero tu guion en la pestaña 2.", true);
@@ -1056,7 +1234,7 @@ async function generateImagesFromPromptsAI() {
       }
       const scriptLines = getScriptLines();
       const styleDesc = styleInput ? `${styleInput}, ${styleSuffix}` : `2D minimalist vector animation style, ${styleSuffix}`;
-      imagePrompts = scriptLines.map((sceneText) => {
+      imagePrompts = scriptLines.map(sceneText => {
         const cleanText = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").replace(/\.+$/, "").trim();
         return `${styleDesc}. Visual scene: ${cleanText}`;
       });
@@ -1064,97 +1242,110 @@ async function generateImagesFromPromptsAI() {
   }
 
   const targetCount = imagePrompts.length;
-  const promptsAreaEl = document.getElementById("promptsArea");
-  if (promptsAreaEl) {
-    promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("\n\n");
+  if (!targetCount) {
+    showAILog("No se han encontrado escenas o prompts para generar.", true);
+    return;
   }
+  currentImagePrompts = imagePrompts.slice();
+  const promptsAreaEl = document.getElementById("promptsArea");
+  if (promptsAreaEl) promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("
 
+");
+
+  imageGenerationInProgress = true;
   loadedImages = [];
   renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias en orden (1 a " + targetCount + ")...</b>");
+  showAILog(`🎨 <b>Generando ${targetCount} imágenes en orden.</b> Pausas de cortesía aplicadas para evitar saturación en vídeos largos.`);
 
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  let failedIndices = [];
-  let refFallbackIndices = [];
+  const failedIndices = [];
+  const refFallbackIndices = [];
+  let quotaBlockedError = null;
+  try {
+    for (let i = 0; i < targetCount; i++) {
+      const sceneNumber = i + 1;
+      if (i > 0 && !quotaBlockedError) await waitMs(1200);
+      let generated = null;
+      let failure = null;
 
-  for (let i = 0; i < targetCount; i++) {
-    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount} en orden...`);
-    let res = null;
-    let success = false;
-    
-    // Pausa de cortesía anti-saturación para vídeos largos y cortos
-    if (i > 0) {
-      await new Promise(r => setTimeout(r, 600));
-    }
-
-    try {
-      res = await fetchCloudflareImage(imagePrompts[i], aspect, true);
-      success = true;
-    } catch (err) {
-      console.error(`Error en escena ${i + 1}:`, err);
-      showAILog(`⚠️ Error en imagen ${i + 1}: ${escapeHtml(err.message)}. Reintentando sin referencia...`, true);
-      if (autoVideoReferenceImageData) {
+      if (!quotaBlockedError) {
+        showAILog(`🎨 Generando imagen ${sceneNumber} de ${targetCount}...`);
         try {
-          await new Promise(r => setTimeout(r, 800));
-          res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
-          success = true;
-          refFallbackIndices.push(i + 1);
-        } catch (err2) {
-          console.error(`Error (sin referencia) en escena ${i + 1}:`, err2);
-          showAILog(`❌ Falló definitivamente la imagen ${i + 1}: ${escapeHtml(err2.message)}`, true);
+          generated = await generateImageWithRetries(imagePrompts[i], aspect, sceneNumber, targetCount);
+          if (generated.usedReferenceFallback) refFallbackIndices.push(sceneNumber);
+        } catch (error) {
+          failure = error;
+          if (isCloudflareImageQuotaError(error)) quotaBlockedError = error;
+          console.error(`Error en imagen ${sceneNumber}:`, error);
         }
+      } else {
+        failure = quotaBlockedError;
       }
+
+      if (generated && generated.result) {
+        loadedImages.push({
+          name: String(sceneNumber).padStart(3, "0") + "_IA.jpg",
+          url: generated.result.dataUrl,
+          imgObj: generated.result.imgObj,
+          sceneIndex: i,
+          prompt: imagePrompts[i],
+          isPending: false,
+          usedReferenceFallback: Boolean(generated.usedReferenceFallback)
+        });
+      } else {
+        const pending = createPendingSceneImage(sceneNumber, imagePrompts[i], failure && failure.message ? failure.message : "La generación no se ha podido completar.");
+        loadedImages.push(pending);
+        failedIndices.push(sceneNumber);
+      }
+      renderMediaGrid();
     }
 
-    if (success && res) {
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA.jpg",
-        url: res.dataUrl,
-        imgObj: res.imgObj,
-        sceneIndex: i
-      });
+    autoSyncProject(false);
+    if (failedIndices.length > 0) {
+      const failedStr = failedIndices.join(", ");
+      if (quotaBlockedError) {
+        showAILog(`❌ <b>Cuota diaria de Cloudflare agotada.</b> No se pudieron generar las imágenes #${failedStr}. Pulsa «Reintentar fallidas» cuando se restablezca la cuota.`, true);
+      } else {
+        showAILog(`⚠️ <b>Quedan ${failedIndices.length} imagen(es) pendientes: #${failedStr}.</b> Pulsa el botón «Reintentar fallidas» para completarlas sin perder el orden.`, true);
+      }
+    } else if (refFallbackIndices.length > 0) {
+      showAILog(`✅ <b>Todas las imágenes generadas.</b> Las escenas ${refFallbackIndices.join(", ")} se recuperaron sin la imagen de referencia.`, false);
     } else {
-      const fallbackPlaceholder = createProceduralSceneImage(
-        String(i + 1).padStart(3, "0") + "_Reintentar",
-        "#1e1b4b", "#0f172a", "#ef4444", "⚠️"
-      );
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA_Pendiente.png",
-        url: fallbackPlaceholder.url,
-        imgObj: fallbackPlaceholder.imgObj,
-        sceneIndex: i
-      });
-      failedIndices.push(i + 1);
+      showAILog(`✅ <b>¡Todas las ${targetCount} imágenes se generaron en orden con éxito!</b>`);
     }
+    switchTab(3);
+  } catch (error) {
+    console.error("Error inesperado generando imágenes:", error);
+    showAILog(`❌ Error inesperado: ${escapeHtml(error.message || String(error))}.`, true);
+  } finally {
+    imageGenerationInProgress = false;
     renderMediaGrid();
+    updateRetryFailedButton();
   }
-
-  autoSyncProject(false);
-
-  if (failedIndices.length > 0) {
-    const failedStr = failedIndices.join(", ");
-    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>. Revisa la consola (F12) para ver el error exacto del Worker.`, true);
-  } else if (refFallbackIndices.length > 0) {
-    showAILog(`⚠️ Imágenes generadas en orden, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
-  } else {
-    showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron en orden con éxito!</b>");
-  }
-  switchTab(3);
 }
 
 async function handleVoiceUpload(file) {
   if (!file) return;
+  if (isPlaying) pausePlayback();
+  isDemoSynthMode = false;
   document.getElementById("voiceLabel").textContent = "✅ " + file.name;
   document.getElementById("st1").textContent = "Audio listo";
   document.getElementById("st1").classList.add("ok");
 
-  const arrayBuf = await file.arrayBuffer();
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
-  totalDuration = voiceBuffer.duration;
-  document.getElementById("seekSlider").max = totalDuration.toFixed(2);
-  autoSyncProject(false);
-  updateTimeUI();
+  try {
+    const arrayBuf = await file.arrayBuffer();
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
+    speechActivityMap = buildSpeechActivityMap(voiceBuffer);
+    totalDuration = voiceBuffer.duration;
+    currentTime = 0;
+    document.getElementById("seekSlider").max = totalDuration.toFixed(2);
+    autoSyncProject(false);
+    updateTimeUI();
+  } catch (err) {
+    speechActivityMap = null;
+    alert("No se pudo cargar el audio: " + err.message);
+  }
 }
 
 async function handleBgmUpload(file) {
@@ -1171,9 +1362,12 @@ function updateBgmVol(val) {
 
 function splitScriptIntoScenes(rawText) {
   const paragraphs = String(rawText || "")
-    .replace(/\r/g, "\n")
-    .split(/\n+/)
-    .map(p => p.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+    .replace(/
+/g, "
+")
+    .split(/
++/)
+    .map(p => p.replace(/^[​-‍﻿\s]+/, "").trim())
     .filter(Boolean);
 
   const numberedCount = paragraphs.filter(p => /^\d+[\.\)\-:]\s+/.test(p)).length;
@@ -1199,7 +1393,7 @@ function getScriptLines() {
 function getWordSpeechWeight(word) {
   const raw = String(word || "");
   const normalized = raw.toLocaleLowerCase("es-ES").normalize("NFD");
-  const plain = normalized.replace(/[\u0300-\u036f]/g, "");
+  const plain = normalized.replace(/[̀-ͯ]/g, "");
   const vowelGroups = (plain.match(/[aeiouü]+/g) || []).length;
   const fallbackUnits = Math.max(1, Math.ceil(plain.replace(/[^a-z0-9]/g, "").length / 4));
   let weight = Math.max(1, vowelGroups || fallbackUnits);
@@ -1222,6 +1416,181 @@ function getSpeechTimingWeight(text) {
   return getSpeechTimingWeights(text).reduce((sum, weight) => sum + weight, 0);
 }
 
+function buildSpeechActivityMap(buffer) {
+  if (!buffer || !buffer.length || !buffer.sampleRate || !buffer.duration) return null;
+  try {
+    const duration = buffer.duration;
+    const hop = 0.02;
+    const frameCount = Math.ceil(duration / hop);
+    const rms = new Float32Array(frameCount);
+    const channels = [];
+    for (let c = 0; c < buffer.numberOfChannels; c++) channels.push(buffer.getChannelData(c));
+
+    for (let i = 0; i < frameCount; i++) {
+      const startSample = Math.floor(i * hop * buffer.sampleRate);
+      const endSample = Math.min(buffer.length, Math.floor(Math.min(duration, (i + 1) * hop) * buffer.sampleRate));
+      let sumSquares = 0;
+      let count = 0;
+      const stride = 2;
+      for (const channel of channels) {
+        for (let s = startSample; s < endSample; s += stride) {
+          const v = channel[s] || 0;
+          sumSquares += v * v;
+          count++;
+        }
+      }
+      rms[i] = count ? Math.sqrt(sumSquares / count) : 0;
+    }
+
+    const sorted = Array.from(rms).sort((a, b) => a - b);
+    const percentile = p => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))] || 0;
+    const noiseFloor = percentile(0.15);
+    const speechLevel = percentile(0.90);
+    if (speechLevel < 0.0012) return null;
+    let threshold = Math.max(0.0008, speechLevel * 0.085, noiseFloor * 2.2);
+    threshold = Math.min(threshold, speechLevel * 0.55);
+
+    const voiced = Array.from(rms, value => value >= threshold);
+
+    for (let i = 1; i < voiced.length - 1;) {
+      if (!voiced[i]) {
+        let j = i;
+        while (j < voiced.length && !voiced[j]) j++;
+        if (i > 0 && j < voiced.length && voiced[i - 1] && voiced[j] && j - i <= 2) {
+          for (let k = i; k < j; k++) voiced[k] = true;
+        }
+        i = Math.max(j, i + 1);
+      } else i++;
+    }
+    for (let i = 0; i < voiced.length;) {
+      if (voiced[i]) {
+        let j = i;
+        while (j < voiced.length && voiced[j]) j++;
+        if (j - i < 3) for (let k = i; k < j; k++) voiced[k] = false;
+        i = j;
+      } else i++;
+    }
+
+    const prefix = new Float64Array(frameCount + 1);
+    const silenceIntervals = [];
+    let activeFrames = 0;
+    for (let i = 0; i < frameCount; i++) {
+      const frameDuration = Math.max(0, Math.min(hop, duration - i * hop));
+      prefix[i + 1] = prefix[i] + (voiced[i] ? frameDuration : 0);
+      if (voiced[i]) activeFrames++;
+    }
+    const activeDuration = prefix[frameCount];
+    if (activeDuration < Math.min(0.35, duration * 0.08) || activeFrames < 4) return null;
+
+    for (let i = 0; i < frameCount;) {
+      if (!voiced[i]) {
+        let j = i;
+        while (j < frameCount && !voiced[j]) j++;
+        const start = i * hop;
+        const end = Math.min(duration, j * hop);
+        if (end - start >= 0.10 && start > 0.04 && end < duration - 0.04) {
+          silenceIntervals.push({ start, end, center: (start + end) / 2, duration: end - start });
+        }
+        i = j;
+      } else i++;
+    }
+
+    return { duration, hop, frameCount, voiced, prefix, activeDuration, silenceIntervals };
+  } catch (err) {
+    return null;
+  }
+}
+
+function speechSecondsAt(map, time) {
+  if (!map) return Math.max(0, time || 0);
+  const t = Math.max(0, Math.min(map.duration, Number(time) || 0));
+  if (t >= map.duration) return map.activeDuration;
+  const index = Math.max(0, Math.min(map.frameCount - 1, Math.floor(t / map.hop)));
+  const frameStart = index * map.hop;
+  const frameDuration = Math.max(0, Math.min(map.hop, map.duration - frameStart));
+  return map.prefix[index] + (map.voiced[index] ? Math.max(0, Math.min(frameDuration, t - frameStart)) : 0);
+}
+
+function wallTimeAtSpeechSeconds(map, target) {
+  if (!map) return Math.max(0, Number(target) || 0);
+  const wanted = Math.max(0, Math.min(map.activeDuration, Number(target) || 0));
+  if (wanted <= 0) {
+    const firstVoice = map.voiced.findIndex(Boolean);
+    return firstVoice < 0 ? 0 : firstVoice * map.hop;
+  }
+  if (wanted >= map.activeDuration) return map.duration;
+
+  let lo = 0, hi = map.frameCount - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (map.prefix[mid + 1] < wanted - 1e-7) lo = mid + 1;
+    else hi = mid;
+  }
+  const i = lo;
+  const before = map.prefix[i];
+  const after = map.prefix[i + 1];
+  if (map.voiced[i] && wanted > before + 1e-7 && wanted < after - 1e-7) {
+    return i * map.hop + (wanted - before);
+  }
+  if (Math.abs(wanted - after) <= 0.025) {
+    let j = i + 1;
+    while (j < map.frameCount && !map.voiced[j] && Math.abs(map.prefix[j] - wanted) < 1e-6) j++;
+    return Math.min(map.duration, j * map.hop);
+  }
+  if (map.voiced[i] && after > before) return i * map.hop + Math.max(0, Math.min(after - before, wanted - before));
+  return Math.min(map.duration, i * map.hop);
+}
+
+function snapSceneBoundaryToPause(target, map, minAllowed, maxAllowed, tolerance) {
+  if (!map || !map.silenceIntervals.length) return target;
+  let best = null;
+  let bestScore = Infinity;
+  for (const pause of map.silenceIntervals) {
+    if (pause.center < minAllowed || pause.center > maxAllowed) continue;
+    const distance = Math.abs(pause.center - target);
+    if (distance > tolerance) continue;
+    const score = distance - Math.min(0.12, Math.max(0, pause.duration - 0.10) * 0.30);
+    if (score < bestScore) { bestScore = score; best = pause.center; }
+  }
+  return best === null ? target : best;
+}
+
+function createWordTimings(text, start, end, activityMap) {
+  const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const weights = getSpeechTimingWeights(words);
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0) || words.length;
+  const safeStart = Math.max(0, Number(start) || 0);
+  const safeEnd = Math.max(safeStart + 0.02, Number(end) || safeStart + 0.02);
+  const activeStart = activityMap ? speechSecondsAt(activityMap, safeStart) : 0;
+  const activeEnd = activityMap ? speechSecondsAt(activityMap, safeEnd) : 0;
+  const useActivity = !!activityMap && activeEnd - activeStart > 0.025;
+  let cumulative = 0;
+  return words.map((word, index) => {
+    const next = cumulative + (weights[index] || 1);
+    let wordStart, wordEnd;
+    if (useActivity) {
+      wordStart = wallTimeAtSpeechSeconds(activityMap, activeStart + (activeEnd - activeStart) * cumulative / totalWeight);
+      wordEnd = wallTimeAtSpeechSeconds(activityMap, activeStart + (activeEnd - activeStart) * next / totalWeight);
+    } else {
+      wordStart = safeStart + (safeEnd - safeStart) * cumulative / totalWeight;
+      wordEnd = safeStart + (safeEnd - safeStart) * next / totalWeight;
+    }
+    wordStart = Math.max(safeStart, Math.min(Math.max(safeStart, safeEnd - 0.015), wordStart));
+    wordEnd = Math.max(wordStart + 0.015, Math.min(safeEnd, wordEnd));
+    if (wordEnd > safeEnd) wordEnd = safeEnd;
+    cumulative = next;
+    return { word, start: wordStart, end: wordEnd };
+  });
+}
+
+function refreshSceneWordTimings() {
+  const map = (voiceBuffer && !isDemoSynthMode) ? speechActivityMap : null;
+  scenes.forEach(scene => {
+    scene.wordTimings = createWordTimings(scene.text, scene.start, scene.end, map);
+  });
+}
+
 function updateScriptStatus() {
   const lines = getScriptLines();
   document.getElementById("lineCountInfo").textContent = lines.length + " escenas estimadas";
@@ -1230,7 +1599,9 @@ function updateScriptStatus() {
 }
 
 function splitLongParagraphs() {
-  document.getElementById("scriptArea").value = getScriptLines().join("\n\n");
+  document.getElementById("scriptArea").value = getScriptLines().join("
+
+");
   updateScriptStatus();
 }
 
@@ -1323,11 +1694,12 @@ function renderMediaGrid() {
     const div = document.createElement("div");
     div.className = "media-item";
     div.innerHTML = `
-      <span class="m-badge">#${String(idx + 1).padStart(3, "0")}</span>
-      <button class="m-delete" onclick="removeImage(${idx})">×</button>
-      <img src="${item.url}" alt="">
-      <div class="m-label">${escapeHtml(item.name)}</div>
+      <span class="m-badge" style="${item.isPending ? 'background:rgba(245,158,11,.96);color:#111827;' : ''}">${item.isPending ? 'PENDIENTE' : '#' + String(idx + 1).padStart(3, "0")}</span>
+      <button class="m-delete" onclick="removeImage(${idx})" title="Eliminar imagen">×</button>
+      <img src="${item.url}" alt="${item.isPending ? 'Imagen pendiente de generación' : 'Imagen generada'}">
+      <div class="m-label" style="${item.isPending ? 'color:#fbbf24;' : ''}">${escapeHtml(item.name)}</div>
       <div class="m-controls">
+        ${item.isPending ? `<button onclick="retryImageAtSlot(${idx})" ${imageGenerationInProgress ? 'disabled' : ''} style="border-color:#f59e0b;color:#fbbf24;">↻ Reintentar esta imagen</button>` : ''}
         <div class="m-row-btns">
           <button onclick="moveImageLeft(${idx})" ${idx === 0 ? "disabled" : ""}>◀ Izq</button>
           <span style="font-size:0.68rem; color:var(--text-muted);">Pos ${idx+1}</span>
@@ -1342,6 +1714,7 @@ function renderMediaGrid() {
     grid.appendChild(div);
   });
   document.getElementById("st3").textContent = total + " imgs";
+  updateRetryFailedButton();
 }
 
 function distributeTextIntoTargetCount(lines, targetCount) {
@@ -1387,7 +1760,7 @@ function autoSyncProject(goToTimeline = true) {
   } else if (lines.length === 0) {
     lines = loadedImages.length > 0 ? loadedImages.map((_, i) => "Escena " + (i + 1)) : ["Escena inicial"];
   }
-  
+
   if (voiceBuffer && !isDemoSynthMode) {
     totalDuration = voiceBuffer.duration;
   } else if (!voiceBuffer && !isDemoSynthMode) {
@@ -1395,21 +1768,46 @@ function autoSyncProject(goToTimeline = true) {
   }
   document.getElementById("seekSlider").max = totalDuration.toFixed(2);
 
-  const weights = lines.map(l => Math.max(getSpeechTimingWeight(l), 1));
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-  let acc = 0; const cuts = [0.0];
-  for (let w of weights) {
-    acc += w;
-    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
+  const weights = lines.map(line => Math.max(getSpeechTimingWeight(line), 1));
+  const totalWeight = weights.reduce((a, b) => a + b, 0) || lines.length || 1;
+  const useActivity = !!(voiceBuffer && !isDemoSynthMode && speechActivityMap && speechActivityMap.activeDuration > 0);
+  const predictedCuts = [0];
+  let accumulatedWeight = 0;
+  for (let i = 0; i < lines.length - 1; i++) {
+    accumulatedWeight += weights[i];
+    const ratio = accumulatedWeight / totalWeight;
+    predictedCuts.push(useActivity
+      ? wallTimeAtSpeechSeconds(speechActivityMap, ratio * speechActivityMap.activeDuration)
+      : ratio * totalDuration);
   }
+  predictedCuts.push(totalDuration);
+
+  const cuts = [0];
+  const minGap = Math.min(0.12, totalDuration / Math.max(4, lines.length * 3));
+  for (let i = 1; i < lines.length; i++) {
+    const predicted = predictedCuts[i];
+    const previous = cuts[i - 1];
+    const maxAllowed = Math.max(previous + minGap, totalDuration - (lines.length - i) * minGap);
+    const predictedSpan = Math.max(0.2, predictedCuts[i + 1] - predictedCuts[i - 1]);
+    const tolerance = Math.min(0.70, Math.max(0.22, predictedSpan * 0.20));
+    let cut = useActivity
+      ? snapSceneBoundaryToPause(predicted, speechActivityMap, previous + minGap, maxAllowed, tolerance)
+      : predicted;
+    cut = Math.max(previous + minGap, Math.min(maxAllowed, cut));
+    cuts.push(Number(cut.toFixed(3)));
+  }
+  cuts.push(totalDuration);
+
   scenes = lines.map((text, idx) => ({
     start: cuts[idx], end: cuts[idx + 1], text,
     imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
     effect: EFFECTS[idx % EFFECTS.length],
     sfxId: "",
     sfxStart: 2.0,
-    sfxEnd: 3.0
+    sfxEnd: 3.0,
+    wordTimings: []
   }));
+  refreshSceneWordTimings();
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
   renderSceneListUI();
@@ -1434,14 +1832,14 @@ function renderSceneListUI() {
     row.innerHTML = `
       <img class="scene-thumb" src="${thumbUrl}" onclick="seekTo(${sc.start})" style="cursor:pointer;">
       <div class="time-pair">
-        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
-        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); refreshSceneWordTimings(); renderSceneListUI(); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); refreshSceneWordTimings(); renderSceneListUI(); renderCurrentFrame()" style="width:48px">s</div>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderSceneListUI(); renderCurrentFrame()">${imgOptions}</select>
         <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
       </div>
-      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
+      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value; scenes[${idx}].wordTimings=[]" onchange="refreshSceneWordTimings(); renderCurrentFrame()"></div>
       <div style="display:flex; flex-direction:column; gap:3px;">
         <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:0.75rem;">${sfxOptions}</select>
         <div style="font-size:0.68rem; color:var(--text-muted); display:flex; gap:2px;">
@@ -1520,24 +1918,42 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const words = scene.text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return;
 
-  const wordWeights = getSpeechTimingWeights(words);
-  const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0);
-  const sceneDuration = Math.max(0.1, scene.end - scene.start);
-  const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
-  const weightedTime = Math.min(
-    Math.max(0, totalSpeechWeight - 0.000001),
-    (timeInScene / sceneDuration) * totalSpeechWeight
-  );
-
   let activeWordIndex = 0;
-  let accumulatedWeight = 0;
-  for (let i = 0; i < wordWeights.length; i++) {
-    if (weightedTime < accumulatedWeight + wordWeights[i]) {
-      activeWordIndex = i;
-      break;
+  const preciseWordTiming = Array.isArray(scene.wordTimings) && scene.wordTimings.length === words.length;
+  if (preciseWordTiming) {
+    const timings = scene.wordTimings;
+    if (currentTime < timings[0].start - 0.025) return;
+    let found = false;
+    for (let i = 0; i < timings.length; i++) {
+      if (currentTime >= timings[i].start && currentTime < timings[i].end) {
+        activeWordIndex = i;
+        found = true;
+        break;
+      }
     }
-    accumulatedWeight += wordWeights[i];
-    activeWordIndex = Math.min(i + 1, words.length - 1);
+    if (!found) {
+      activeWordIndex = currentTime >= timings[timings.length - 1].end
+        ? words.length - 1
+        : Math.max(0, timings.findIndex(t => currentTime < t.end));
+    }
+  } else {
+    const wordWeights = getSpeechTimingWeights(words);
+    const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0) || words.length;
+    const sceneDuration = Math.max(0.1, scene.end - scene.start);
+    const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
+    const weightedTime = Math.min(
+      Math.max(0, totalSpeechWeight - 0.000001),
+      (timeInScene / sceneDuration) * totalSpeechWeight
+    );
+    let accumulatedWeight = 0;
+    for (let i = 0; i < wordWeights.length; i++) {
+      if (weightedTime < accumulatedWeight + wordWeights[i]) {
+        activeWordIndex = i;
+        break;
+      }
+      accumulatedWeight += wordWeights[i];
+      activeWordIndex = Math.min(i + 1, words.length - 1);
+    }
   }
 
   const activeChunkIndex = Math.floor(activeWordIndex / 3);
@@ -1600,7 +2016,7 @@ function renderCurrentFrame() {
   ctx.clearRect(0, 0, w, h);
   const idx = findSceneIndexAtTime(currentTime);
   
-  if (isPlaying && idx >= 0 && scenes[idx]) {
+  if (isPlaying && !isExportingVideo && idx >= 0 && scenes[idx]) {
     const sc = scenes[idx];
     if (sc.sfxId) {
       const targetStart = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
@@ -1644,13 +2060,37 @@ function seekTo(val) {
 }
 function togglePlay() { if (scenes.length === 0) { alert("Sincroniza primero."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
 
+function getAudibleAudioContextTime() {
+  if (!audioCtx) return 0;
+  try {
+    if (typeof audioCtx.getOutputTimestamp === "function") {
+      const stamp = audioCtx.getOutputTimestamp();
+      if (stamp && Number.isFinite(stamp.contextTime) && Number.isFinite(stamp.performanceTime) && stamp.performanceTime > 0) {
+        const extrapolated = stamp.contextTime + Math.max(0, (performance.now() - stamp.performanceTime) / 1000);
+        return Math.max(0, Math.min(audioCtx.currentTime, extrapolated));
+      }
+    }
+  } catch (_) {}
+  const latency = Number(audioCtx.outputLatency) || Number(audioCtx.baseLatency) || 0;
+  return Math.max(0, audioCtx.currentTime - Math.min(0.35, Math.max(0, latency)));
+}
+
+function getPlaybackElapsedSeconds(now) {
+  if (audioCtx && playbackStartContextTime !== null) {
+    const usesRealVoiceClock = !!(voiceBuffer && !isDemoSynthMode && !isExportingVideo);
+    const clockTime = usesRealVoiceClock ? getAudibleAudioContextTime() : audioCtx.currentTime;
+    return Math.max(0, clockTime - playbackStartContextTime);
+  }
+  return Math.max(0, ((now || performance.now()) - playbackStartPerfTime) / 1000);
+}
+
 async function startPlayback() {
   if (currentTime >= totalDuration - 0.1) currentTime = 0;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") await audioCtx.resume();
 
   playbackStartOffset = currentTime;
-  playbackStartContextTime = audioCtx.currentTime;
+  playbackStartContextTime = audioCtx.currentTime + 0.025;
   playbackStartPerfTime = performance.now();
   isPlaying = true;
   document.getElementById("playBtn").textContent = "⏸ Pausa";
@@ -1677,12 +2117,13 @@ async function startPlayback() {
   }
 
   lastFrameTimestamp = performance.now();
+  lastPlayedChunkIndex = -1;
   animFrameId = requestAnimationFrame(playbackLoop);
 }
 
 function pausePlayback() {
-  if (isPlaying && audioCtx && playbackStartContextTime !== null) {
-    const elapsed = Math.max(0, audioCtx.currentTime - playbackStartContextTime);
+  if (isPlaying && playbackStartContextTime !== null) {
+    const elapsed = getPlaybackElapsedSeconds(performance.now());
     currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + elapsed));
   }
   isPlaying = false;
@@ -1697,18 +2138,19 @@ function pausePlayback() {
 
 function playbackLoop(now) {
   if (!isPlaying) return;
-  let elapsed;
-  if (audioCtx && playbackStartContextTime !== null) {
-    elapsed = audioCtx.currentTime - playbackStartContextTime;
-  } else {
-    elapsed = (now - playbackStartPerfTime) / 1000;
-  }
+  const elapsed = getPlaybackElapsedSeconds(now);
   currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + Math.max(0, elapsed)));
   if (currentTime >= totalDuration) {
     currentTime = totalDuration;
+    isPlaying = false;
+    playbackStartContextTime = null;
+    document.getElementById("playBtn").textContent = "▶ Play";
+    if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} voiceAudioNode = null; }
+    if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} activeBgmSource = null; }
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    animFrameId = null;
     updateTimeUI();
     renderCurrentFrame();
-    pausePlayback();
     return;
   }
   updateTimeUI();
@@ -1717,9 +2159,13 @@ function playbackLoop(now) {
 }
 
 function loadBuiltInDemo() {
-  pausePlayback(); isDemoSynthMode = true; totalDuration = 15.0; currentTime = 0.0;
+  pausePlayback(); isDemoSynthMode = true; speechActivityMap = null; totalDuration = 15.0; currentTime = 0.0;
   document.getElementById("seekSlider").max = totalDuration;
-  document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas viven de él.";
+  document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.
+En septiembre, completamente verde.
+Ningún rey lo ordenó. Lo hizo un viento.
+El monzón trae el 70% de la lluvia del país en solo cuatro meses.
+Casi 1.500 millones de personas viven de él.";
   updateScriptStatus();
   loadedImages = [
     createProceduralSceneImage("001_Mayo", "#451a03", "#78350f", "#f59e0b", "🌍🏜️"),
@@ -1745,7 +2191,14 @@ function createProceduralSceneImage(title, topColor, bottomColor, accentColor, i
 
 async function exportVideoYouTubeMaster() {
   if (scenes.length === 0) { alert("Sincroniza el guion antes de exportar."); return; }
+  const pendingImages = loadedImages.filter(item => item && item.isPending);
+  if (pendingImages.length > 0) {
+    alert(`No se puede exportar todavía: hay ${pendingImages.length} imagen(es) que no se han generado. Ve a Recursos Visuales y pulsa «Reintentar fallidas». Así evitamos que el vídeo final incluya triángulos o imágenes provisionales.`);
+    switchTab(3);
+    return;
+  }
   pausePlayback();
+  isExportingVideo = true;
   const statusEl = document.getElementById("exportStatus");
   const progOuter = document.getElementById("exportProgressOuter");
   const progInner = document.getElementById("exportProgressInner");
@@ -1819,6 +2272,7 @@ async function exportVideoYouTubeMaster() {
       const a = document.createElement("a"); a.href = url; a.download = "video_faceless_youtube_master.webm";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       btn.disabled = false; progInner.style.width = "100%";
+      isExportingVideo = false;
       statusEl.innerHTML = "✅ <b>¡Vídeo Master Pro descargado con éxito!</b>";
     };
 
@@ -1855,6 +2309,7 @@ async function exportVideoYouTubeMaster() {
     }
     requestAnimationFrame(step);
   } catch (err) {
+    isExportingVideo = false;
     alert("Error: " + err.message); btn.disabled = false; statusEl.textContent = "❌ Error en exportación.";
   }
 }
@@ -1867,7 +2322,11 @@ function toSrtTime(sec) {
 
 function downloadSRT() {
   if (scenes.length === 0) return;
-  const srt = scenes.map((sc, i) => `${i+1}\n${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}\n${sc.text}\n`).join("\n");
+  const srt = scenes.map((sc, i) => `${i+1}
+${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}
+${sc.text}
+`).join("
+");
   const blob = new Blob([srt], { type: "text/plain;charset=utf-8" });
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "subtitulos.srt";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
