@@ -159,7 +159,7 @@
     <div class="brand-icon">🤖</div>
     <div>
       <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">AI MASTER PRO</span></div>
-      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">IA Automatización de SFX · BGM Independiente · Control Inicio/Fin</div>
+      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">IA Automatización de SFX · BGM en Bucle Automático · Control Inicio/Fin</div>
     </div>
   </div>
   <div class="header-actions">
@@ -193,8 +193,8 @@
     </button>
 
     <div class="sidebar-box">
-      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">🤖 Automatización IA:</strong>
-      Usa el botón de la Pestaña 4 para que la IA lea tu guion y coloque automáticamente los efectos de sonido (ej. avispas, risas) donde corresponda.
+      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">🎵 Nota sobre BGM:</strong>
+      La música corta (ej. 30s) se repite automáticamente en bucle hasta el final. Si pones una muy larga (ej. 15m), se cortará al terminar el vídeo.
     </div>
   </aside>
 
@@ -265,8 +265,8 @@
       </div>
 
       <div class="card">
-        <h2>🎶 Música de Fondo (BGM - Suena de fondo en todo el vídeo)</h2>
-        <p class="sub">Sube tu MP3 musical. Sonará de fondo a volumen bajo durante todo el vídeo y se repetirá en bucle.</p>
+        <h2>🎶 Música de Fondo (BGM - Se repite en bucle hasta el final)</h2>
+        <p class="sub">Sube tu MP3 musical. Si dura poco (ej. 30s) se repetirá en bucle automático; si dura más que el vídeo, se cortará al acabar.</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
           <button class="btn" onclick="document.getElementById('bgmInput').click()">📂 Seleccionar Música BGM</button>
           <span id="bgmLabel" style="font-size:0.83rem; color:var(--text-muted);">Ninguna pista</span>
@@ -289,7 +289,7 @@
 
       <div class="card">
         <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, Avispas...)</h2>
-        <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) y la IA los detectará automáticamente. Debajo de cada efecto puedes añadir más palabras que lo activen (ej. <i>teclado, teclear, escribir</i>).</p>
+        <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) y la IA los detectará automáticamente.</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
           <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX</button>
           <input type="file" id="sfxFileInput" accept="audio/*" multiple style="display:none" onchange="handleSfxUpload(this.files)">
@@ -499,9 +499,8 @@ const EFFECTS = [
   "Zoom + Pan", "Movimiento Ken Burns", "Pulso Suave"
 ];
 
-// TIPOGRAFÍAS DE SUBTÍTULOS
 const SUB_FONTS = {
-  "segoe":            { family: "'Segoe UI', sans-serif",          weight: 700, load: null },
+  "segoe":             { family: "'Segoe UI', sans-serif",        weight: 700, load: null },
   "montserrat-black": { family: "'Montserrat', sans-serif",        weight: 900, load: "Montserrat" },
   "bebas":            { family: "'Bebas Neue', sans-serif",        weight: 400, load: "Bebas Neue" },
   "cinzel":           { family: "'Cinzel', serif",                 weight: 700, load: "Cinzel" },
@@ -537,7 +536,6 @@ function isValidHex(hex) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(hex) || /^(white|black|red|green|blue|yellow|purple|orange)$/i.test(hex);
 }
 
-// ===== UTILIDADES PARA LA DETECCIÓN AUTOMÁTICA DE SFX =====
 const SFX_STOPWORDS = new Set([
   "de","del","la","el","los","las","un","una","y","en","con","sfx","fx","sound","sonido","sonidos",
   "efecto","efectos","audio","mp3","wav","ogg","final","copy","copia","new","nuevo"
@@ -553,7 +551,6 @@ function normalizeText(s) {
   return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-// Raíz simple de la palabra: "avispas"/"avispa" -> "avisp", "teclados"/"teclado" -> "teclad"
 function stemWord(w) {
   let s = normalizeText(w);
   if (s.length >= 5) s = s.replace(/(es|s)$/, "");
@@ -588,7 +585,6 @@ function updateSfxKeywords(id, value) {
   if (item) item.keywords = value;
 }
 
-// Devuelve la posición (en caracteres del texto normalizado) de la primera coincidencia, o -1
 function findSfxMatchPosition(sfx, normText, wordList) {
   const keywords = parseKeywords(sfx.keywords);
   let best = -1;
@@ -674,13 +670,11 @@ function playAssignedSfx(id, startSec = 2.0, endSec = 3.0) {
     const src = audioCtx.createBufferSource();
     src.buffer = item.buffer;
     src.connect(audioCtx.destination);
-    
     const duration = Math.max(0.1, endSec - startSec);
     src.start(0, 0, duration);
   } catch(e) {}
 }
 
-// AUTOMATIZACIÓN DE SFX POR IA (ANÁLISIS DE PALABRAS CLAVE)
 function autoDetectAndAssignSFXWithAI() {
   if (userSfxList.length === 0) {
     alert("Sube primero al menos un archivo SFX en la Pestaña 1.");
@@ -704,7 +698,6 @@ function autoDetectAndAssignSFXWithAI() {
       wordList.push({ index: m.index, stem: stemWord(m[0]) });
     }
 
-    // Se elige el efecto cuya palabra aparece antes en la escena
     let best = null;
     for (const sfx of userSfxList) {
       const pos = findSfxMatchPosition(sfx, normText, wordList);
@@ -734,7 +727,7 @@ function autoDetectAndAssignSFXWithAI() {
     if (assignedCount > 0) {
       logEl.innerHTML = `🤖 <b>IA Completada:</b> se han asignado efectos de sonido a ${assignedCount} escena(s):<br>` + report.join("<br>");
     } else {
-      logEl.innerHTML = `🤖 <b>IA Completada:</b> no se ha encontrado ninguna coincidencia entre el guion y tus efectos. Añade más palabras clave a cada efecto en la Pestaña 1 (ej. <i>teclado, teclear, escribir</i>).`;
+      logEl.innerHTML = `🤖 <b>IA Completada:</b> no se ha encontrado ninguna coincidencia entre el guion y tus efectos. Añade más palabras clave a cada efecto en la Pestaña 1.`;
     }
   }
 }
@@ -1022,8 +1015,7 @@ async function generateImagesFromPromptsAI() {
     showAILog(`❌ <b>${failedCount} de ${targetCount} imágenes fallaron.</b> Último error: ${lastError}`, true);
     alert(`${failedCount} de ${targetCount} imágenes fallaron.\nÚltimo error: ${lastError}`);
   } else if (refFallbackCount > 0) {
-    showAILog(`⚠️ Imágenes generadas, pero ${refFallbackCount} se hicieron SIN la imagen de referencia porque el Worker la rechazó. Último error: ${lastError}`, true);
-    alert(`${refFallbackCount} imágenes se generaron sin la imagen de referencia porque el Worker la rechazó.\nError: ${lastError}`);
+    showAILog(`⚠️ Imágenes generadas, pero ${refFallbackCount} se hicieron SIN la imagen de referencia.`, true);
   } else {
     showAILog("✅ <b>Imágenes generadas con éxito.</b>");
   }
@@ -1254,7 +1246,6 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
 
   const sceneDuration = Math.max(0.1, scene.end - scene.start);
   const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
-  
   const chunkDuration = sceneDuration / chunks.length;
   const activeChunkIndex = Math.min(chunks.length - 1, Math.floor(timeInScene / chunkDuration));
 
@@ -1353,7 +1344,7 @@ function startPlayback() {
   if (bgmBuffer && !activeBgmSource) {
     activeBgmSource = audioCtx.createBufferSource();
     activeBgmSource.buffer = bgmBuffer;
-    activeBgmSource.loop = true;
+    activeBgmSource.loop = true; // <--- AQUÍ SE REPITE EN BUCLE INFINITO
     const gainNode = audioCtx.createGain();
     gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
     activeBgmSource.connect(gainNode);
@@ -1437,7 +1428,7 @@ async function exportVideoYouTubeMaster() {
     if (bgmBuffer) {
       exportBgmNode = audioCtx.createBufferSource();
       exportBgmNode.buffer = bgmBuffer; 
-      exportBgmNode.loop = true;
+      exportBgmNode.loop = true; // <--- AQUÍ TAMBIÉN SE REPITE EN BUCLE DURANTE LA EXPORTACIÓN
       const gainNode = audioCtx.createGain();
       gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
       exportBgmNode.connect(gainNode); 
@@ -1554,7 +1545,6 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("cloudflareAccessKey").value = accessKey;
     } catch (_) {}
   }
-  // Precarga de tipografías de subtítulos para que el canvas las pinte bien
   Object.values(SUB_FONTS).forEach(def => { loadSubFontAsset(def).then(() => renderCurrentFrame()); });
   renderCurrentFrame();
   updateScriptStatus();
