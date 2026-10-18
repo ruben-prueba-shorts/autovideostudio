@@ -107,16 +107,19 @@
   }
   textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); }
 
-  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 12px; }
+  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; }
   .media-item { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
   .media-item img { width: 100%; height: 86px; object-fit: cover; display: block; }
   .media-item .m-label { font-size: 0.72rem; padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
   .media-item .m-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: #60a5fa; font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index:2; }
   .media-item .m-delete { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 4px; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index:2; }
-  .media-item .m-controls { display: flex; background: rgba(0,0,0,0.7); justify-content: space-between; align-items:center; padding: 3px 6px; margin-top: auto; }
+  .media-item .m-controls { display: flex; flex-direction: column; background: rgba(0,0,0,0.8); gap: 4px; padding: 6px; margin-top: auto; }
+  .media-item .m-row-btns { display: flex; justify-content: space-between; align-items: center; width: 100%; }
   .media-item .m-controls button { background: transparent; border: 1px solid var(--border); color: #cbd5e1; font-size: 0.7rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
   .media-item .m-controls button:hover:not(:disabled) { background: rgba(59, 130, 246, 0.3); color: #fff; }
   .media-item .m-controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .media-item .m-jump-box { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--text-muted); width: 100%; }
+  .media-item .m-jump-box select { background: var(--bg-card); color: var(--text-main); font-size: 0.72rem; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border); flex: 1; }
 
   .scene-list { display: flex; flex-direction: column; gap: 10px; }
   .scene-row { display: grid; grid-template-columns: 78px 110px 130px 1fr 125px 40px; gap: 8px; align-items: center; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
@@ -343,7 +346,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
           <div>
             <h2>🖼️ 3. Recursos Visuales (Galería)</h2>
-            <p class="sub" style="margin-bottom:0;">Usa las flechas ◀ ▶ para mover y reordenar las imágenes.</p>
+            <p class="sub" style="margin-bottom:0;">Usa ◀ ▶ o salta directamente a la posición numérica deseada (ej. #5).</p>
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
@@ -1193,10 +1196,28 @@ function moveImageRight(index) {
   renderMediaGrid();
 }
 
+function moveImageToPosition(fromIndex, selectEl) {
+  const toPosition = parseInt(selectEl.value, 10);
+  if (isNaN(toPosition)) return;
+  const toIndex = toPosition - 1;
+  if (fromIndex === toIndex || toIndex < 0 || toIndex >= loadedImages.length) return;
+
+  const item = loadedImages.splice(fromIndex, 1)[0];
+  loadedImages.splice(toIndex, 0, item);
+  renderMediaGrid();
+}
+
 function renderMediaGrid() {
   const grid = document.getElementById("mediaGrid");
   grid.innerHTML = "";
+  const total = loadedImages.length;
+
   loadedImages.forEach((item, idx) => {
+    let positionOptions = "";
+    for (let p = 1; p <= total; p++) {
+      positionOptions += `<option value="${p}" ${p === (idx + 1) ? "selected" : ""}>#${p}</option>`;
+    }
+
     const div = document.createElement("div");
     div.className = "media-item";
     div.innerHTML = `
@@ -1205,14 +1226,20 @@ function renderMediaGrid() {
       <img src="${item.url}" alt="">
       <div class="m-label">${escapeHtml(item.name)}</div>
       <div class="m-controls">
-        <button onclick="moveImageLeft(${idx})" ${idx === 0 ? "disabled" : ""}>◀ Izq</button>
-        <span style="font-size:0.68rem; color:var(--text-muted);">Pos ${idx+1}</span>
-        <button onclick="moveImageRight(${idx})" ${idx === loadedImages.length - 1 ? "disabled" : ""}>Der ▶</button>
+        <div class="m-row-btns">
+          <button onclick="moveImageLeft(${idx})" ${idx === 0 ? "disabled" : ""}>◀ Izq</button>
+          <span style="font-size:0.68rem; color:var(--text-muted);">Pos ${idx+1}</span>
+          <button onclick="moveImageRight(${idx})" ${idx === total - 1 ? "disabled" : ""}>Der ▶</button>
+        </div>
+        <div class="m-jump-box">
+          <span>Mover a:</span>
+          <select onchange="moveImageToPosition(${idx}, this)">${positionOptions}</select>
+        </div>
       </div>
     `;
     grid.appendChild(div);
   });
-  document.getElementById("st3").textContent = loadedImages.length + " imgs";
+  document.getElementById("st3").textContent = total + " imgs";
 }
 
 function autoSyncProject(goToTimeline = true) {
