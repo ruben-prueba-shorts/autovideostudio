@@ -107,14 +107,16 @@
   }
   textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); }
 
-  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 12px; margin-top: 12px; }
-  .media-item { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; cursor: grab; }
-  .media-item img { width: 100%; height: 82px; object-fit: cover; display: block; }
+  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; }
+  .media-item { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+  .media-item img { width: 100%; height: 92px; object-fit: cover; display: block; }
   .media-item .m-label { font-size: 0.72rem; padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
-  .media-item .m-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: #60a5fa; font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-  .media-item .m-delete { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 4px; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .media-item .m-controls { display: flex; background: rgba(0,0,0,0.6); justify-content: space-between; padding: 2px 4px; }
-  .media-item .m-controls button { background: transparent; border: none; color: #cbd5e1; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; }
+  .media-item .m-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: #60a5fa; font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index:2; }
+  .media-item .m-delete { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 4px; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index:2; }
+  .media-item .m-controls { display: flex; background: rgba(0,0,0,0.75); justify-content: space-between; align-items:center; padding: 4px 8px; margin-top: auto; }
+  .media-item .m-controls button { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: #cbd5e1; font-size: 0.75rem; cursor: pointer; padding: 2px 8px; }
+  .media-item .m-controls button:hover:not(:disabled) { background: rgba(59, 130, 246, 0.3); color: #fff; }
+  .media-item .m-controls button:disabled { opacity: 0.3; cursor: not-allowed; }
 
   .scene-list { display: flex; flex-direction: column; gap: 10px; }
   .scene-row { display: grid; grid-template-columns: 78px 110px 130px 1fr 125px 40px; gap: 8px; align-items: center; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
@@ -341,7 +343,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
           <div>
             <h2>🖼️ 3. Recursos Visuales (Galería)</h2>
-            <p class="sub" style="margin-bottom:0;">Aquí aparecen las imágenes generadas por la IA o subidas por ti.</p>
+            <p class="sub" style="margin-bottom:0;">Usa las flechas ◀ ▶ para reordenar las imágenes o sube las tuyas.</p>
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
@@ -513,17 +515,17 @@ const EFFECTS = [
 ];
 
 const SUB_FONTS = {
-  "segoe":            { family: "'Segoe UI', sans-serif",         weight: 700, load: null },
-  "montserrat-black": { family: "'Montserrat', sans-serif",       weight: 900, load: "Montserrat" },
-  "bebas":            { family: "'Bebas Neue', sans-serif",       weight: 400, load: "Bebas Neue" },
-  "cinzel":           { family: "'Cinzel', serif",                weight: 700, load: "Cinzel" },
-  "anton":            { family: "'Anton', sans-serif",            weight: 400, load: "Anton" },
-  "oswald":           { family: "'Oswald', sans-serif",           weight: 700, load: "Oswald" },
-  "poppins":          { family: "'Poppins', sans-serif",          weight: 700, load: "Poppins" },
-  "roboto":           { family: "'Roboto', sans-serif",           weight: 700, load: "Roboto" },
-  "bangers":          { family: "'Bangers', cursive",             weight: 400, load: "Bangers" },
-  "lobster":          { family: "'Lobster', cursive",             weight: 400, load: "Lobster" },
-  "marker":           { family: "'Permanent Marker', cursive",    weight: 400, load: "Permanent Marker" },
+  "segoe":             { family: "'Segoe UI', sans-serif",        weight: 700, load: null },
+  "montserrat-black": { family: "'Montserrat', sans-serif",        weight: 900, load: "Montserrat" },
+  "bebas":            { family: "'Bebas Neue', sans-serif",        weight: 400, load: "Bebas Neue" },
+  "cinzel":           { family: "'Cinzel', serif",                 weight: 700, load: "Cinzel" },
+  "anton":            { family: "'Anton', sans-serif",             weight: 400, load: "Anton" },
+  "oswald":           { family: "'Oswald', sans-serif",            weight: 700, load: "Oswald" },
+  "poppins":          { family: "'Poppins', sans-serif",           weight: 700, load: "Poppins" },
+  "roboto":           { family: "'Roboto', sans-serif",            weight: 700, load: "Roboto" },
+  "bangers":          { family: "'Bangers', cursive",              weight: 400, load: "Bangers" },
+  "lobster":          { family: "'Lobster', cursive",              weight: 400, load: "Lobster" },
+  "marker":           { family: "'Permanent Marker', cursive",     weight: 400, load: "Permanent Marker" },
   "impact":           { family: "Impact, 'Arial Narrow Bold', sans-serif", weight: 400, load: null },
   "arial-black":      { family: "'Arial Black', Gadget, sans-serif", weight: 400, load: null }
 };
@@ -1018,31 +1020,31 @@ async function generateImagesFromPromptsAI() {
   showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias...</b>");
 
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  let failedCount = 0;
-  let refFallbackCount = 0;
-  let lastError = "";
+  let failedIndices = [];
+  let refFallbackIndices = [];
 
   for (let i = 0; i < targetCount; i++) {
     showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount}...`);
     let res = null;
+    let success = false;
     try {
       res = await fetchCloudflareImage(imagePrompts[i], aspect, true);
+      success = true;
     } catch (err) {
       console.error(`Error en escena ${i + 1}:`, err);
-      lastError = err.message;
       if (autoVideoReferenceImageData) {
         try {
-          showAILog(`⚠️ Falló con la imagen de referencia. Reintentando la imagen ${i + 1} sin ella...`);
+          showAILog(`⚠️ Falló con la imagen de referencia en la imagen ${i + 1}. Reintentando sin ella...`);
           res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
-          refFallbackCount++;
+          success = true;
+          refFallbackIndices.push(i + 1);
         } catch (err2) {
           console.error(`Error (sin referencia) en escena ${i + 1}:`, err2);
-          lastError = err2.message;
         }
       }
     }
 
-    if (res) {
+    if (success && res) {
       loadedImages.push({
         name: String(i + 1).padStart(3, "0") + "_IA.jpg",
         url: res.dataUrl,
@@ -1051,7 +1053,7 @@ async function generateImagesFromPromptsAI() {
       });
       renderMediaGrid();
     } else {
-      failedCount++;
+      failedIndices.push(i + 1);
     }
   }
 
@@ -1077,13 +1079,14 @@ async function generateImagesFromPromptsAI() {
   renderCurrentFrame();
   updateTimeUI();
 
-  if (failedCount > 0) {
-    showAILog(`❌ <b>${failedCount} de ${targetCount} imágenes fallaron.</b> Último error: ${lastError}`, true);
-    alert(`${failedCount} de ${targetCount} imágenes fallaron.\nÚltimo error: ${lastError}`);
-  } else if (refFallbackCount > 0) {
-    showAILog(`⚠️ Imágenes generadas, pero ${refFallbackCount} se hicieron SIN la imagen de referencia.`, true);
+  if (failedIndices.length > 0) {
+    const failedStr = failedIndices.join(", ");
+    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) #${failedStr}.`, true);
+    alert(`No se pudieron generar las imágenes de la(s) escena(s) número: #${failedStr}.\nComprueba tu conexión o vuelve a intentarlo.`);
+  } else if (refFallbackIndices.length > 0) {
+    showAILog(`⚠️ Imágenes generadas, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
   } else {
-    showAILog("✅ <b>Imágenes generadas con éxito.</b>");
+    showAILog("✅ <b>¡Todas las imágenes se generaron con éxito!</b>");
   }
   switchTab(3);
 }
@@ -1174,6 +1177,22 @@ function removeImage(index) {
   renderMediaGrid();
 }
 
+function moveImageLeft(index) {
+  if (index <= 0) return;
+  const temp = loadedImages[index];
+  loadedImages[index] = loadedImages[index - 1];
+  loadedImages[index - 1] = temp;
+  renderMediaGrid();
+}
+
+function moveImageRight(index) {
+  if (index >= loadedImages.length - 1) return;
+  const temp = loadedImages[index];
+  loadedImages[index] = loadedImages[index + 1];
+  loadedImages[index + 1] = temp;
+  renderMediaGrid();
+}
+
 function renderMediaGrid() {
   const grid = document.getElementById("mediaGrid");
   grid.innerHTML = "";
@@ -1182,9 +1201,14 @@ function renderMediaGrid() {
     div.className = "media-item";
     div.innerHTML = `
       <span class="m-badge">#${String(idx + 1).padStart(3, "0")}</span>
-      <button class="m-delete" onclick="removeImage(${idx})">×</button>
+      <button class="m-delete" onclick="removeImage(${idx})" title="Eliminar">×</button>
       <img src="${item.url}" alt="">
-      <div class="m-controls"><span class="m-label">${item.name}</span></div>
+      <div class="m-label" style="padding:4px 6px;">${escapeHtml(item.name)}</div>
+      <div class="m-controls">
+        <button onclick="moveImageLeft(${idx})" ${idx === 0 ? "disabled" : ""} title="Mover izquierda">◀ Izq</button>
+        <span style="font-size:0.7rem; color:var(--text-muted);">Pos ${idx+1}</span>
+        <button onclick="moveImageRight(${idx})" ${idx === loadedImages.length - 1 ? "disabled" : ""} title="Mover derecha">Der ▶</button>
+      </div>
     `;
     grid.appendChild(div);
   });
