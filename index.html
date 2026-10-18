@@ -8,140 +8,84 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Bebas+Neue&family=Cinzel:wght@700&family=Lobster&family=Montserrat:wght@900&family=Oswald:wght@700&family=Permanent+Marker&family=Poppins:wght@700&family=Roboto:wght@700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg-dark: #0b0f17;
-    --bg-panel: #131b2e;
-    --bg-card: #1c263f;
-    --bg-input: #0e1525;
-    --border: #2a395c;
-    --accent: #3b82f6;
-    --accent-hover: #2563eb;
-    --accent-purple: #8b5cf6;
-    --accent-green: #10b981;
-    --accent-amber: #f59e0b;
-    --text-main: #f1f5f9;
-    --text-muted: #94a3b8;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  header {
-    height: 58px;
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    flex-shrink: 0;
-  }
-  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.1rem; }
-  .brand-icon {
-    width: 34px; height: 34px; border-radius: 8px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-  }
-  .badge-local {
-    background: rgba(139, 92, 246, 0.18); color: #c4b5fd;
-    border: 1px solid rgba(139, 92, 246, 0.45); font-size: 0.75rem;
-    padding: 4px 10px; border-radius: 999px; font-weight: 600;
-  }
-  .header-actions { display: flex; align-items: center; gap: 10px; }
-  .btn {
-    background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border);
-    padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
-    cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px;
-  }
-  .btn:hover:not(:disabled) { background: #263354; border-color: #435b91; }
-  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
-  .btn-ai { background: linear-gradient(135deg, #6366f1, #8b5cf6); border-color: #8b5cf6; color: #fff; }
-  .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: #052e16; }
-  .btn-success:hover:not(:disabled) { background: #059669; color: #fff; }
-  .btn-amber { background: rgba(245, 158, 11, 0.18); border-color: var(--accent-amber); color: #fbbf24; }
-
-  .workspace { display: grid; grid-template-columns: 240px 1fr 440px; flex: 1; overflow: hidden; }
-  .format-gate { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
-  .format-gate.hidden { display:none !important; pointer-events:none; }
-  .format-panel { width:min(760px,100%); background:var(--bg-card,#111827); border:1px solid var(--border); border-radius:18px; padding:clamp(20px,4vw,36px); box-shadow:0 25px 80px #0009; }
-  .format-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:22px 0; }
-  .format-option { display:block; border:1px solid var(--border); background:var(--bg-input); border-radius:14px; padding:18px; cursor:pointer; }
-  .format-option:has(input:checked) { border:2px solid #8b5cf6; background:rgba(139,92,246,.12); }
-  .format-option input { margin-right:8px; }
-  @media(max-width:600px){.format-options{grid-template-columns:1fr}.format-panel{padding:20px}}
-  .sidebar { background: var(--bg-panel); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-  .step-btn {
-    width: 100%; text-align: left; padding: 11px 14px; border-radius: 8px;
-    border: 1px solid transparent; background: transparent; color: var(--text-muted);
-    font-size: 0.88rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: 0.15s;
-  }
-  .step-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-main); }
-  .step-btn.active { background: rgba(59, 130, 246, 0.16); color: #60a5fa; border-color: rgba(59, 130, 246, 0.45); }
-  .step-btn.ai-step.active { background: rgba(139, 92, 246, 0.18); color: #c4b5fd; border-color: rgba(139, 92, 246, 0.5); }
-  .step-status { font-size: 0.72rem; padding: 2px 7px; border-radius: 10px; background: var(--bg-card); color: var(--text-muted); }
-  .step-status.ok { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-  .step-status.ai-badge { background: rgba(139, 92, 246, 0.25); color: #ddd6fe; }
-  .sidebar-box { margin-top: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; }
-
-  .center-panel { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
-  .tab-View { display: none; flex-direction: column; gap: 16px; }
-  .tab-View.active { display: flex; }
-
-  .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-  .card.ai-card { border-color: rgba(139, 92, 246, 0.45); background: linear-gradient(180deg, rgba(139, 92, 246, 0.07) 0%, var(--bg-panel) 100%); }
-  .card h2 { font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-  .card p.sub { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 14px; }
-
-  .dropzone { border: 2px dashed var(--border); background: var(--bg-input); border-radius: 10px; padding: 22px; text-align: center; cursor: pointer; transition: 0.2s; }
-  .dropzone:hover { border-color: var(--accent); background: rgba(59, 130, 246, 0.08); }
-  textarea, input[type="text"], input[type="password"], input[type="number"], select {
-    width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); border-radius: 8px; padding: 10px 12px; font-size: 0.88rem; font-family: inherit;
-  }
-  textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); }
-
-  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; }
-  .media-item { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
-  .media-item img { width: 100%; height: 86px; object-fit: cover; display: block; }
-  .media-item .m-label { font-size: 0.72rem; padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
-  .media-item .m-badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: #60a5fa; font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; z-index:2; }
-  .media-item .m-delete { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 4px; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index:2; }
-  .media-item .m-controls { display: flex; flex-direction: column; background: rgba(0,0,0,0.82); gap: 4px; padding: 6px; margin-top: auto; }
-  .media-item .m-row-btns { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-  .media-item .m-controls button { background: transparent; border: 1px solid var(--border); color: #cbd5e1; font-size: 0.7rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
-  .media-item .m-controls button:hover:not(:disabled) { background: rgba(59, 130, 246, 0.3); color: #fff; }
-  .media-item .m-controls button:disabled { opacity: 0.3; cursor: not-allowed; }
-  .media-item .m-jump-box { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--text-muted); width: 100%; }
-  .media-item .m-jump-box input[type="number"] { background: var(--bg-card); color: var(--text-main); font-size: 0.75rem; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); width: 55px; text-align: center; }
-
-  .scene-list { display: flex; flex-direction: column; gap: 10px; }
-  .scene-row { display: grid; grid-template-columns: 78px 110px 130px 1fr 125px 40px; gap: 8px; align-items: center; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
-  @media(max-width:1100px){.scene-row{grid-template-columns:1fr}}
-  .scene-row.playing { border-color: var(--accent-green); box-shadow: 0 0 0 1px var(--accent-green); }
-  .scene-thumb { width: 74px; height: 46px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background: #000; }
-  .time-pair { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--text-muted); }
-  .time-pair input { padding: 4px 6px; font-size: 0.8rem; }
-
-  .right-panel { background: var(--bg-panel); border-left: 1px solid var(--border); padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
-  .canvas-wrapper { background: #05070b; border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; min-height: 235px; max-height: 360px; }
-  canvas#previewCanvas { max-width: 100%; max-height: 340px; width: auto; height: auto; display: block; }
-  .player-controls { display: flex; flex-direction: column; gap: 8px; background: var(--bg-input); padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
-  .player-bar { display: flex; align-items: center; gap: 10px; }
-  .time-code { font-family: monospace; font-size: 0.85rem; color: #60a5fa; min-width: 95px; }
-  input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
-  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; }
-  .settings-grid label { display: block; color: var(--text-muted); margin-bottom: 4px; }
-  .status-banner { padding: 10px 12px; border-radius: 8px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.82rem; color: #93c5fd; }
-  .ai-log { padding: 10px 12px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.35); font-size: 0.82rem; color: #ddd6fe; margin-top: 10px; display: none; }
-  .progress-outer { width: 100%; height: 10px; background: var(--bg-input); border-radius: 99px; overflow: hidden; display: none; }
-  .progress-inner { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.1s; }
+:root{--bg-dark:#0b0f17;--bg-panel:#131b2e;--bg-card:#1c263f;--bg-input:#0e1525;--border:#2a395c;--accent:#3b82f6;--accent-hover:#2563eb;--accent-green:#10b981;--accent-amber:#f59e0b;--text-main:#f1f5f9;--text-muted:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg-dark);color:var(--text-main);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{height:58px;background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:1.1rem}
+.brand-icon{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.badge-local{background:rgba(139,92,246,.18);color:#c4b5fd;border:1px solid rgba(139,92,246,.45);font-size:.75rem;padding:4px 10px;border-radius:999px;font-weight:600}
+.header-actions{display:flex;align-items:center;gap:10px}
+.btn{background:var(--bg-card);color:var(--text-main);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover:not(:disabled){background:#263354;border-color:#435b91}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--accent-hover)}
+.btn-ai{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-color:#8b5cf6;color:#fff}
+.btn-success{background:var(--accent-green);border-color:var(--accent-green);color:#052e16}
+.btn-success:hover:not(:disabled){background:#059669;color:#fff}
+.btn-amber{background:rgba(245,158,11,.18);border-color:var(--accent-amber);color:#fbbf24}
+.workspace{display:grid;grid-template-columns:240px 1fr 440px;flex:1;overflow:hidden}
+.format-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,8,16,.96);overflow:auto}
+.format-gate.hidden{display:none!important;pointer-events:none}
+.format-panel{width:min(760px,100%);background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:clamp(20px,4vw,36px);box-shadow:0 25px 80px #0009}
+.format-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:22px 0}
+.format-option{display:block;border:1px solid var(--border);background:var(--bg-input);border-radius:14px;padding:18px;cursor:pointer}
+.format-option:has(input:checked){border:2px solid #8b5cf6;background:rgba(139,92,246,.12)}
+.format-option input{margin-right:8px}
+@media(max-width:600px){.format-options{grid-template-columns:1fr}.format-panel{padding:20px}}
+.sidebar{background:var(--bg-panel);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.step-btn{width:100%;text-align:left;padding:11px 14px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--text-muted);font-size:.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:.15s}
+.step-btn:hover{background:rgba(255,255,255,.04);color:var(--text-main)}
+.step-btn.active{background:rgba(59,130,246,.16);color:#60a5fa;border-color:rgba(59,130,246,.45)}
+.step-btn.ai-step.active{background:rgba(139,92,246,.18);color:#c4b5fd;border-color:rgba(139,92,246,.5)}
+.step-status{font-size:.72rem;padding:2px 7px;border-radius:10px;background:var(--bg-card);color:var(--text-muted)}
+.step-status.ok{background:rgba(16,185,129,.2);color:#34d399}
+.step-status.ai-badge{background:rgba(139,92,246,.25);color:#ddd6fe}
+.sidebar-box{margin-top:auto;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:.78rem;color:var(--text-muted);line-height:1.45}
+.center-panel{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+.tab-View{display:none;flex-direction:column;gap:16px}
+.tab-View.active{display:flex}
+.card{background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:18px}
+.card.ai-card{border-color:rgba(139,92,246,.45);background:linear-gradient(180deg,rgba(139,92,246,.07) 0%,var(--bg-panel) 100%)}
+.card h2{font-size:1.05rem;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card p.sub,.sub{font-size:.83rem;color:var(--text-muted);margin-bottom:14px}
+.dropzone{border:2px dashed var(--border);background:var(--bg-input);border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:.2s}
+.dropzone:hover{border-color:var(--accent);background:rgba(59,130,246,.08)}
+textarea,input[type=text],input[type=password],input[type=number],select{width:100%;background:var(--bg-input);border:1px solid var(--border);color:var(--text-main);border-radius:8px;padding:10px 12px;font-size:.88rem;font-family:inherit}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--accent)}
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:12px}
+.media-item{background:var(--bg-input);border:1px solid var(--border);border-radius:8px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.media-item img{width:100%;height:86px;object-fit:cover;display:block}
+.m-label{font-size:.72rem;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-muted)}
+.m-badge{position:absolute;top:4px;left:4px;background:rgba(0,0,0,.8);color:#60a5fa;font-size:.68rem;font-weight:700;padding:2px 6px;border-radius:4px;z-index:2}
+.m-delete{position:absolute;top:4px;right:4px;background:rgba(239,68,68,.9);color:#fff;border:none;border-radius:4px;width:20px;height:20px;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+.m-controls{display:flex;flex-direction:column;background:rgba(0,0,0,.82);gap:4px;padding:6px;margin-top:auto}
+.m-row-btns{display:flex;justify-content:space-between;align-items:center;width:100%}
+.m-controls button{background:transparent;border:1px solid var(--border);color:#cbd5e1;font-size:.7rem;cursor:pointer;padding:2px 6px;border-radius:4px}
+.m-controls button:hover:not(:disabled){background:rgba(59,130,246,.3);color:#fff}
+.m-controls button:disabled{opacity:.3;cursor:not-allowed}
+.m-jump-box{display:flex;align-items:center;gap:4px;font-size:.72rem;color:var(--text-muted);width:100%}
+.m-jump-box input[type=number]{background:var(--bg-card);color:var(--text-main);font-size:.75rem;padding:3px 6px;border-radius:4px;border:1px solid var(--border);width:55px;text-align:center}
+.scene-list{display:flex;flex-direction:column;gap:10px}
+.scene-row{display:grid;grid-template-columns:78px 110px 130px 1fr 125px 40px;gap:8px;align-items:center;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:10px}
+@media(max-width:1100px){.scene-row{grid-template-columns:1fr}}
+.scene-thumb{width:74px;height:46px;object-fit:cover;border-radius:6px;border:1px solid var(--border);background:#000}
+.time-pair{display:flex;flex-direction:column;gap:4px;font-size:.75rem;color:var(--text-muted)}
+.time-pair input{padding:4px 6px;font-size:.8rem}
+.right-panel{background:var(--bg-panel);border-left:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.canvas-wrapper{background:#05070b;border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;min-height:235px;max-height:360px}
+canvas#previewCanvas{max-width:100%;max-height:340px;width:auto;height:auto;display:block}
+.player-controls{display:flex;flex-direction:column;gap:8px;background:var(--bg-input);padding:12px;border-radius:10px;border:1px solid var(--border)}
+.player-bar{display:flex;align-items:center;gap:10px}
+.time-code{font-family:monospace;font-size:.85rem;color:#60a5fa;min-width:95px}
+input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer;width:auto}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.8rem}
+.settings-grid label{display:block;color:var(--text-muted);margin-bottom:4px}
+.status-banner{padding:10px 12px;border-radius:8px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);font-size:.82rem;color:#93c5fd}
+.ai-log{padding:10px 12px;border-radius:8px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.35);font-size:.82rem;color:#ddd6fe;margin-top:10px;display:none;overflow-wrap:anywhere}
+.progress-outer{width:100%;height:10px;background:var(--bg-input);border-radius:99px;overflow:hidden;display:none}
+.progress-inner{height:100%;width:0%;background:linear-gradient(90deg,#3b82f6,#10b981);transition:width .1s}
 </style>
 </head>
 <body>
@@ -152,10 +96,10 @@
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
     <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos sincronizados y automatización por IA de tus efectos SFX.</p>
     <div class="format-options">
-      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="short" checked style="cursor:pointer;"> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
-      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="long" style="cursor:pointer;"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
+      <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
+      <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
     </div>
-    <button class="btn btn-primary" style="width:100%;padding:14px;cursor:pointer;position:relative;z-index:9999;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
+    <button type="button" class="btn btn-primary" style="width:100%;padding:14px;justify-content:center;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
   </div>
 </div>
 
@@ -164,7 +108,7 @@
     <div class="brand-icon">🤖</div>
     <div>
       <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">AI MASTER PRO</span></div>
-      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">IA Automatización de SFX · BGM en Bucle Automático · Control Inicio/Fin</div>
+      <div style="font-size:.72rem;color:var(--text-muted);font-weight:400;">IA Automatización de SFX · BGM en Bucle Automático · Control Inicio/Fin</div>
     </div>
   </div>
   <div class="header-actions">
@@ -176,92 +120,59 @@
 
 <div class="workspace">
   <aside class="sidebar">
-    <button class="step-btn ai-step active" onclick="switchTab(0)" id="nav0">
-      <span>🤖 0. Estudio IA</span>
-      <span class="step-status ai-badge" id="st0">IA Lista</span>
-    </button>
-    <button class="step-btn" onclick="switchTab(1)" id="nav1">
-      <span>1. Audio, BGM y SFX</span>
-      <span class="step-status" id="st1">Configurado</span>
-    </button>
-    <button class="step-btn" onclick="switchTab(2)" id="nav2">
-      <span>2. Guion y Prompts</span>
-      <span class="step-status" id="st2">Pendiente</span>
-    </button>
-    <button class="step-btn" onclick="switchTab(3)" id="nav3">
-      <span>3. Recursos Visuales</span>
-      <span class="step-status" id="st3">0 imgs</span>
-    </button>
-    <button class="step-btn" onclick="switchTab(4)" id="nav4">
-      <span>4. Línea de Tiempo & IA SFX</span>
-      <span class="step-status" id="st4">0 escenas</span>
-    </button>
-
-    <div class="sidebar-box">
-      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">🎵 Nota sobre BGM:</strong>
-      La música corta (ej. 30s) se repite automáticamente en bucle hasta el final. Si pones una muy larga (ej. 15m), se cortará al terminar el vídeo.
-    </div>
+    <button class="step-btn ai-step active" onclick="switchTab(0)" id="nav0"><span>🤖 0. Estudio IA</span><span class="step-status ai-badge" id="st0">IA Lista</span></button>
+    <button class="step-btn" onclick="switchTab(1)" id="nav1"><span>1. Audio, BGM y SFX</span><span class="step-status" id="st1">Configurado</span></button>
+    <button class="step-btn" onclick="switchTab(2)" id="nav2"><span>2. Guion y Prompts</span><span class="step-status" id="st2">Pendiente</span></button>
+    <button class="step-btn" onclick="switchTab(3)" id="nav3"><span>3. Recursos Visuales</span><span class="step-status" id="st3">0 imgs</span></button>
+    <button class="step-btn" onclick="switchTab(4)" id="nav4"><span>4. Línea de Tiempo & IA SFX</span><span class="step-status" id="st4">0 escenas</span></button>
+    <div class="sidebar-box"><strong style="color:#c4b5fd;display:block;margin-bottom:4px;">🎵 Nota sobre BGM:</strong>La música corta (ej. 30s) se repite automáticamente en bucle hasta el final. Si pones una muy larga (ej. 15m), se cortará al terminar el vídeo.</div>
   </aside>
 
   <main class="center-panel">
-    <!-- PESTAÑA 0: ESTUDIO IA -->
+    <!-- TAB 0 -->
     <div class="tab-View active" id="tab0">
       <div class="card ai-card">
         <h2>📝 1. Tu guion e imágenes limpias con IA</h2>
         <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y generará imágenes limpias mediante Cloudflare.</p>
-
         <div class="settings-grid" style="margin-bottom:12px;">
           <div>
             <label for="aiImageModel">Motor de generación de imágenes</label>
-            <select id="aiImageModel" onchange="setImageModelPreference(this.value)">
-              <option value="cloudflare" selected>Cloudflare FLUX.1 Schnell</option>
-            </select>
-            <div style="margin-top:10px; display:flex; flex-direction:column; gap:7px;">
+            <select id="aiImageModel" onchange="setImageModelPreference(this.value)"><option value="cloudflare" selected>Cloudflare FLUX.1 Schnell</option></select>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:7px;">
               <label for="cloudflareWorkerUrl">URL del Worker de imágenes</label>
-              <input type="text" id="cloudflareWorkerUrl" value="https://autovideo-image-worker.jarambedioszz.workers.dev" placeholder="https://autovideo-image-worker.jarambedioszz.workers.dev" autocomplete="url" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
+              <input type="text" id="cloudflareWorkerUrl" value="https://autovideo-image-worker.jarambedioszz.workers.dev" autocomplete="url" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
               <label for="cloudflareAccessKey">Clave de acceso del Worker (APP_SECRET)</label>
               <input type="password" id="cloudflareAccessKey" placeholder="La clave que guardaste como APP_SECRET" autocomplete="new-password" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button type="button" class="btn" onclick="testCloudflareWorker()">🔌 Comprobar Cloudflare</button>
-              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;"><button type="button" class="btn" onclick="testCloudflareWorker()">🔌 Comprobar Cloudflare</button></div>
             </div>
           </div>
           <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <label for="promptGenMode" style="margin-bottom:0;">🎯 Modo de Generación de Prompts</label>
-            </div>
+            <label for="promptGenMode">🎯 Modo de Generación de Prompts</label>
             <select id="promptGenMode" style="margin-bottom:10px;" onchange="togglePromptMode(this.value)">
               <option value="auto" selected>✨ Automático (Guion + Estilo visual general)</option>
-              <option value="manual19">📋 Forzar Lista Exacta de Prompts (1 al 9)</option>
+              <option value="manual19">📋 Forzar Lista Exacta de Prompts (1 al N)</option>
             </select>
-
             <div id="styleBoxContainer">
               <label for="aiVisualStyle">Estilo visual general (Opcional)</label>
               <textarea id="aiVisualStyle" rows="3" placeholder="Ejemplo: 2D minimalist vector animation style, simple stickman characters, clean outlines"></textarea>
             </div>
-
-            <div id="manualListContainer" style="display:none; margin-top:8px;">
-              <label for="aiManualPrompts19">📋 Pega aquí tu lista exacta del 1 al 9</label>
+            <div id="manualListContainer" style="display:none;margin-top:8px;">
+              <label for="aiManualPrompts19">📋 Pega aquí tu lista exacta de prompts numerados</label>
               <textarea id="aiManualPrompts19" rows="4" placeholder="1. Extreme wide shot...&#10;2. High-angle shot..."></textarea>
             </div>
-
-            <div style="margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:10px; background:var(--bg-input);">
+            <div style="margin-top:14px;padding:14px;border:1px dashed var(--border);border-radius:10px;background:var(--bg-input);">
               <label for="aiReferenceImage">🖼️ Imagen de referencia (Comprimida automáticamente)</label>
-              <p style="font-size:0.78rem; line-height:1.45; color:var(--text-muted); margin:6px 0 10px;">Sube tu personaje base. Se optimizará automáticamente para evitar errores de tamaño en Cloudflare.</p>
-              <input type="file" id="aiReferenceImage" accept="image/png,image/jpeg,image/webp" onchange="handleReferenceImageSelection(event)" style="width:100%; color:var(--text-main); font-size:0.82rem;">
-              <div id="aiReferencePreviewWrap" style="display:none; margin-top:10px; align-items:center; gap:12px;">
-                <img id="aiReferencePreview" alt="Vista previa" style="width:100px; height:100px; object-fit:contain; background:#080c14; border:1px solid var(--border); border-radius:8px;">
-                <div style="flex:1; min-width:0;">
-                  <div id="aiReferenceFileName" style="font-size:0.82rem; overflow-wrap:anywhere;"></div>
-                  <button type="button" class="btn" onclick="clearReferenceImage()" style="margin-top:8px;">Quitar imagen</button>
-                </div>
+              <p style="font-size:.78rem;line-height:1.45;color:var(--text-muted);margin:6px 0 10px;">Sube tu personaje base. Se optimizará automáticamente. Si falla con referencia, se reintenta sin ella.</p>
+              <input type="file" id="aiReferenceImage" accept="image/png,image/jpeg,image/webp" onchange="handleReferenceImageSelection(event)" style="width:100%;color:var(--text-main);font-size:.82rem;">
+              <div id="aiReferencePreviewWrap" style="display:none;margin-top:10px;align-items:center;gap:12px;">
+                <img id="aiReferencePreview" alt="Vista previa" style="width:100px;height:100px;object-fit:contain;background:#080c14;border:1px solid var(--border);border-radius:8px;">
+                <div style="flex:1;min-width:0;"><div id="aiReferenceFileName" style="font-size:.82rem;overflow-wrap:anywhere;"></div><button type="button" class="btn" onclick="clearReferenceImage()" style="margin-top:8px;">Quitar imagen</button></div>
               </div>
-              <div id="aiReferenceStatus" style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:8px;">Sin imagen de referencia.</div>
+              <div id="aiReferenceStatus" style="font-size:.76rem;line-height:1.45;color:var(--text-muted);margin-top:8px;">Sin imagen de referencia.</div>
             </div>
           </div>
         </div>
-
-        <div style="margin-bottom:12px; padding:16px; border:1px solid var(--border); border-radius:12px; background:var(--bg-input);">
+        <div style="margin-bottom:12px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--bg-input);">
           <h3 style="margin:0 0 6px;">✍️ Siguiente paso</h3>
           <button class="btn btn-primary" onclick="switchTab(2)">📝 Ir a pegar el guion</button>
         </div>
@@ -270,219 +181,145 @@
       </div>
     </div>
 
-    <!-- PESTAÑA 1: AUDIO, BGM Y SFX -->
+    <!-- TAB 1 -->
     <div class="tab-View" id="tab1">
       <div class="card">
         <h2>🎙️ Audio Principal (Voz en Off del Guion)</h2>
         <div class="dropzone" onclick="document.getElementById('voiceInput').click()">
-          <div style="font-size:1.8rem; margin-bottom:6px;">🎵</div>
-          <div id="voiceLabel" style="font-weight:600;">Haz clic aquí o arrastra tu archivo MP3 principal de Voz en Off</div>
+          <div style="font-size:1.8rem;margin-bottom:6px;">🎵</div>
+          <div id="voiceLabel" style="font-weight:600;">Haz clic aquí para subir tu archivo MP3 principal de Voz en Off</div>
           <input type="file" id="voiceInput" accept="audio/*" style="display:none" onchange="handleVoiceUpload(this.files[0])">
         </div>
-        <canvas id="waveformCanvas" width="700" height="64" style="width:100%; height:64px; margin-top:12px; background:#090d16; border-radius:8px; border:1px solid var(--border);"></canvas>
+        <canvas id="waveformCanvas" width="700" height="64" style="width:100%;height:64px;margin-top:12px;background:#090d16;border-radius:8px;border:1px solid var(--border);"></canvas>
       </div>
-
       <div class="card">
         <h2>🎶 Música de Fondo (BGM - Se repite en bucle hasta el final)</h2>
         <p class="sub">Sube tu MP3 musical. Si dura poco (ej. 30s) se repetirá en bucle automático; si dura más que el vídeo, se cortará al acabar.</p>
-        <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;">
           <button class="btn" onclick="document.getElementById('bgmInput').click()">📂 Seleccionar Música BGM</button>
-          <span id="bgmLabel" style="font-size:0.83rem; color:var(--text-muted);">Ninguna pista</span>
+          <span id="bgmLabel" style="font-size:.83rem;color:var(--text-muted);">Ninguna pista</span>
           <input type="file" id="bgmInput" accept="audio/*" style="display:none" onchange="handleBgmUpload(this.files[0])">
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
-          <div>
-            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Inicio de la Música (Offset en segundos):</label>
-            <input type="number" id="bgmOffsetInput" min="0" step="0.1" value="0" style="width:100%;" placeholder="Ej: 0">
-          </div>
-          <div>
-            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Volumen de la música (Recomendado 10-20%):</label>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <input type="range" id="bgmVolSlider" min="0" max="60" value="14" oninput="updateBgmVol(this.value)">
-              <span id="bgmVolText" style="font-size:0.82rem; font-weight:600;">14%</span>
-            </div>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+          <div><label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:4px;">Inicio de la Música (Offset en segundos):</label><input type="number" id="bgmOffsetInput" min="0" step="0.1" value="0"></div>
+          <div><label style="font-size:.8rem;color:var(--text-muted);display:block;margin-bottom:4px;">Volumen de la música (Recomendado 10-20%):</label>
+            <div style="display:flex;align-items:center;gap:8px;"><input type="range" id="bgmVolSlider" min="0" max="60" value="14" oninput="updateBgmVol(this.value)"><span id="bgmVolText" style="font-size:.82rem;font-weight:600;">14%</span></div></div>
         </div>
       </div>
-
       <div class="card">
         <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, Avispas...)</h2>
         <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) y la IA los detectará automáticamente.</p>
-        <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;">
           <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX</button>
           <input type="file" id="sfxFileInput" accept="audio/*" multiple style="display:none" onchange="handleSfxUpload(this.files)">
         </div>
-        <div id="sfxLibraryList" style="display:flex; flex-direction:column; gap:8px;">
-          <div style="font-size:0.82rem; color:var(--text-muted);">No hay efectos subidos todavía.</div>
-        </div>
+        <div id="sfxLibraryList" style="display:flex;flex-direction:column;gap:8px;"><div style="font-size:.82rem;color:var(--text-muted);">No hay efectos subidos todavía.</div></div>
       </div>
     </div>
 
-    <!-- PESTAÑA 2: GUION -->
+    <!-- TAB 2 -->
     <div class="tab-View" id="tab2">
       <div class="card">
         <h2>📝 2. Tu guion</h2>
         <p class="sub">Pega aquí tu guion completo. Con audio cargado, AutoVideo detecta pausas y sincroniza cada escena y palabra con la voz.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
-        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:.8rem;color:var(--text-muted);flex-wrap:wrap;gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
-          <button class="btn" style="padding:4px 10px; font-size:0.76rem;" onclick="splitLongParagraphs()">✂️ Dividir párrafos largos</button>
+          <button class="btn" style="padding:4px 10px;font-size:.76rem;" onclick="splitLongParagraphs()">✂️ Dividir párrafos largos</button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
           <button class="btn btn-primary" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes limpias</button>
           <button class="btn" onclick="switchTab(1)">🎙️ Audio y SFX</button>
         </div>
       </div>
-
       <div class="card">
         <h2>🎨 Instrucciones visuales (Sin texto)</h2>
         <textarea id="promptsArea" rows="6" placeholder="Aquí aparecerán las instrucciones visuales generadas..." readonly></textarea>
       </div>
     </div>
 
-    <!-- PESTAÑA 3: IMÁGENES -->
+    <!-- TAB 3 -->
     <div class="tab-View" id="tab3">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-          <div>
-            <h2>🖼️ 3. Recursos Visuales (Galería)</h2>
-            <p class="sub" style="margin-bottom:0;">Usa ◀ ▶ o escribe a mano el número de posición (desplaza el resto a la derecha).</p>
-          </div>
-          <div style="display:flex; gap:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+          <div><h2>🖼️ 3. Recursos Visuales (Galería)</h2><p class="sub" style="margin-bottom:0;">Usa ◀ ▶ o escribe a mano el número de posición.</p></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
             <button class="btn btn-amber" id="retryFailedImagesBtn" onclick="retryFailedImages()" disabled>🔁 Reintentar fallidas (0)</button>
             <button class="btn" onclick="clearAllImages()">🗑️ Vaciar</button>
           </div>
         </div>
+        <div id="aiStatusLog3" class="ai-log" style="margin:0 0 12px;"></div>
         <div class="dropzone" onclick="document.getElementById('imgInput').click()">
-          <div style="font-size:1.8rem; margin-bottom:6px;">🖼️</div>
-          <div style="font-weight:600;">Haz clic o arrastra tus imágenes aquí</div>
+          <div style="font-size:1.8rem;margin-bottom:6px;">🖼️</div>
+          <div style="font-weight:600;">Haz clic para subir tus imágenes</div>
           <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImagesUpload(this.files)">
         </div>
         <div class="media-grid" id="mediaGrid"></div>
       </div>
     </div>
 
-    <!-- PESTAÑA 4: TIMELINE & AI SFX -->
+    <!-- TAB 4 -->
     <div class="tab-View" id="tab4">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-          <div>
-            <h2>⏱️ 4. Línea de Tiempo y Automatización IA de SFX</h2>
-            <p class="sub" style="margin-bottom:0;">Haz que la IA lea tu guion y coloque los efectos de sonido automáticamente según las palabras clave.</p>
-          </div>
-          <div style="display:flex; gap:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div><h2>⏱️ 4. Línea de Tiempo y Automatización IA de SFX</h2><p class="sub" style="margin-bottom:0;">Haz que la IA lea tu guion y coloque los efectos de sonido automáticamente según las palabras clave.</p></div>
+          <div style="display:flex;gap:8px;">
             <button class="btn btn-ai" onclick="autoDetectAndAssignSFXWithAI()">🤖 Auto-Detectar SFX con IA</button>
             <button class="btn" onclick="addBlankScene()">➕ Añadir Escena</button>
           </div>
         </div>
-        <div id="aiSfxLog" class="status-banner" style="display:none; margin-bottom:12px;"></div>
+        <div id="aiSfxLog" class="status-banner" style="display:none;margin-bottom:12px;"></div>
         <div class="scene-list" id="sceneList"></div>
       </div>
     </div>
   </main>
 
-  <!-- PANEL DERECHO -->
   <aside class="right-panel">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h3 style="font-size:0.95rem;">👁️ Vista Previa en Tiempo Real</h3>
-      <span id="currentSceneBadge" style="font-size:0.75rem; color:#34d399; font-weight:600;">Escena 1</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="font-size:.95rem;">👁️ Vista Previa en Tiempo Real</h3>
+      <span id="currentSceneBadge" style="font-size:.75rem;color:#34d399;font-weight:600;">Escena 1</span>
     </div>
-
-    <div class="canvas-wrapper">
-      <canvas id="previewCanvas" width="1280" height="720"></canvas>
-    </div>
-
+    <div class="canvas-wrapper"><canvas id="previewCanvas" width="720" height="1280"></canvas></div>
     <div class="player-controls">
       <div class="player-bar">
-        <button class="btn btn-primary" id="playBtn" onclick="togglePlay()" style="min-width:90px; justify-content:center;">▶ Play</button>
+        <button class="btn btn-primary" id="playBtn" onclick="togglePlay()" style="min-width:90px;justify-content:center;">▶ Play</button>
         <input type="range" id="seekSlider" min="0" max="20" step="0.04" value="0" oninput="seekTo(this.value)">
         <span class="time-code" id="timeDisplay">00:00 / 00:20</span>
       </div>
     </div>
-
     <div class="card" style="padding:14px;">
-      <h3 style="font-size:0.88rem; margin-bottom:10px;">⚙️ Estilo de Edición y Subtítulos</h3>
+      <h3 style="font-size:.88rem;margin-bottom:10px;">⚙️ Estilo de Edición y Subtítulos</h3>
       <div class="settings-grid">
-        <div>
-          <label>Formato</label>
-          <select id="aspectSelect" onchange="changeAspectRatio(this.value)">
-            <option value="9:16">9:16 Vertical (Shorts)</option>
-            <option value="16:9">16:9 Horizontal (YouTube)</option>
-          </select>
-        </div>
-        <div>
-          <label>Fondo</label>
-          <select id="fitSelect" onchange="renderCurrentFrame()">
-            <option value="blur">Desenfocado (Blur)</option>
-            <option value="crop">Recortar (Crop)</option>
-          </select>
-        </div>
-        <div>
-          <label>Transición</label>
-          <select id="transSelect" onchange="renderCurrentFrame()">
-            <option value="fade">Fundido Suave</option>
-            <option value="cut">Corte Directo</option>
-          </select>
-        </div>
-        <div>
-          <label>Estilo Subtítulos</label>
-          <select id="subsSelect" onchange="renderCurrentFrame()">
-            <option value="box">Caja Oscura (Fondo Negro)</option>
-            <option value="clean">Sin Fondo (Texto + Borde)</option>
-            <option value="none">Desactivados</option>
-          </select>
-        </div>
+        <div><label>Formato</label><select id="aspectSelect" onchange="changeAspectRatio(this.value)"><option value="9:16">9:16 Vertical (Shorts)</option><option value="16:9">16:9 Horizontal (YouTube)</option></select></div>
+        <div><label>Fondo</label><select id="fitSelect" onchange="renderCurrentFrame()"><option value="blur">Desenfocado (Blur)</option><option value="crop">Recortar (Crop)</option></select></div>
+        <div><label>Transición</label><select id="transSelect" onchange="renderCurrentFrame()"><option value="fade">Fundido Suave</option><option value="cut">Corte Directo</option></select></div>
+        <div><label>Estilo Subtítulos</label><select id="subsSelect" onchange="renderCurrentFrame()"><option value="box">Caja Oscura (Fondo Negro)</option><option value="clean">Sin Fondo (Texto + Borde)</option><option value="none">Desactivados</option></select></div>
         <div style="grid-column:1/-1;">
           <label>🎨 Color de los Subtítulos (Hex o Básico)</label>
-          <div style="display:flex; gap:8px; align-items:center; margin-top:4px;">
-            <input type="color" id="subColorPicker" value="#ffffff" style="width:40px; height:38px; padding:2px; cursor:pointer; background:var(--bg-input); border:1px solid var(--border); border-radius:8px;" oninput="document.getElementById('subColorText').value = this.value; renderCurrentFrame();">
-            <input type="text" id="subColorText" value="#ffffff" placeholder="#ffffff o white" style="flex:1;" oninput="document.getElementById('subColorPicker').value = isValidHex(this.value) ? this.value : '#ffffff'; renderCurrentFrame();">
-            <select id="subColorPreset" style="width:110px;" onchange="if(this.value){document.getElementById('subColorText').value = this.value; document.getElementById('subColorPicker').value = isValidHex(this.value)?this.value:'#ffffff'; renderCurrentFrame();}">
-              <option value="">Básicos...</option>
-              <option value="#ffffff">Blanco</option>
-              <option value="#ffff00">Amarillo</option>
-              <option value="#3b82f6">Azul</option>
-              <option value="#10b981">Verde</option>
-              <option value="#ef4444">Rojo</option>
-              <option value="#a78bfa">Morado</option>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+            <input type="color" id="subColorPicker" value="#ffffff" style="width:40px;height:38px;padding:2px;cursor:pointer;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;" oninput="document.getElementById('subColorText').value=this.value;renderCurrentFrame();">
+            <input type="text" id="subColorText" value="#ffffff" placeholder="#ffffff o white" style="flex:1;" oninput="document.getElementById('subColorPicker').value=/^#([0-9a-f]{3}){1,2}$/i.test(this.value)?this.value:'#ffffff';renderCurrentFrame();">
+            <select id="subColorPreset" style="width:110px;" onchange="if(this.value){document.getElementById('subColorText').value=this.value;document.getElementById('subColorPicker').value=this.value;renderCurrentFrame();}">
+              <option value="">Básicos...</option><option value="#ffffff">Blanco</option><option value="#ffff00">Amarillo</option><option value="#3b82f6">Azul</option><option value="#10b981">Verde</option><option value="#ef4444">Rojo</option><option value="#a78bfa">Morado</option>
             </select>
           </div>
         </div>
         <div style="grid-column:1/-1;">
           <label for="subFontSelect">🔤 Tipografía subtítulos</label>
           <select id="subFontSelect" onchange="onSubFontChange(this.value)" style="margin-top:4px;">
-            <option value="segoe">Segoe UI (Por defecto)</option>
-            <option value="montserrat-black">Montserrat Black</option>
-            <option value="bebas">Bebas Neue</option>
-            <option value="cinzel">Cinzel</option>
-            <option value="anton">Anton</option>
-            <option value="oswald">Oswald Bold</option>
-            <option value="poppins">Poppins Bold</option>
-            <option value="roboto">Roboto Bold</option>
-            <option value="bangers">Bangers</option>
-            <option value="lobster">Lobster</option>
-            <option value="marker">Permanent Marker</option>
-            <option value="impact">Impact</option>
-            <option value="arial-black">Arial Black</option>
+            <option value="segoe">Segoe UI (Por defecto)</option><option value="montserrat-black">Montserrat Black</option><option value="bebas">Bebas Neue</option><option value="cinzel">Cinzel</option><option value="anton">Anton</option><option value="oswald">Oswald Bold</option><option value="poppins">Poppins Bold</option><option value="roboto">Roboto Bold</option><option value="bangers">Bangers</option><option value="lobster">Lobster</option><option value="marker">Permanent Marker</option><option value="impact">Impact</option><option value="arial-black">Arial Black</option>
           </select>
         </div>
       </div>
     </div>
-
-    <div class="card" style="padding:14px; margin-top:auto;">
-      <h3 style="font-size:0.88rem; margin-bottom:8px;">🚀 Exportar Vídeo Master Pro</h3>
-      <div id="exportStatus" class="status-banner" style="margin-bottom:10px;">
-        Listo para exportar vídeo con automatización IA, BGM y SFX precisos.
-      </div>
-      <div class="progress-outer" id="exportProgressOuter" style="margin-bottom:10px;">
-        <div class="progress-inner" id="exportProgressInner"></div>
-      </div>
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <button class="btn btn-success" id="exportVideoBtn" onclick="exportVideoYouTubeMaster()" style="justify-content:center; padding:11px;">
-          🎬 Descargar Vídeo (.WEBM)
-        </button>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+    <div class="card" style="padding:14px;margin-top:auto;">
+      <h3 style="font-size:.88rem;margin-bottom:8px;">🚀 Exportar Vídeo Master Pro</h3>
+      <div id="exportStatus" class="status-banner" style="margin-bottom:10px;">Listo para exportar vídeo con automatización IA, BGM y SFX precisos.</div>
+      <div class="progress-outer" id="exportProgressOuter" style="margin-bottom:10px;"><div class="progress-inner" id="exportProgressInner"></div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-success" id="exportVideoBtn" onclick="exportVideoYouTubeMaster()" style="justify-content:center;padding:11px;">🎬 Descargar Vídeo (.WEBM)</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <button class="btn" onclick="downloadSRT()" style="justify-content:center;">📥 Subtítulos (.SRT)</button>
           <button class="btn" onclick="downloadProjectJSON()" style="justify-content:center;">💾 Proyecto (.JSON)</button>
         </div>
@@ -492,1276 +329,1082 @@
 </div>
 
 <script>
-let audioCtx = null;
-let voiceBuffer = null;
-let voiceAudioNode = null;
-let speechActivityMap = null;
-let isExportingVideo = false;
-let bgmBuffer = null;
-let activeBgmSource = null;
-
-let totalDuration = 15.0;
-let currentTime = 0.0;
-let isPlaying = false;
-let isDemoSynthMode = false;
-let animFrameId = null;
-let lastFrameTimestamp = 0;
-let playbackStartContextTime = null;
-let playbackStartOffset = 0;
-let playbackStartPerfTime = 0;
-
-let loadedImages = [];
-let scenes = [];
-let userSfxList = [];
-let imageGenerationInProgress = false;
-let currentImagePrompts = [];
-let lastPlayedSceneIndex = -1;
+"use strict";
+/* ============ ESTADO ============ */
+let audioCtx = null, voiceBuffer = null, voiceAudioNode = null, speechActivityMap = null;
+let isExportingVideo = false, bgmBuffer = null, activeBgmSource = null;
+let totalDuration = 15.0, currentTime = 0.0, isPlaying = false, isDemoSynthMode = false, animFrameId = null;
+let playbackStartContextTime = null, playbackStartOffset = 0, playbackStartPerfTime = 0;
+let loadedImages = [], scenes = [], userSfxList = [];
+let imageGenerationInProgress = false, currentImagePrompts = [];
+let activeSfxNodes = [];
 let lastPlayedChunkIndex = -1;
-let triggeredSfxInCurrentScene = {};
+let selectedVideoFormat = "short";
+let autoVideoReferenceImageData = "", autoVideoReferenceImageMime = "";
 
-const EFFECTS = [
-  "Sin movimiento", "Zoom In Suave", "Zoom Out Suave", "Zoom In Dramático",
-  "Pan Derecha", "Pan Izquierda", "Pan Arriba", "Pan Abajo",
-  "Zoom + Pan", "Movimiento Ken Burns", "Pulso Suave"
-];
-
+const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
+const EFFECTS = ["Sin movimiento","Zoom In Suave","Zoom Out Suave","Zoom In Dramático","Pan Derecha","Pan Izquierda","Pan Arriba","Pan Abajo","Zoom + Pan","Movimiento Ken Burns","Pulso Suave"];
 const SUB_FONTS = {
-  "segoe":            { family: "'Segoe UI', sans-serif",         weight: 700, load: null },
-  "montserrat-black": { family: "'Montserrat', sans-serif",       weight: 900, load: "Montserrat" },
-  "bebas":            { family: "'Bebas Neue', sans-serif",       weight: 400, load: "Bebas Neue" },
-  "cinzel":           { family: "'Cinzel', serif",                weight: 700, load: "Cinzel" },
-  "anton":            { family: "'Anton', sans-serif",            weight: 400, load: "Anton" },
-  "oswald":           { family: "'Oswald', sans-serif",           weight: 700, load: "Oswald" },
-  "poppins":          { family: "'Poppins', sans-serif",          weight: 700, load: "Poppins" },
-  "roboto":           { family: "'Roboto', sans-serif",           weight: 700, load: "Roboto" },
-  "bangers":          { family: "'Bangers', cursive",             weight: 400, load: "Bangers" },
-  "lobster":          { family: "'Lobster', cursive",             weight: 400, load: "Lobster" },
-  "marker":           { family: "'Permanent Marker', cursive",    weight: 400, load: "Permanent Marker" },
-  "impact":           { family: "Impact, 'Arial Narrow Bold', sans-serif", weight: 400, load: null },
-  "arial-black":      { family: "'Arial Black', Gadget, sans-serif", weight: 400, load: null }
+  "segoe":{family:"'Segoe UI', sans-serif",weight:700,load:null},
+  "montserrat-black":{family:"'Montserrat', sans-serif",weight:900,load:"Montserrat"},
+  "bebas":{family:"'Bebas Neue', sans-serif",weight:400,load:"Bebas Neue"},
+  "cinzel":{family:"'Cinzel', serif",weight:700,load:"Cinzel"},
+  "anton":{family:"'Anton', sans-serif",weight:400,load:"Anton"},
+  "oswald":{family:"'Oswald', sans-serif",weight:700,load:"Oswald"},
+  "poppins":{family:"'Poppins', sans-serif",weight:700,load:"Poppins"},
+  "roboto":{family:"'Roboto', sans-serif",weight:700,load:"Roboto"},
+  "bangers":{family:"'Bangers', cursive",weight:400,load:"Bangers"},
+  "lobster":{family:"'Lobster', cursive",weight:400,load:"Lobster"},
+  "marker":{family:"'Permanent Marker', cursive",weight:400,load:"Permanent Marker"},
+  "impact":{family:"Impact, 'Arial Narrow Bold', sans-serif",weight:400,load:null},
+  "arial-black":{family:"'Arial Black', Gadget, sans-serif",weight:400,load:null}
 };
+const SFX_STOPWORDS = new Set(["de","del","la","el","los","las","un","una","y","en","con","sfx","fx","sound","sonido","sonidos","efecto","efectos","audio","mp3","wav","ogg","final","copy","copia","new","nuevo"]);
+const $ = id => document.getElementById(id);
 
-function getSubtitleFont() {
-  const sel = document.getElementById("subFontSelect");
-  const key = sel ? sel.value : "segoe";
-  return SUB_FONTS[key] || SUB_FONTS["segoe"];
+/* ============ UTILIDADES ============ */
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
 }
-
-function loadSubFontAsset(def) {
-  if (!def || !def.load || !document.fonts || !document.fonts.load) return Promise.resolve();
-  return document.fonts.load(`${def.weight} 40px "${def.load}"`).catch(() => {});
+function escapeHtml(str) {
+  return String(str == null ? "" : str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
-
-function onSubFontChange(key) {
-  const def = SUB_FONTS[key] || SUB_FONTS["segoe"];
-  loadSubFontAsset(def).then(() => renderCurrentFrame());
-  renderCurrentFrame();
-}
-
+function normalizeText(s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
 function isValidHex(hex) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(hex) || /^(white|black|red|green|blue|yellow|purple|orange)$/i.test(hex);
 }
+function waitMs(ms) { return new Promise(r => setTimeout(r, ms)); }
+function formatMMSS(sec) { const s = Math.floor(sec); return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0"); }
+function setImageModelPreference(v) { try { localStorage.setItem("autovideo_image_model", v); } catch (_) {} }
 
-function setImageModelPreference(val) {
-  try { localStorage.setItem("autovideo_image_model", val); } catch (_) {}
+function getSubtitleFont() {
+  const sel = $("subFontSelect");
+  return SUB_FONTS[sel ? sel.value : "segoe"] || SUB_FONTS.segoe;
 }
-
+function loadSubFontAsset(def) {
+  if (!def || !def.load || !document.fonts || !document.fonts.load) return Promise.resolve();
+  return document.fonts.load(def.weight + ' 40px "' + def.load + '"').catch(() => {});
+}
+function onSubFontChange(key) {
+  loadSubFontAsset(SUB_FONTS[key] || SUB_FONTS.segoe).then(renderCurrentFrame);
+  renderCurrentFrame();
+}
 function togglePromptMode(mode) {
-  const styleContainer = document.getElementById("styleBoxContainer");
-  const manualContainer = document.getElementById("manualListContainer");
-  if (mode === "manual19") {
-    if (styleContainer) styleContainer.style.display = "none";
-    if (manualContainer) manualContainer.style.display = "block";
-  } else {
-    if (styleContainer) styleContainer.style.display = "block";
-    if (manualContainer) manualContainer.style.display = "none";
+  $("styleBoxContainer").style.display = mode === "manual19" ? "none" : "block";
+  $("manualListContainer").style.display = mode === "manual19" ? "block" : "none";
+}
+function switchTab(num) {
+  for (let i = 0; i <= 4; i++) {
+    const t = $("tab" + i), n = $("nav" + i);
+    if (t) t.classList.toggle("active", i === num);
+    if (n) n.classList.toggle("active", i === num);
   }
 }
-
-const SFX_STOPWORDS = new Set([
-  "de","del","la","el","los","las","un","una","y","en","con","sfx","fx","sound","sonido","sonidos",
-  "efecto","efectos","audio","mp3","wav","ogg","final","copy","copia","new","nuevo"
-]);
-
-function escapeHtml(str) {
-  return String(str == null ? "" : str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+function showAILog(msg, isError = false) {
+  ["aiStatusLog", "aiStatusLog3"].forEach(id => {
+    const el = $(id); if (!el) return;
+    el.style.display = "block";
+    el.style.borderColor = isError ? "#ef4444" : "rgba(139,92,246,.45)";
+    el.style.color = isError ? "#fca5a5" : "#ddd6fe";
+    el.innerHTML = msg;
+  });
 }
 
-function normalizeText(s) {
-  return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+/* ============ PANTALLA INICIAL ============ */
+function startProjectWithFormat() {
+  const selected = document.querySelector('input[name="videoFormat"]:checked');
+  selectedVideoFormat = selected ? selected.value : "short";
+  const aspect = selectedVideoFormat === "short" ? "9:16" : "16:9";
+  $("aspectSelect").value = aspect;
+  changeAspectRatio(aspect);
+  $("formatGate").classList.add("hidden");
+  switchTab(2);
 }
 
+/* ============ SFX ============ */
 function stemWord(w) {
   let s = normalizeText(w);
   if (s.length >= 5) s = s.replace(/(es|s)$/, "");
   if (s.length >= 4) s = s.replace(/[aeo]$/, "");
   return s;
 }
-
 function stemsMatch(a, b) {
   if (!a || !b) return false;
   if (a === b) return true;
-  const shorter = a.length <= b.length ? a : b;
-  const longer = a.length <= b.length ? b : a;
-  return shorter.length >= 5 && longer.startsWith(shorter);
+  const sh = a.length <= b.length ? a : b, lo = a.length <= b.length ? b : a;
+  return sh.length >= 5 && lo.startsWith(sh);
 }
-
 function parseKeywords(str) {
-  return String(str || "")
-    .split(/[,;
-]+/)
-    .map(k => normalizeText(k).trim())
-    .filter(k => k.length >= 3);
+  return String(str || "").split(/[,;\n]+/).map(k => normalizeText(k).trim()).filter(k => k.length >= 3);
 }
-
 function defaultKeywordsFromName(fileName) {
   const base = normalizeText(String(fileName || "").replace(/\.[^/.]+$/, ""));
-  const words = base.replace(/[-_.\d]+/g, " ").split(/\s+/)
-    .filter(w => w.length > 2 && !SFX_STOPWORDS.has(w));
+  const words = base.replace(/[-_.\d]+/g, " ").split(/\s+/).filter(w => w.length > 2 && !SFX_STOPWORDS.has(w));
   return Array.from(new Set(words)).join(", ");
 }
-
 function updateSfxKeywords(id, value) {
   const item = userSfxList.find(x => x.id === id);
   if (item) item.keywords = value;
 }
-
 function findSfxMatchPosition(sfx, normText, wordList) {
-  const keywords = parseKeywords(sfx.keywords);
   let best = -1;
-  for (const kw of keywords) {
+  for (const kw of parseKeywords(sfx.keywords)) {
     let pos = -1;
-    if (/\s/.test(kw)) {
-      pos = normText.indexOf(kw);
-    } else {
+    if (/\s/.test(kw)) pos = normText.indexOf(kw);
+    else {
       const kwStem = stemWord(kw);
-      for (const wd of wordList) {
-        if (stemsMatch(kwStem, wd.stem)) { pos = wd.index; break; }
-      }
+      for (const wd of wordList) if (stemsMatch(kwStem, wd.stem)) { pos = wd.index; break; }
     }
     if (pos >= 0 && (best < 0 || pos < best)) best = pos;
   }
   return best;
 }
-
 async function handleSfxUpload(fileList) {
-  if (!fileList || fileList.length === 0) return;
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
+  if (!fileList || !fileList.length) return;
+  ensureAudio();
   for (let i = 0; i < fileList.length; i++) {
     const file = fileList[i];
     try {
-      const arrayBuf = await file.arrayBuffer();
-      const decodedBuf = await audioCtx.decodeAudioData(arrayBuf);
-      userSfxList.push({
-        id: "sfx_" + Date.now() + "_" + i,
-        name: file.name,
-        buffer: decodedBuf,
-        keywords: defaultKeywordsFromName(file.name)
-      });
-    } catch(e) {
-      console.error("Error al cargar SFX:", e);
-    }
+      const buf = await audioCtx.decodeAudioData(await file.arrayBuffer());
+      userSfxList.push({ id: "sfx_" + Date.now() + "_" + i, name: file.name, buffer: buf, keywords: defaultKeywordsFromName(file.name) });
+    } catch (e) { console.error("Error al cargar SFX:", e); alert("No se pudo leer el efecto: " + file.name); }
   }
   renderSfxLibraryUI();
   renderSceneListUI();
 }
-
 function renderSfxLibraryUI() {
-  const container = document.getElementById("sfxLibraryList");
-  if (!container) return;
-  if (userSfxList.length === 0) {
-    container.innerHTML = `<div style="font-size:0.82rem; color:var(--text-muted);">No hay efectos subidos todavía.</div>`;
-    return;
-  }
-  container.innerHTML = userSfxList.map((sfx, idx) => `
-    <div style="display:flex; flex-direction:column; gap:8px; background:var(--bg-input); padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-        <span style="font-size:0.85rem; font-weight:600; overflow-wrap:anywhere;">🔊 ${escapeHtml(sfx.name)}</span>
-        <button class="btn" onclick="playPreviewSfx('${sfx.id}')" style="padding:4px 8px; font-size:0.75rem; flex-shrink:0;">▶ Probar</button>
+  const c = $("sfxLibraryList");
+  if (!userSfxList.length) { c.innerHTML = '<div style="font-size:.82rem;color:var(--text-muted);">No hay efectos subidos todavía.</div>'; return; }
+  c.innerHTML = userSfxList.map(sfx => `
+    <div style="display:flex;flex-direction:column;gap:8px;background:var(--bg-input);padding:10px 12px;border:1px solid var(--border);border-radius:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <span style="font-size:.85rem;font-weight:600;overflow-wrap:anywhere;">🔊 ${escapeHtml(sfx.name)}</span>
+        <button class="btn" onclick="playPreviewSfx('${sfx.id}')" style="padding:4px 8px;font-size:.75rem;flex-shrink:0;">▶ Probar</button>
       </div>
-      <div>
-        <label style="font-size:0.76rem; color:var(--text-muted); display:block; margin-bottom:4px;">Palabras que activan este sonido (separadas por comas)</label>
-        <input type="text" value="${escapeHtml(sfx.keywords)}" placeholder="Ej: teclado, teclear, escribir, ordenador" oninput="updateSfxKeywords('${sfx.id}', this.value)">
-      </div>
-    </div>
-  `).join("");
+      <div><label style="font-size:.76rem;color:var(--text-muted);display:block;margin-bottom:4px;">Palabras que activan este sonido (separadas por comas)</label>
+      <input type="text" value="${escapeHtml(sfx.keywords)}" placeholder="Ej: teclado, teclear, escribir" oninput="updateSfxKeywords('${sfx.id}', this.value)"></div>
+    </div>`).join("");
 }
-
 function playPreviewSfx(id) {
   const item = userSfxList.find(x => x.id === id);
   if (!item) return;
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    const src = audioCtx.createBufferSource();
-    src.buffer = item.buffer;
-    src.connect(audioCtx.destination);
-    src.start(0);
-  } catch(e) {}
+    ensureAudio(); if (audioCtx.state === "suspended") audioCtx.resume();
+    const src = audioCtx.createBufferSource(); src.buffer = item.buffer; src.connect(audioCtx.destination); src.start(0);
+  } catch (e) {}
 }
-
-function playAssignedSfx(id, startSec = 2.0, endSec = 3.0) {
-  if (!id) return;
-  const item = userSfxList.find(x => x.id === id);
-  if (!item) return;
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    const src = audioCtx.createBufferSource();
-    src.buffer = item.buffer;
-    src.connect(audioCtx.destination);
-    const duration = Math.max(0.1, endSec - startSec);
-    src.start(0, 0, duration);
-  } catch(e) {}
-}
-
 function autoDetectAndAssignSFXWithAI() {
-  if (userSfxList.length === 0) {
-    alert("Sube primero al menos un archivo SFX en la Pestaña 1.");
-    switchTab(1);
-    return;
-  }
-  if (scenes.length === 0) {
-    alert("No hay escenas en la línea de tiempo. Sincroniza tu guion primero.");
-    return;
-  }
-
-  let assignedCount = 0;
-  const report = [];
-
+  if (!userSfxList.length) { alert("Sube primero al menos un archivo SFX en la Pestaña 1."); switchTab(1); return; }
+  if (!scenes.length) { alert("No hay escenas en la línea de tiempo. Sincroniza tu guion primero."); return; }
+  let assigned = 0; const report = [];
   scenes.forEach((sc, sceneIdx) => {
     const normText = normalizeText(sc.text || "");
-    const wordList = [];
-    const re = /[a-z0-9]+/g;
-    let m;
-    while ((m = re.exec(normText)) !== null) {
-      wordList.push({ index: m.index, stem: stemWord(m[0]) });
-    }
-
+    const wordList = []; const re = /[a-z0-9]+/g; let m;
+    while ((m = re.exec(normText)) !== null) wordList.push({ index: m.index, stem: stemWord(m[0]) });
     let best = null;
     for (const sfx of userSfxList) {
       const pos = findSfxMatchPosition(sfx, normText, wordList);
       if (pos >= 0 && (best === null || pos < best.pos)) best = { sfx, pos };
     }
     if (!best) return;
-
+    // Posición temporal real de la palabra usando los tiempos de palabra si existen
     const sceneDur = Math.max(0.1, sc.end - sc.start);
-    const frac = best.pos / Math.max(1, normText.length);
-    let startRel = Math.round(frac * sceneDur * 10) / 10;
-    startRel = Math.max(0, Math.min(startRel, Math.max(0, sceneDur - 0.3)));
+    let startRel;
+    const wordIdx = normText.slice(0, best.pos).trim().split(/\s+/).filter(Boolean).length;
+    if (sc.wordTimings && sc.wordTimings[wordIdx]) startRel = sc.wordTimings[wordIdx].start - sc.start;
+    else startRel = (best.pos / Math.max(1, normText.length)) * sceneDur;
+    startRel = Math.round(Math.max(0, Math.min(startRel, Math.max(0, sceneDur - 0.3))) * 10) / 10;
     const sfxLen = Math.min(best.sfx.buffer ? best.sfx.buffer.duration : 2.0, 4.0);
-    const endRel = Math.round((startRel + Math.max(0.1, sfxLen)) * 10) / 10;
-
-    sc.sfxId = best.sfx.id;
-    sc.sfxStart = startRel;
-    sc.sfxEnd = endRel;
-    assignedCount++;
+    sc.sfxId = best.sfx.id; sc.sfxStart = startRel; sc.sfxEnd = Math.round((startRel + Math.max(0.1, sfxLen)) * 10) / 10;
+    assigned++;
     report.push(`Escena ${sceneIdx + 1} → ${escapeHtml(best.sfx.name)} (a los ${startRel}s)`);
   });
-
-  renderSceneListUI();
-  renderCurrentFrame();
-  const logEl = document.getElementById("aiSfxLog");
-  if (logEl) {
-    logEl.style.display = "block";
-    if (assignedCount > 0) {
-      logEl.innerHTML = `🤖 <b>IA Completada:</b> se han asignado efectos de sonido a ${assignedCount} escena(s):<br>` + report.join("<br>");
-    } else {
-      logEl.innerHTML = `🤖 <b>IA Completada:</b> no se ha encontrado ninguna coincidencia entre el guion y tus efectos. Añade más palabras clave a cada efecto en la Pestaña 1.`;
-    }
-  }
+  renderSceneListUI(); renderCurrentFrame();
+  const log = $("aiSfxLog"); log.style.display = "block";
+  log.innerHTML = assigned
+    ? `🤖 <b>IA Completada:</b> efectos asignados a ${assigned} escena(s):<br>` + report.join("<br>")
+    : `🤖 <b>IA Completada:</b> no hay coincidencias entre el guion y tus efectos. Añade más palabras clave a cada efecto en la Pestaña 1.`;
+}
+function stopSfxNodes() {
+  activeSfxNodes.forEach(n => { try { n.stop(); } catch (e) {} });
+  activeSfxNodes = [];
+}
+// Programa todos los SFX en el reloj del AudioContext (sincronía exacta con la voz)
+function scheduleSfx(baseContextTime, fromTime, targets) {
+  scenes.forEach(sc => {
+    if (!sc.sfxId) return;
+    const item = userSfxList.find(x => x.id === sc.sfxId);
+    if (!item || !item.buffer) return;
+    const s = sc.sfxStart !== undefined ? sc.sfxStart : 2.0, e = sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0;
+    const trig = sc.start + s;
+    if (trig < fromTime - 0.02) return;
+    try {
+      const node = audioCtx.createBufferSource(); node.buffer = item.buffer;
+      targets.forEach(t => node.connect(t));
+      node.start(baseContextTime + (trig - fromTime), 0, Math.max(0.1, e - s));
+      activeSfxNodes.push(node);
+    } catch (err) {}
+  });
 }
 
-let autoVideoReferenceImageData = "";
-let autoVideoReferenceImageMime = "";
-
+/* ============ IMAGEN DE REFERENCIA ============ */
 function handleReferenceImageSelection(event) {
   const file = event && event.target && event.target.files ? event.target.files[0] : null;
   if (!file) return;
-  const status = document.getElementById("aiReferenceStatus");
-  status.textContent = "Optimizando imagen...";
-
+  const status = $("aiReferenceStatus"); status.textContent = "Optimizando imagen...";
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = e => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      let width = img.width;
-      let height = img.height;
-      const MAX_DIM = 700;
-      if (width > height && width > MAX_DIM) {
-        height = Math.round((height * MAX_DIM) / width);
-        width = MAX_DIM;
-      } else if (height > MAX_DIM) {
-        width = Math.round((width * MAX_DIM) / height);
-        height = MAX_DIM;
-      }
-      canvas.width = width;
-      canvas.height = height;
+      let w = img.width, h = img.height; const MAX = 700;
+      if (w > h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      else if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+      canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.80);
-      autoVideoReferenceImageData = compressedDataUrl;
-      autoVideoReferenceImageMime = "image/jpeg";
-
-      document.getElementById("aiReferencePreview").src = compressedDataUrl;
-      document.getElementById("aiReferenceFileName").textContent = file.name + " (Optimizada)";
-      document.getElementById("aiReferencePreviewWrap").style.display = "flex";
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      const data = canvas.toDataURL("image/jpeg", 0.80);
+      autoVideoReferenceImageData = data; autoVideoReferenceImageMime = "image/jpeg";
+      $("aiReferencePreview").src = data;
+      $("aiReferenceFileName").textContent = file.name + " (Optimizada)";
+      $("aiReferencePreviewWrap").style.display = "flex";
       status.textContent = "Imagen optimizada y lista.";
     };
+    img.onerror = () => { status.textContent = "No se pudo leer la imagen."; };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
-
 function clearReferenceImage() {
-  autoVideoReferenceImageData = "";
-  autoVideoReferenceImageMime = "";
-  document.getElementById("aiReferenceImage").value = "";
-  document.getElementById("aiReferencePreviewWrap").style.display = "none";
-  document.getElementById("aiReferenceStatus").textContent = "Sin imagen de referencia.";
+  autoVideoReferenceImageData = ""; autoVideoReferenceImageMime = "";
+  $("aiReferenceImage").value = "";
+  $("aiReferencePreviewWrap").style.display = "none";
+  $("aiReferenceStatus").textContent = "Sin imagen de referencia.";
 }
 
-function startProjectWithFormat() {
-  const selected = document.querySelector('input[name="videoFormat"]:checked');
-  selectedVideoFormat = selected ? selected.value : "short";
-  const defaultAspect = selectedVideoFormat === "short" ? "9:16" : "16:9";
-  const aspectSelect = document.getElementById("aspectSelect");
-  if (aspectSelect) aspectSelect.value = defaultAspect;
-  changeAspectRatio(defaultAspect);
-  document.getElementById("formatGate").classList.add("hidden");
-  switchTab(2);
-}
-
-function switchTab(num) {
-  for (let i = 0; i <= 4; i++) {
-    const tabEl = document.getElementById("tab" + i);
-    const navEl = document.getElementById("nav" + i);
-    if (tabEl) tabEl.classList.toggle("active", i === num);
-    if (navEl) navEl.classList.toggle("active", i === num);
-  }
-}
-
-function showAILog(msg, isError = false) {
-  const el = document.getElementById("aiStatusLog");
-  if (!el) return;
-  el.style.display = "block";
-  el.style.borderColor = isError ? "#ef4444" : "rgba(139, 92, 246, 0.45)";
-  el.style.color = isError ? "#fca5a5" : "#ddd6fe";
-  el.innerHTML = msg;
-}
-
-const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
-let selectedVideoFormat = "short";
-
+/* ============ CLOUDFLARE ============ */
 function getCloudflareWorkerUrl() {
-  const input = document.getElementById("cloudflareWorkerUrl");
-  let value = input ? input.value.trim() : "";
-  if (!value) value = IMAGE_WORKER_DEFAULT_URL;
-  return value.replace(/\/+$/, "");
+  let v = ($("cloudflareWorkerUrl").value || "").trim();
+  if (!v) v = IMAGE_WORKER_DEFAULT_URL;
+  return v.replace(/\/+$/, "");
 }
-
-function getCloudflareAccessKey() {
-  const input = document.getElementById("cloudflareAccessKey");
-  return input ? input.value.trim() : "";
-}
-
+function getCloudflareAccessKey() { return ($("cloudflareAccessKey").value || "").trim(); }
 function saveCloudflareSettings() {
   try {
-    const url = document.getElementById("cloudflareWorkerUrl").value.trim().replace(/\/+$/, "");
-    const key = document.getElementById("cloudflareAccessKey").value.trim();
+    const url = $("cloudflareWorkerUrl").value.trim().replace(/\/+$/, "");
+    const key = $("cloudflareAccessKey").value.trim();
     if (url) localStorage.setItem("autovideo_cloudflare_worker_url", url);
     if (key) localStorage.setItem("autovideo_cloudflare_access_key", key);
   } catch (_) {}
 }
-
 async function testCloudflareWorker() {
-  const workerUrl = getCloudflareWorkerUrl();
-  const accessKey = getCloudflareAccessKey();
-  if (!workerUrl || !accessKey) { showAILog("Introduce URL y clave.", true); return; }
+  const url = getCloudflareWorkerUrl(), key = getCloudflareAccessKey();
+  if (!url || !key) { showAILog("Introduce URL y clave.", true); return; }
   try {
-    const res = await fetch(workerUrl + "/health", { method: "GET", mode: "cors", headers: { "X-AutoVideo-Key": accessKey } });
-    let data = {};
-    try { data = await res.json(); } catch (_) {}
+    const res = await fetch(url + "/health", { method: "GET", mode: "cors", headers: { "X-AutoVideo-Key": key } });
+    let data = {}; try { data = await res.json(); } catch (_) {}
     if (!res.ok || !data.ok) throw new Error(data.error || ("HTTP " + res.status));
     showAILog("✅ <b>Cloudflare conectado con éxito.</b>");
-  } catch (err) {
-    showAILog("❌ <b>Error:</b> " + err.message, true);
-  }
+  } catch (err) { showAILog("❌ <b>Error:</b> " + escapeHtml(err.message), true); }
 }
-
-async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
-  const workerUrl = getCloudflareWorkerUrl();
-  const accessKey = getCloudflareAccessKey();
-  if (!workerUrl || !accessKey) throw new Error("Configura la clave de acceso de tu Worker en la Pestaña 0.");
-  
-  let cleanRefImage = null;
-  let refMime = null;
-  if (useReference && autoVideoReferenceImageData) {
-    cleanRefImage = autoVideoReferenceImageData;
-    if (cleanRefImage.includes("base64,")) {
-      cleanRefImage = cleanRefImage.split("base64,")[1];
-    }
-    refMime = autoVideoReferenceImageMime || "image/jpeg";
-  }
-
+function blobToDataURL(blob) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error("No se pudo leer la imagen.")); r.readAsDataURL(blob); });
+}
+async function fetchCloudflareImage(prompt, aspectRatio, useReference) {
+  const workerUrl = getCloudflareWorkerUrl(), accessKey = getCloudflareAccessKey();
+  if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave (APP_SECRET) de tu Worker en la Pestaña 0.");
   const payload = { prompt, aspectRatio, steps: 4 };
-  if (cleanRefImage) {
-    payload.referenceImage = cleanRefImage;
-    payload.referenceImageMimeType = refMime;
+  if (useReference && autoVideoReferenceImageData) {
+    payload.referenceImage = autoVideoReferenceImageData.includes("base64,") ? autoVideoReferenceImageData.split("base64,")[1] : autoVideoReferenceImageData;
+    payload.referenceImageMimeType = autoVideoReferenceImageMime || "image/jpeg";
   }
-
   const controller = new AbortController();
-  const requestTimeout = setTimeout(() => controller.abort(), 120000);
+  const to = setTimeout(() => controller.abort(), 120000);
   let response;
   try {
     response = await fetch(workerUrl + "/generate", {
-      method: "POST",
-      mode: "cors",
+      method: "POST", mode: "cors",
       headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
-      body: JSON.stringify(payload),
-      signal: controller.signal
+      body: JSON.stringify(payload), signal: controller.signal
     });
   } catch (err) {
-    if (err && err.name === "AbortError") {
-      throw new Error("La solicitud de imagen superó los 120 segundos (timeout).");
+    if (err && err.name === "AbortError") throw new Error("La solicitud de imagen superó los 120 segundos.");
+    throw new Error("No se pudo conectar con el Worker (" + (err && err.message ? err.message : err) + ").");
+  } finally { clearTimeout(to); }
+
+  const ct = (response.headers.get("content-type") || "").toLowerCase();
+  let dataUrl = "";
+  if (ct.startsWith("image/")) {
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    dataUrl = await blobToDataURL(await response.blob());
+  } else {
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw); } catch (e) { throw new Error("Respuesta no válida del Worker (HTTP " + response.status + "): " + raw.substring(0, 120)); }
+    if (!response.ok) {
+      const m = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : (data.message || ("HTTP " + response.status)));
+      throw new Error(m);
     }
-    throw err;
-  } finally {
-    clearTimeout(requestTimeout);
+    const r = data.result && typeof data.result === "object" ? data.result : {};
+    let v = data.dataURI || data.dataUrl || data.url || data.image || data.b64_json || r.image || "";
+    if (v && !/^(data:|https?:)/.test(v)) v = "data:image/jpeg;base64," + v;
+    dataUrl = v;
   }
-  
-  const rawText = await response.text();
-  let data = {};
-  try {
-    data = JSON.parse(rawText);
-  } catch (e) {
-    throw new Error("Respuesta inválida del Worker (no es JSON): " + rawText.substring(0, 100));
-  }
-
-  if (!response.ok) {
-    const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : ("HTTP " + response.status));
-    throw new Error(msg);
-  }
-
-  const dataUrl = data.dataURI || data.dataUrl || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
   if (!dataUrl) throw new Error("El Worker respondió OK pero no devolvió ninguna imagen.");
-  return await loadImageCrossOrigin(dataUrl, 180000);
+  return await loadImageCrossOrigin(dataUrl, 60000);
 }
-
-function loadImageCrossOrigin(url, timeoutMs = 45000) {
+function loadImageCrossOrigin(url, timeoutMs) {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    let settled = false;
-    const timeoutId = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      reject(new Error("Tiempo agotado esperando la imagen remota."));
-    }, timeoutMs);
-
+    const img = new Image(); let settled = false;
+    const tid = setTimeout(() => { if (settled) return; settled = true; reject(new Error("Tiempo agotado cargando la imagen.")); }, timeoutMs || 45000);
     img.crossOrigin = "anonymous";
     img.onload = () => {
       if (settled) return;
       try {
         const c = document.createElement("canvas");
-        c.width = img.naturalWidth || img.width || 1280;
-        c.height = img.naturalHeight || img.height || 720;
-        const ctx = c.getContext("2d");
-        ctx.drawImage(img, 0, 0, c.width, c.height);
-        const safeDataUrl = c.toDataURL("image/jpeg", 0.92);
-        const localImg = new Image();
-        localImg.onload = () => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timeoutId);
-          resolve({ dataUrl: safeDataUrl, imgObj: localImg });
-        };
-        localImg.src = safeDataUrl;
-      } catch (e) {
-        settled = true;
-        clearTimeout(timeoutId);
-        reject(new Error("Error al preparar imagen."));
-      }
+        c.width = img.naturalWidth || img.width || 1280; c.height = img.naturalHeight || img.height || 720;
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        const safe = c.toDataURL("image/jpeg", 0.92);
+        const local = new Image();
+        local.onload = () => { if (settled) return; settled = true; clearTimeout(tid); resolve({ dataUrl: safe, imgObj: local }); };
+        local.onerror = () => { if (settled) return; settled = true; clearTimeout(tid); reject(new Error("Imagen recibida corrupta.")); };
+        local.src = safe;
+      } catch (e) { settled = true; clearTimeout(tid); reject(new Error("No se pudo preparar la imagen (CORS): " + e.message)); }
     };
-    img.onerror = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeoutId);
-      reject(new Error("Error al cargar imagen."));
-    };
+    img.onerror = () => { if (settled) return; settled = true; clearTimeout(tid); reject(new Error("La imagen recibida no se puede mostrar.")); };
     img.src = url;
   });
 }
 
+/* ============ PROMPTS ============ */
 function parseManualList(rawText) {
   if (!rawText || !rawText.trim()) return [];
   const negRegex = /,?\s*strictly no text, no words, no letters, no numbers, no typography, pure visual graphics\.?$/i;
-  const text = rawText.replace(/
-/g, "
-").trim();
-  const lines = text.split("
-");
-
-  const startNumRegex = /^\s*(?:(?:\*\*|__)?(?:scene|escena|imagen|image|prompt|shot|paso)?\s*#?\s*\d+[\.\)\-:]|\d+[\.\)\-:])\s*/i;
-  const numberedLinesCount = lines.filter(l => startNumRegex.test(l)).length;
-
+  const lines = rawText.replace(/\r\n?/g, "\n").trim().split("\n");
+  const startNum = /^\s*(?:(?:\*\*|__)?(?:scene|escena|imagen|image|prompt|shot|paso)?\s*#?\s*\d+[\.\)\-:]|\d+[\.\)\-:])\s*/i;
+  const clean = l => l.replace(/^[\u200b-\u200d\ufeff\s]+/, "").trim();
   let items = [];
-  if (numberedLinesCount >= 2) {
-    let current = "";
-    for (const rawLine of lines) {
-      const line = rawLine.replace(/^[​-‍﻿\s]+/, "").trim();
-      if (!line) continue;
-      if (startNumRegex.test(line)) {
-        if (current) items.push(current.trim());
-        current = line.replace(startNumRegex, "").trim();
-      } else {
-        if (current) {
-          current += " " + line;
-        } else {
-          current = line;
-        }
-      }
+  if (lines.filter(l => startNum.test(l)).length >= 2) {
+    let cur = "";
+    for (const raw of lines) {
+      const line = clean(raw); if (!line) continue;
+      if (startNum.test(line)) { if (cur) items.push(cur.trim()); cur = line.replace(startNum, "").trim(); }
+      else cur = cur ? cur + " " + line : line;
     }
-    if (current) items.push(current.trim());
+    if (cur) items.push(cur.trim());
   } else {
-    items = lines
-      .map(l => l.replace(/^[​-‍﻿\s]+/, "").trim())
-      .filter(Boolean)
-      .map(l => l.replace(startNumRegex, "").trim());
+    items = lines.map(clean).filter(Boolean).map(l => l.replace(startNum, "").trim());
   }
-
-  return items
-    .map(l => l.replace(/^(?:\*\*|__)\s*|\s*(?:\*\*|__)$/g, "").trim())
-    .map(l => l.replace(negRegex, "").trim())
-    .filter(Boolean);
+  return items.map(l => l.replace(/^(?:\*\*|__)\s*|\s*(?:\*\*|__)$/g, "").trim()).map(l => l.replace(negRegex, "").trim()).filter(Boolean);
 }
 
-// Bucle robusto con reintentos automáticos de hasta 3 intentos por escena y pausas progresivas
+/* ============ GENERACIÓN DE IMÁGENES ============ */
+function isCloudflareImageQuotaError(error) {
+  const m = normalizeText(error && error.message ? error.message : String(error || ""));
+  return m.includes("4006") || m.includes("daily free allocation") || m.includes("used up your daily") || m.includes("quota exceeded") || m.includes("daily limit");
+}
+function createPendingSceneImage(n, prompt, reason) {
+  const c = document.createElement("canvas"); c.width = 1280; c.height = 720;
+  const ctx = c.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 1280, 720); g.addColorStop(0, "#111827"); g.addColorStop(.55, "#172554"); g.addColorStop(1, "#312e81");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 1280, 720);
+  ctx.fillStyle = "rgba(15,23,42,.88)"; ctx.fillRect(115, 155, 1050, 405);
+  ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 4; ctx.strokeRect(115, 155, 1050, 405);
+  ctx.textAlign = "center"; ctx.fillStyle = "#fbbf24"; ctx.font = "800 34px 'Segoe UI', sans-serif";
+  ctx.fillText("ESCENA " + n + " · IMAGEN PENDIENTE", 640, 245);
+  ctx.fillStyle = "#f8fafc"; ctx.font = "700 54px 'Segoe UI', sans-serif"; ctx.fillText("REINTENTAR GENERACIÓN", 640, 330);
+  ctx.fillStyle = "#94a3b8"; ctx.font = "24px 'Segoe UI', sans-serif";
+  ctx.fillText("Pulsa «Reintentar fallidas» en Recursos Visuales", 640, 485);
+  return {
+    name: String(n).padStart(3, "0") + "_PENDIENTE.png", url: c.toDataURL("image/png"), imgObj: c,
+    sceneIndex: n - 1, prompt: String(prompt || ""), isPending: true, lastError: String(reason || "Error desconocido")
+  };
+}
+function updateRetryFailedButton() {
+  const btn = $("retryFailedImagesBtn"); if (!btn) return;
+  const count = loadedImages.filter(i => i && i.isPending).length;
+  btn.textContent = "🔁 Reintentar fallidas (" + count + ")";
+  btn.disabled = imageGenerationInProgress || count === 0;
+}
+async function generateImageWithRetries(prompt, aspect, n, total) {
+  const max = 3, hasRef = Boolean(autoVideoReferenceImageData);
+  let lastError = null;
+  for (let attempt = 1; attempt <= max; attempt++) {
+    const useRef = hasRef && attempt === 1;
+    try {
+      const result = await fetchCloudflareImage(prompt, aspect, useRef);
+      return { result, usedReferenceFallback: hasRef && !useRef };
+    } catch (error) {
+      lastError = error;
+      console.warn("Escena " + n + " intento " + attempt + ":", error.message);
+      if (isCloudflareImageQuotaError(error)) throw error;
+      if (attempt < max) {
+        showAILog(`⚠️ Escena ${n}/${total}: intento ${attempt}/${max} fallido (${escapeHtml(error.message)}). Reintentando...`, true);
+        await waitMs(attempt * 2000);
+      }
+    }
+  }
+  throw lastError || new Error("No se pudo generar la imagen.");
+}
+function buildImagePrompts() {
+  const mode = $("promptGenMode").value;
+  const style = $("aiVisualStyle").value.trim();
+  const suffix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
+  if (mode === "manual19") {
+    const lines = parseManualList($("aiManualPrompts19").value);
+    if (!lines.length) { showAILog("Has elegido la lista manual, pero la caja de prompts está vacía.", true); switchTab(0); return null; }
+    const extra = style ? ", " + style : "";
+    return lines.map(l => l.replace(/\.+$/, "").trim() + extra + ", " + suffix);
+  }
+  const styleList = parseManualList(style);
+  if (styleList.length >= 2 && /(?:^|\n)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(style)) {
+    return styleList.map(l => l.replace(/\.+$/, "").trim() + ", " + suffix);
+  }
+  if (!$("scriptArea").value.trim()) { showAILog("Pega primero tu guion en la pestaña 2.", true); switchTab(2); return null; }
+  const styleDesc = style ? style + ", " + suffix : "2D minimalist vector animation style, " + suffix;
+  return getScriptLines().map(t => styleDesc + ". Visual scene: " + String(t || "").replace(/^\d+[\.\)\-:]\s*/, "").replace(/\.+$/, "").trim());
+}
 async function generateImagesFromPromptsAI() {
-  const promptMode = document.getElementById("promptGenMode").value;
-  const rawScript = document.getElementById("scriptArea").value.trim();
-  const manualText = document.getElementById("aiManualPrompts19").value.trim();
-  const styleInput = document.getElementById("aiVisualStyle").value.trim();
-
-  const styleSuffix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
-  let imagePrompts = [];
-
-  if (promptMode === "manual19") {
-    const manualLines = parseManualList(manualText);
-    if (manualLines.length === 0) {
-      showAILog("Has seleccionado el modo de lista manual, pero la caja de prompts está vacía.", true);
-      switchTab(0);
-      return;
-    }
-    const extraStyle = styleInput ? `, ${styleInput}` : "";
-    imagePrompts = manualLines.map((lineContent) => {
-      const cleanLine = lineContent.replace(/\.+$/, "").trim();
-      return `${cleanLine}${extraStyle}, ${styleSuffix}`;
-    });
-  } else {
-    const styleAsList = parseManualList(styleInput);
-    const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|
-)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
-
-    if (hasNumberedStyleList) {
-      imagePrompts = styleAsList.map((lineContent) => {
-        const cleanLine = lineContent.replace(/\.+$/, "").trim();
-        return `${cleanLine}, ${styleSuffix}`;
-      });
-    } else {
-      if (!rawScript) {
-        showAILog("Pega primero tu guion en la pestaña 2.", true);
-        switchTab(2);
-        return;
-      }
-      const scriptLines = getScriptLines();
-      const styleDesc = styleInput ? `${styleInput}, ${styleSuffix}` : `2D minimalist vector animation style, ${styleSuffix}`;
-      imagePrompts = scriptLines.map((sceneText) => {
-        const cleanText = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").replace(/\.+$/, "").trim();
-        return `${styleDesc}. Visual scene: ${cleanText}`;
-      });
-    }
-  }
-
-  const targetCount = imagePrompts.length;
-  const promptsAreaEl = document.getElementById("promptsArea");
-  if (promptsAreaEl) {
-    promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("
-
-");
-  }
-
-  loadedImages = [];
-  renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes en orden con protección anti-saturación...</b>");
-
-  const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  let successCount = 0;
-  let errorList = [];
-
-  for (let i = 0; i < targetCount; i++) {
-    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount}...`);
-    
-    // Pausa de 1.2 segundos entre cada imagen en vídeos largos para evitar sobrecargar Cloudflare
-    if (i > 0) {
-      await new Promise(r => setTimeout(r, 1200));
-    }
-
-    let res = null;
-    let attempt = 0;
-    let success = false;
-
-    while (attempt < 3 && !success) {
-      attempt++;
-      try {
-        // Intento 1 con referencia (si existe), intentos 2 y 3 sin referencia para asegurar éxito
-        const useReference = (attempt === 1 && Boolean(autoVideoReferenceImageData));
-        res = await fetchCloudflareImage(imagePrompts[i], aspect, useReference);
-        success = true;
-      } catch (err) {
-        console.warn(`Intento ${attempt} fallido en escena ${i + 1}:`, err.message);
-        if (attempt < 3) {
-          await new Promise(r => setTimeout(r, 2000));
-        }
-      }
-    }
-
-    if (success && res) {
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA.jpg",
-        url: res.dataUrl,
-        imgObj: res.imgObj,
-        sceneIndex: i
-      });
-      successCount++;
-    } else {
-      // Si falla tras 3 intentos, generamos un placeholder local limpio para no romper la galería
-      const fallbackPlaceholder = createProceduralSceneImage(
-        String(i + 1).padStart(3, "0") + "_Error",
-        "#1e1b4b", "#0f172a", "#ef4444", "⚠️"
-      );
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_Error.png",
-        url: fallbackPlaceholder.url,
-        imgObj: fallbackPlaceholder.imgObj,
-        sceneIndex: i
-      });
-      errorList.push(i + 1);
-    }
-    renderMediaGrid();
-  }
-
-  autoSyncProject(false);
-
-  if (errorList.length > 0) {
-    showAILog(`⚠️ <b>Generación completada con avisos:</b> ${successCount} de ${targetCount} imágenes generadas. Las escenas #${errorList.join(", ")} no respondieron (revisa tu clave en Pestaña 0 o reintenta).`, true);
-  } else {
-    showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron correctamente en orden!</b>");
-  }
+  if (imageGenerationInProgress) { showAILog("La generación actual sigue en marcha. Espera a que termine.", true); return; }
+  const prompts = buildImagePrompts();
+  if (!prompts) return;
+  const total = prompts.length;
+  currentImagePrompts = prompts.slice();
+  $("promptsArea").value = prompts.map((p, i) => (i + 1) + ". " + p).join("\n\n");
+  imageGenerationInProgress = true;
+  loadedImages = []; renderMediaGrid();
   switchTab(3);
+  showAILog(`🎨 <b>Generando ${total} imágenes en orden...</b>`);
+  const aspect = $("aspectSelect").value === "9:16" ? "9:16" : "16:9";
+  const failed = [], refFallback = []; let quotaErr = null, lastMsg = "";
+  try {
+    for (let i = 0; i < total; i++) {
+      const n = i + 1;
+      if (i > 0 && !quotaErr) await waitMs(1200);
+      let gen = null, failure = quotaErr;
+      if (!quotaErr) {
+        showAILog(`🎨 Generando imagen ${n} de ${total}...`);
+        try {
+          gen = await generateImageWithRetries(prompts[i], aspect, n, total);
+          if (gen.usedReferenceFallback) refFallback.push(n);
+        } catch (e) { failure = e; lastMsg = e.message; if (isCloudflareImageQuotaError(e)) quotaErr = e; }
+      }
+      if (gen && gen.result) {
+        loadedImages.push({ name: String(n).padStart(3, "0") + "_IA.jpg", url: gen.result.dataUrl, imgObj: gen.result.imgObj, sceneIndex: i, prompt: prompts[i], isPending: false });
+      } else {
+        loadedImages.push(createPendingSceneImage(n, prompts[i], failure && failure.message));
+        failed.push(n);
+      }
+      renderMediaGrid();
+    }
+    autoSyncProject(false);
+    if (failed.length) {
+      showAILog(quotaErr
+        ? `❌ <b>Cuota diaria de Cloudflare agotada.</b> Faltan las imágenes #${failed.join(", ")}. Reintenta cuando se restablezca.`
+        : `⚠️ <b>Faltan ${failed.length} imagen(es): #${failed.join(", ")}.</b> Último error: <i>${escapeHtml(lastMsg)}</i><br>Pulsa «Reintentar fallidas».`, true);
+    } else if (refFallback.length) {
+      showAILog(`✅ <b>Todas las imágenes generadas.</b> Las escenas ${refFallback.join(", ")} se hicieron sin imagen de referencia.`);
+    } else showAILog(`✅ <b>¡Las ${total} imágenes se generaron en orden!</b>`);
+  } catch (error) {
+    console.error(error); showAILog("❌ Error inesperado: " + escapeHtml(error.message || String(error)), true);
+  } finally {
+    imageGenerationInProgress = false; renderMediaGrid(); updateRetryFailedButton();
+  }
 }
+async function retryPendingImageItems(items) {
+  if (imageGenerationInProgress) return;
+  const pending = items.filter(i => i && i.isPending && i.prompt);
+  if (!pending.length) { showAILog("No hay imágenes pendientes con prompt guardado."); return; }
+  imageGenerationInProgress = true; updateRetryFailedButton();
+  let recovered = 0, quotaErr = null, lastMsg = "";
+  const aspect = $("aspectSelect").value === "9:16" ? "9:16" : "16:9";
+  try {
+    for (let k = 0; k < pending.length; k++) {
+      const item = pending[k], pos = loadedImages.indexOf(item);
+      if (pos < 0) continue;
+      const n = (item.sceneIndex != null ? item.sceneIndex : pos) + 1;
+      showAILog(`🔁 Reintentando imagen ${n} (${k + 1} de ${pending.length})...`);
+      try {
+        const g = await generateImageWithRetries(item.prompt, aspect, n, pending.length);
+        loadedImages[loadedImages.indexOf(item)] = { name: String(n).padStart(3, "0") + "_IA.jpg", url: g.result.dataUrl, imgObj: g.result.imgObj, sceneIndex: n - 1, prompt: item.prompt, isPending: false };
+        recovered++;
+      } catch (e) {
+        lastMsg = e.message; item.lastError = e.message;
+        if (isCloudflareImageQuotaError(e)) { quotaErr = e; break; }
+      }
+      renderMediaGrid(); renderSceneListUI(); renderCurrentFrame();
+      if (k < pending.length - 1) await waitMs(1200);
+    }
+  } finally {
+    imageGenerationInProgress = false; renderMediaGrid(); renderSceneListUI(); renderCurrentFrame(); updateRetryFailedButton();
+  }
+  const still = loadedImages.filter(i => i && i.isPending).length;
+  if (!still) showAILog("✅ <b>Perfecto:</b> imágenes recuperadas. Ya puedes exportar.");
+  else if (quotaErr) showAILog(`❌ <b>Cuota diaria de Cloudflare agotada.</b> Siguen ${still} pendientes.`, true);
+  else showAILog(`⚠️ <b>${recovered} recuperadas.</b> Quedan ${still}. Último error: <i>${escapeHtml(lastMsg)}</i>`, true);
+}
+async function retryFailedImages() { await retryPendingImageItems(loadedImages.filter(i => i && i.isPending)); }
+async function retryImageAtSlot(index) { const it = loadedImages[index]; if (it && it.isPending) await retryPendingImageItems([it]); }
 
+/* ============ AUDIO ============ */
+function drawWaveform(buffer) {
+  const c = $("waveformCanvas"); if (!c || !buffer) return;
+  const ctx = c.getContext("2d"), w = c.width, h = c.height, data = buffer.getChannelData(0), step = Math.max(1, Math.floor(data.length / w));
+  ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#3b82f6";
+  for (let x = 0; x < w; x++) {
+    let max = 0;
+    for (let j = 0; j < step; j += Math.max(1, Math.floor(step / 20))) max = Math.max(max, Math.abs(data[x * step + j] || 0));
+    const bh = Math.max(1, max * h * 0.95);
+    ctx.fillRect(x, (h - bh) / 2, 1, bh);
+  }
+}
 async function handleVoiceUpload(file) {
   if (!file) return;
-  document.getElementById("voiceLabel").textContent = "✅ " + file.name;
-  document.getElementById("st1").textContent = "Audio listo";
-  document.getElementById("st1").classList.add("ok");
-
-  const arrayBuf = await file.arrayBuffer();
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
-  totalDuration = voiceBuffer.duration;
-  document.getElementById("seekSlider").max = totalDuration.toFixed(2);
-  autoSyncProject(false);
-  updateTimeUI();
+  if (isPlaying) pausePlayback();
+  isDemoSynthMode = false;
+  $("voiceLabel").textContent = "✅ " + file.name;
+  $("st1").textContent = "Audio listo"; $("st1").classList.add("ok");
+  try {
+    ensureAudio();
+    voiceBuffer = await audioCtx.decodeAudioData(await file.arrayBuffer());
+    speechActivityMap = buildSpeechActivityMap(voiceBuffer);
+    totalDuration = voiceBuffer.duration; currentTime = 0;
+    $("seekSlider").max = totalDuration.toFixed(2);
+    drawWaveform(voiceBuffer);
+    autoSyncProject(false); updateTimeUI();
+  } catch (err) { speechActivityMap = null; alert("No se pudo cargar el audio: " + err.message); }
 }
-
 async function handleBgmUpload(file) {
   if (!file) return;
-  document.getElementById("bgmLabel").textContent = "🎵 " + file.name;
-  const arrayBuf = await file.arrayBuffer();
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  bgmBuffer = await audioCtx.decodeAudioData(arrayBuf);
+  try {
+    ensureAudio();
+    bgmBuffer = await audioCtx.decodeAudioData(await file.arrayBuffer());
+    $("bgmLabel").textContent = "🎵 " + file.name;
+  } catch (e) { alert("No se pudo cargar la música: " + e.message); }
 }
+function updateBgmVol(v) { $("bgmVolText").textContent = v + "%"; }
 
-function updateBgmVol(val) {
-  document.getElementById("bgmVolText").textContent = val + "%";
-}
-
+/* ============ GUION / TIEMPOS ============ */
 function splitScriptIntoScenes(rawText) {
-  const paragraphs = String(rawText || "")
-    .replace(/
-/g, "
-")
-    .split(/
-+/)
-    .map(p => p.replace(/^[​-‍﻿\s]+/, "").trim())
-    .filter(Boolean);
-
-  const numberedCount = paragraphs.filter(p => /^\d+[\.\)\-:]\s+/.test(p)).length;
-  if (numberedCount >= 2 && numberedCount >= paragraphs.length * 0.5) {
-    return paragraphs.map(p => p.replace(/^\d+[\.\)\-:]\s+/, "").trim()).filter(Boolean);
+  const paragraphs = String(rawText || "").replace(/\r\n?/g, "\n").split(/\n+/).map(p => p.replace(/^[\u200b-\u200d\ufeff\s]+/, "").trim()).filter(Boolean);
+  const numbered = paragraphs.filter(p => /^\d+[\.\)\-:]\s+/.test(p)).length;
+  if (numbered >= 2 && numbered >= paragraphs.length * 0.5) return paragraphs.map(p => p.replace(/^\d+[\.\)\-:]\s+/, "").trim()).filter(Boolean);
+  const out = [];
+  for (const p of paragraphs) {
+    const clean = p.replace(/^\d+[\.\)\-:]\s+/, "");
+    // Corta solo en .!?… seguidos de espacio (no rompe "1.500" ni "3.5")
+    for (const part of clean.split(/(?<=[.!?…]["”’')\]]*)\s+/)) if (part.trim()) out.push(part.trim());
   }
-
-  const sentences = [];
-  for (const paragraph of paragraphs) {
-    const cleanedParagraph = paragraph.replace(/^\d+[\.\)\-:]\s+/, "");
-    const parts = cleanedParagraph.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [cleanedParagraph];
-    for (const part of parts) {
-      if (part.trim()) sentences.push(part.trim());
-    }
-  }
-  return sentences.length > 0 ? sentences : ["Escena inicial"];
+  return out.length ? out : ["Escena inicial"];
 }
-
-function getScriptLines() {
-  return splitScriptIntoScenes(document.getElementById("scriptArea").value);
-}
-
+function getScriptLines() { return splitScriptIntoScenes($("scriptArea").value); }
 function getWordSpeechWeight(word) {
   const raw = String(word || "");
-  const normalized = raw.toLocaleLowerCase("es-ES").normalize("NFD");
-  const plain = normalized.replace(/[̀-ͯ]/g, "");
-  const vowelGroups = (plain.match(/[aeiouü]+/g) || []).length;
-  const fallbackUnits = Math.max(1, Math.ceil(plain.replace(/[^a-z0-9]/g, "").length / 4));
-  let weight = Math.max(1, vowelGroups || fallbackUnits);
-
-  if (/[;,]/.test(raw)) weight += raw.includes(";") ? 1.5 : 0.8;
-  if (/:/.test(raw)) weight += 1.1;
-  if (/[.!?…]/.test(raw)) weight += 1.6;
+  const plain = raw.toLocaleLowerCase("es-ES").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const vowelGroups = (plain.match(/[aeiou\u00fc]+/g) || []).length;
+  const fallback = Math.max(1, Math.ceil(plain.replace(/[^a-z0-9]/g, "").length / 4));
+  let weight = Math.max(1, vowelGroups || fallback);
+  if (/[;,]["”’')\]]*$/.test(raw)) weight += raw.includes(";") ? 1.5 : 0.8;
+  if (/:["”’')\]]*$/.test(raw)) weight += 1.1;
+  if (/[.!?…]["”’')\]]*$/.test(raw)) weight += 1.6;
   if (/[—–]/.test(raw)) weight += 1.0;
   return weight;
 }
-
-function getSpeechTimingWeights(textOrWords) {
-  const words = Array.isArray(textOrWords)
-    ? textOrWords
-    : String(textOrWords || "").trim().split(/\s+/).filter(Boolean);
+function getSpeechTimingWeights(t) {
+  const words = Array.isArray(t) ? t : String(t || "").trim().split(/\s+/).filter(Boolean);
   return words.map(getWordSpeechWeight);
 }
+function getSpeechTimingWeight(text) { return getSpeechTimingWeights(text).reduce((a, b) => a + b, 0); }
 
-function getSpeechTimingWeight(text) {
-  return getSpeechTimingWeights(text).reduce((sum, weight) => sum + weight, 0);
+function buildSpeechActivityMap(buffer) {
+  if (!buffer || !buffer.length) return null;
+  try {
+    const duration = buffer.duration, hop = 0.02, frameCount = Math.ceil(duration / hop);
+    const rms = new Float32Array(frameCount), channels = [];
+    for (let c = 0; c < buffer.numberOfChannels; c++) channels.push(buffer.getChannelData(c));
+    for (let i = 0; i < frameCount; i++) {
+      const s0 = Math.floor(i * hop * buffer.sampleRate), s1 = Math.min(buffer.length, Math.floor(Math.min(duration, (i + 1) * hop) * buffer.sampleRate));
+      let sum = 0, cnt = 0;
+      for (const ch of channels) for (let s = s0; s < s1; s += 2) { const v = ch[s] || 0; sum += v * v; cnt++; }
+      rms[i] = cnt ? Math.sqrt(sum / cnt) : 0;
+    }
+    const sorted = Array.from(rms).sort((a, b) => a - b);
+    const pct = p => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))] || 0;
+    const noise = pct(0.15), speech = pct(0.90);
+    if (speech < 0.0012) return null;
+    let th = Math.max(0.0008, speech * 0.085, noise * 2.2); th = Math.min(th, speech * 0.55);
+    const voiced = Array.from(rms, v => v >= th);
+    for (let i = 1; i < voiced.length - 1;) {
+      if (!voiced[i]) {
+        let j = i; while (j < voiced.length && !voiced[j]) j++;
+        if (j < voiced.length && voiced[i - 1] && voiced[j] && j - i <= 2) for (let k = i; k < j; k++) voiced[k] = true;
+        i = Math.max(j, i + 1);
+      } else i++;
+    }
+    for (let i = 0; i < voiced.length;) {
+      if (voiced[i]) { let j = i; while (j < voiced.length && voiced[j]) j++; if (j - i < 3) for (let k = i; k < j; k++) voiced[k] = false; i = j; } else i++;
+    }
+    const prefix = new Float64Array(frameCount + 1); let activeFrames = 0;
+    for (let i = 0; i < frameCount; i++) {
+      const fd = Math.max(0, Math.min(hop, duration - i * hop));
+      prefix[i + 1] = prefix[i] + (voiced[i] ? fd : 0); if (voiced[i]) activeFrames++;
+    }
+    const activeDuration = prefix[frameCount];
+    if (activeDuration < Math.min(0.35, duration * 0.08) || activeFrames < 4) return null;
+    const silenceIntervals = [];
+    for (let i = 0; i < frameCount;) {
+      if (!voiced[i]) {
+        let j = i; while (j < frameCount && !voiced[j]) j++;
+        const start = i * hop, end = Math.min(duration, j * hop);
+        if (end - start >= 0.10 && start > 0.04 && end < duration - 0.04) silenceIntervals.push({ start, end, center: (start + end) / 2, duration: end - start });
+        i = j;
+      } else i++;
+    }
+    return { duration, hop, frameCount, voiced, prefix, activeDuration, silenceIntervals };
+  } catch (e) { return null; }
 }
-
+function speechSecondsAt(map, time) {
+  if (!map) return Math.max(0, time || 0);
+  const t = Math.max(0, Math.min(map.duration, Number(time) || 0));
+  if (t >= map.duration) return map.activeDuration;
+  const idx = Math.max(0, Math.min(map.frameCount - 1, Math.floor(t / map.hop)));
+  const fs = idx * map.hop, fd = Math.max(0, Math.min(map.hop, map.duration - fs));
+  return map.prefix[idx] + (map.voiced[idx] ? Math.max(0, Math.min(fd, t - fs)) : 0);
+}
+function wallTimeAtSpeechSeconds(map, target) {
+  if (!map) return Math.max(0, Number(target) || 0);
+  const wanted = Math.max(0, Math.min(map.activeDuration, Number(target) || 0));
+  if (wanted <= 0) { const fv = map.voiced.findIndex(Boolean); return fv < 0 ? 0 : fv * map.hop; }
+  if (wanted >= map.activeDuration) return map.duration;
+  let lo = 0, hi = map.frameCount - 1;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (map.prefix[mid + 1] < wanted - 1e-7) lo = mid + 1; else hi = mid; }
+  const i = lo, before = map.prefix[i], after = map.prefix[i + 1];
+  if (map.voiced[i] && wanted > before + 1e-7 && wanted < after - 1e-7) return i * map.hop + (wanted - before);
+  if (Math.abs(wanted - after) <= 0.025) {
+    let j = i + 1;
+    while (j < map.frameCount && !map.voiced[j] && Math.abs(map.prefix[j] - wanted) < 1e-6) j++;
+    return Math.min(map.duration, j * map.hop);
+  }
+  if (map.voiced[i] && after > before) return i * map.hop + Math.max(0, Math.min(after - before, wanted - before));
+  return Math.min(map.duration, i * map.hop);
+}
+function snapSceneBoundaryToPause(target, map, minAllowed, maxAllowed, tol) {
+  if (!map || !map.silenceIntervals.length) return target;
+  let best = null, bestScore = Infinity;
+  for (const p of map.silenceIntervals) {
+    if (p.center < minAllowed || p.center > maxAllowed) continue;
+    const d = Math.abs(p.center - target); if (d > tol) continue;
+    const score = d - Math.min(0.12, Math.max(0, p.duration - 0.10) * 0.30);
+    if (score < bestScore) { bestScore = score; best = p.center; }
+  }
+  return best === null ? target : best;
+}
+function createWordTimings(text, start, end, map) {
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const weights = getSpeechTimingWeights(words), totalW = weights.reduce((a, b) => a + b, 0) || words.length;
+  const s0 = Math.max(0, Number(start) || 0), e0 = Math.max(s0 + 0.02, Number(end) || s0 + 0.02);
+  const aS = map ? speechSecondsAt(map, s0) : 0, aE = map ? speechSecondsAt(map, e0) : 0;
+  const useAct = !!map && aE - aS > 0.025;
+  let cum = 0;
+  return words.map((word, i) => {
+    const next = cum + (weights[i] || 1);
+    let ws, we;
+    if (useAct) { ws = wallTimeAtSpeechSeconds(map, aS + (aE - aS) * cum / totalW); we = wallTimeAtSpeechSeconds(map, aS + (aE - aS) * next / totalW); }
+    else { ws = s0 + (e0 - s0) * cum / totalW; we = s0 + (e0 - s0) * next / totalW; }
+    ws = Math.max(s0, Math.min(Math.max(s0, e0 - 0.015), ws));
+    we = Math.max(ws + 0.015, Math.min(e0, we));
+    cum = next;
+    return { word, start: ws, end: we };
+  });
+}
+function refreshSceneWordTimings() {
+  const map = (voiceBuffer && !isDemoSynthMode) ? speechActivityMap : null;
+  scenes.forEach(sc => { sc.wordTimings = createWordTimings(sc.text, sc.start, sc.end, map); });
+}
 function updateScriptStatus() {
-  const lines = getScriptLines();
-  document.getElementById("lineCountInfo").textContent = lines.length + " escenas estimadas";
-  document.getElementById("st2").textContent = lines.length + " escenas";
-  document.getElementById("st2").classList.add("ok");
+  const n = getScriptLines().length;
+  $("lineCountInfo").textContent = n + " escenas estimadas";
+  $("st2").textContent = n + " escenas"; $("st2").classList.add("ok");
 }
+function splitLongParagraphs() { $("scriptArea").value = getScriptLines().join("\n\n"); updateScriptStatus(); }
 
-function splitLongParagraphs() {
-  document.getElementById("scriptArea").value = getScriptLines().join("
-
-");
-  updateScriptStatus();
-}
-
+/* ============ GALERÍA ============ */
 function handleImagesUpload(fileList) {
-  if (!fileList || fileList.length === 0) return;
-  const files = Array.from(fileList);
-  const startIdx = loadedImages.length;
-  files.forEach((_, idx) => {
-    loadedImages.push({ name: "", url: "", imgObj: null });
-  });
-  files.forEach((file, idx) => {
-    const targetSlot = startIdx + idx;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      renderMediaGrid();
-      renderSceneListUI();
-      renderCurrentFrame();
-    };
+  if (!fileList || !fileList.length) return;
+  Array.from(fileList).forEach(file => {
+    const url = URL.createObjectURL(file), img = new Image();
+    const entry = { name: file.name, url, imgObj: img, sceneIndex: loadedImages.length };
+    loadedImages.push(entry);
+    img.onload = () => { renderMediaGrid(); renderSceneListUI(); renderCurrentFrame(); };
     img.src = url;
-    loadedImages[targetSlot] = { name: file.name, url, imgObj: img, sceneIndex: targetSlot };
   });
   renderMediaGrid();
 }
-
-function clearAllImages() {
-  loadedImages = [];
-  renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
-}
-
+function clearAllImages() { loadedImages = []; renderMediaGrid(); renderSceneListUI(); renderCurrentFrame(); }
 function removeImage(index) {
   loadedImages.splice(index, 1);
-  scenes.forEach((sc, idx) => {
-    if (loadedImages.length === 0) {
-      sc.imgIndex = -1;
-    } else if (sc.imgIndex >= loadedImages.length) {
-      sc.imgIndex = loadedImages.length - 1;
-    }
+  scenes.forEach(sc => {
+    if (!loadedImages.length) sc.imgIndex = -1;
+    else if (sc.imgIndex >= loadedImages.length) sc.imgIndex = loadedImages.length - 1;
   });
-  renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
+  renderMediaGrid(); renderSceneListUI(); renderCurrentFrame();
 }
-
-function moveImageLeft(index) {
-  if (index <= 0) return;
-  const temp = loadedImages[index];
-  loadedImages[index] = loadedImages[index - 1];
-  loadedImages[index - 1] = temp;
-  renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
+function swapImages(a, b) { const t = loadedImages[a]; loadedImages[a] = loadedImages[b]; loadedImages[b] = t; renderMediaGrid(); renderSceneListUI(); renderCurrentFrame(); }
+function moveImageLeft(i) { if (i > 0) swapImages(i, i - 1); }
+function moveImageRight(i) { if (i < loadedImages.length - 1) swapImages(i, i + 1); }
+function changeImagePositionByInput(from, inputEl) {
+  const val = parseInt(inputEl.value, 10); if (isNaN(val)) return;
+  const to = Math.max(1, Math.min(val, loadedImages.length)) - 1;
+  if (from === to) { renderMediaGrid(); return; }
+  loadedImages.splice(to, 0, loadedImages.splice(from, 1)[0]);
+  renderMediaGrid(); renderSceneListUI(); renderCurrentFrame();
 }
-
-function moveImageRight(index) {
-  if (index >= loadedImages.length - 1) return;
-  const temp = loadedImages[index];
-  loadedImages[index] = loadedImages[index + 1];
-  loadedImages[index + 1] = temp;
-  renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
-}
-
-function changeImagePositionByInput(fromIndex, inputEl) {
-  const val = parseInt(inputEl.value, 10);
-  if (isNaN(val)) return;
-  const targetPos = Math.max(1, Math.min(val, loadedImages.length));
-  const toIndex = targetPos - 1;
-  if (fromIndex === toIndex) {
-    renderMediaGrid();
-    return;
-  }
-
-  const item = loadedImages.splice(fromIndex, 1)[0];
-  loadedImages.splice(toIndex, 0, item);
-  renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
-}
-
 function renderMediaGrid() {
-  const grid = document.getElementById("mediaGrid");
-  grid.innerHTML = "";
+  const grid = $("mediaGrid"); grid.innerHTML = "";
   const total = loadedImages.length;
-
   loadedImages.forEach((item, idx) => {
-    const div = document.createElement("div");
-    div.className = "media-item";
+    const div = document.createElement("div"); div.className = "media-item";
+    const p = item.isPending;
     div.innerHTML = `
-      <span class="m-badge">#${String(idx + 1).padStart(3, "0")}</span>
-      <button class="m-delete" onclick="removeImage(${idx})">×</button>
+      <span class="m-badge" style="${p ? "background:rgba(245,158,11,.96);color:#111827;" : ""}">${p ? "PENDIENTE" : "#" + String(idx + 1).padStart(3, "0")}</span>
+      <button class="m-delete" onclick="removeImage(${idx})" title="Eliminar">×</button>
       <img src="${item.url}" alt="">
-      <div class="m-label">${escapeHtml(item.name)}</div>
+      <div class="m-label" style="${p ? "color:#fbbf24;" : ""}" title="${escapeHtml(p ? item.lastError : item.name)}">${escapeHtml(item.name)}</div>
       <div class="m-controls">
+        ${p ? `<button onclick="retryImageAtSlot(${idx})" ${imageGenerationInProgress ? "disabled" : ""} style="border-color:#f59e0b;color:#fbbf24;">↻ Reintentar esta imagen</button>` : ""}
         <div class="m-row-btns">
           <button onclick="moveImageLeft(${idx})" ${idx === 0 ? "disabled" : ""}>◀ Izq</button>
-          <span style="font-size:0.68rem; color:var(--text-muted);">Pos ${idx+1}</span>
+          <span style="font-size:.68rem;color:var(--text-muted);">Pos ${idx + 1}</span>
           <button onclick="moveImageRight(${idx})" ${idx === total - 1 ? "disabled" : ""}>Der ▶</button>
         </div>
-        <div class="m-jump-box">
-          <span>Ir a pos:</span>
-          <input type="number" min="1" max="${total}" value="${idx + 1}" onchange="changeImagePositionByInput(${idx}, this)">
-        </div>
-      </div>
-    `;
+        <div class="m-jump-box"><span>Ir a pos:</span><input type="number" min="1" max="${total}" value="${idx + 1}" onchange="changeImagePositionByInput(${idx}, this)"></div>
+      </div>`;
     grid.appendChild(div);
   });
-  document.getElementById("st3").textContent = total + " imgs";
+  $("st3").textContent = total + " imgs";
+  updateRetryFailedButton();
 }
 
-function distributeTextIntoTargetCount(lines, targetCount) {
-  if (targetCount <= 0) return lines;
-  if (lines.length === targetCount) return lines;
-  if (lines.length === 0) return Array.from({ length: targetCount }, (_, i) => "Escena " + (i + 1));
-
-  if (lines.length > targetCount) {
-    const grouped = [];
-    for (let i = 0; i < targetCount; i++) {
-      const start = Math.floor((i * lines.length) / targetCount);
-      const end = Math.floor(((i + 1) * lines.length) / targetCount);
-      const chunk = lines.slice(start, Math.max(start + 1, end)).join(" ");
-      grouped.push(chunk || lines[lines.length - 1]);
+/* ============ SINCRONIZACIÓN ============ */
+function distributeTextIntoTargetCount(lines, target) {
+  if (target <= 0 || lines.length === target) return lines;
+  if (!lines.length) return Array.from({ length: target }, (_, i) => "Escena " + (i + 1));
+  if (lines.length > target) {
+    const g = [];
+    for (let i = 0; i < target; i++) {
+      const s = Math.floor(i * lines.length / target), e = Math.floor((i + 1) * lines.length / target);
+      g.push(lines.slice(s, Math.max(s + 1, e)).join(" ") || lines[lines.length - 1]);
     }
-    return grouped;
-  } else {
-    const allWords = lines.join(" ").trim().split(/\s+/).filter(Boolean);
-    if (allWords.length >= targetCount) {
-      const grouped = [];
-      for (let i = 0; i < targetCount; i++) {
-        const start = Math.floor((i * allWords.length) / targetCount);
-        const end = Math.floor(((i + 1) * allWords.length) / targetCount);
-        grouped.push(allWords.slice(start, Math.max(start + 1, end)).join(" "));
-      }
-      return grouped;
-    }
-    const padded = [...lines];
-    while (padded.length < targetCount) {
-      padded.push("");
-    }
-    return padded;
+    return g;
   }
+  const words = lines.join(" ").trim().split(/\s+/).filter(Boolean);
+  if (words.length >= target) {
+    const g = [];
+    for (let i = 0; i < target; i++) {
+      const s = Math.floor(i * words.length / target), e = Math.floor((i + 1) * words.length / target);
+      g.push(words.slice(s, Math.max(s + 1, e)).join(" "));
+    }
+    return g;
+  }
+  const padded = [...lines]; while (padded.length < target) padded.push(""); return padded;
 }
-
-// Sincronización robusta y exacta basada en la duración real del archivo de voz
 function autoSyncProject(goToTimeline = true) {
-  const rawScript = document.getElementById("scriptArea").value.trim();
-  let lines = rawScript ? getScriptLines() : [];
+  const raw = $("scriptArea").value.trim();
+  let lines = raw ? getScriptLines() : [];
+  const mode = $("promptGenMode") ? $("promptGenMode").value : "auto";
+  if (loadedImages.length > 0 && (mode === "manual19" || !lines.length)) lines = distributeTextIntoTargetCount(lines, loadedImages.length);
+  else if (!lines.length) lines = loadedImages.length ? loadedImages.map((_, i) => "Escena " + (i + 1)) : ["Escena inicial"];
 
-  const promptMode = document.getElementById("promptGenMode") ? document.getElementById("promptGenMode").value : "auto";
-  if (loadedImages.length > 0 && (promptMode === "manual19" || lines.length === 0)) {
-    lines = distributeTextIntoTargetCount(lines, loadedImages.length);
-  } else if (lines.length === 0) {
-    lines = loadedImages.length > 0 ? loadedImages.map((_, i) => "Escena " + (i + 1)) : ["Escena inicial"];
-  }
-  
-  if (voiceBuffer && !isDemoSynthMode) {
-    totalDuration = voiceBuffer.duration;
-  } else if (!voiceBuffer && !isDemoSynthMode) {
-    totalDuration = Math.max(lines.length * 3.2, 4.0);
-  }
-  document.getElementById("seekSlider").max = totalDuration.toFixed(2);
+  if (voiceBuffer && !isDemoSynthMode) totalDuration = voiceBuffer.duration;
+  else if (!voiceBuffer && !isDemoSynthMode) totalDuration = Math.max(lines.length * 3.2, 4.0);
+  $("seekSlider").max = totalDuration.toFixed(2);
 
   const weights = lines.map(l => Math.max(getSpeechTimingWeight(l), 1));
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-  let acc = 0; const cuts = [0.0];
-  for (let w of weights) {
-    acc += w;
-    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(3)));
+  const totalW = weights.reduce((a, b) => a + b, 0) || lines.length || 1;
+  const useAct = !!(voiceBuffer && !isDemoSynthMode && speechActivityMap && speechActivityMap.activeDuration > 0);
+  const predicted = [0]; let acc = 0;
+  for (let i = 0; i < lines.length - 1; i++) {
+    acc += weights[i]; const r = acc / totalW;
+    predicted.push(useAct ? wallTimeAtSpeechSeconds(speechActivityMap, r * speechActivityMap.activeDuration) : r * totalDuration);
   }
-  cuts[cuts.length - 1] = Number(totalDuration.toFixed(3));
+  predicted.push(totalDuration);
+  const cuts = [0], minGap = Math.min(0.12, totalDuration / Math.max(4, lines.length * 3));
+  for (let i = 1; i < lines.length; i++) {
+    const prev = cuts[i - 1], maxAllowed = Math.max(prev + minGap, totalDuration - (lines.length - i) * minGap);
+    const span = Math.max(0.2, predicted[i + 1] - predicted[i - 1]);
+    const tol = Math.min(0.70, Math.max(0.22, span * 0.20));
+    let cut = useAct ? snapSceneBoundaryToPause(predicted[i], speechActivityMap, prev + minGap, maxAllowed, tol) : predicted[i];
+    cut = Math.max(prev + minGap, Math.min(maxAllowed, cut));
+    cuts.push(Number(cut.toFixed(3)));
+  }
+  cuts.push(totalDuration);
 
-  scenes = lines.map((text, idx) => ({
-    start: cuts[idx], end: cuts[idx + 1], text,
-    imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
-    effect: EFFECTS[idx % EFFECTS.length],
-    sfxId: "",
-    sfxStart: 2.0,
-    sfxEnd: 3.0
-  }));
-  document.getElementById("st4").textContent = scenes.length + " escenas";
-  document.getElementById("st4").classList.add("ok");
-  renderSceneListUI();
-  updateTimeUI();
-  renderCurrentFrame();
+  const old = scenes;
+  scenes = lines.map((text, idx) => {
+    const o = old.length === lines.length ? old[idx] : null;   // conserva SFX ya asignados
+    return {
+      start: cuts[idx], end: cuts[idx + 1], text,
+      imgIndex: loadedImages.length ? (idx % loadedImages.length) : -1,
+      effect: EFFECTS[idx % EFFECTS.length],
+      sfxId: o ? o.sfxId : "", sfxStart: o ? o.sfxStart : 2.0, sfxEnd: o ? o.sfxEnd : 3.0, wordTimings: []
+    };
+  });
+  refreshSceneWordTimings();
+  $("st4").textContent = scenes.length + " escenas"; $("st4").classList.add("ok");
+  renderSceneListUI(); updateTimeUI(); renderCurrentFrame();
   if (goToTimeline) switchTab(4);
 }
-
 function renderSceneListUI() {
-  const container = document.getElementById("sceneList");
-  container.innerHTML = "";
+  const c = $("sceneList"); c.innerHTML = "";
   scenes.forEach((sc, idx) => {
-    const row = document.createElement("div");
-    row.className = "scene-row";
-    const thumbUrl = (sc.imgIndex >= 0 && loadedImages[sc.imgIndex]) ? loadedImages[sc.imgIndex].url : "";
-    let imgOptions = loadedImages.map((im, iIdx) => `<option value="${iIdx}" ${iIdx === sc.imgIndex ? "selected" : ""}>#${String(iIdx+1).padStart(3,"0")}</option>`).join("");
-    if (!imgOptions) imgOptions = `<option value="-1">Sin imagen</option>`;
-    let effectOptions = EFFECTS.map(ef => `<option value="${ef}" ${ef === sc.effect ? "selected" : ""}>${ef}</option>`).join("");
-    
-    let sfxOptions = `<option value="">Sin SFX</option>` + userSfxList.map(s => `<option value="${s.id}" ${s.id === sc.sfxId ? "selected" : ""}>${s.name}</option>`).join("");
-
+    const row = document.createElement("div"); row.className = "scene-row";
+    const thumb = (sc.imgIndex >= 0 && loadedImages[sc.imgIndex]) ? loadedImages[sc.imgIndex].url : "";
+    let imgOpts = loadedImages.map((im, i) => `<option value="${i}" ${i === sc.imgIndex ? "selected" : ""}>#${String(i + 1).padStart(3, "0")}</option>`).join("");
+    if (!imgOpts) imgOpts = '<option value="-1">Sin imagen</option>';
+    const efOpts = EFFECTS.map(ef => `<option value="${ef}" ${ef === sc.effect ? "selected" : ""}>${ef}</option>`).join("");
+    const sfxOpts = '<option value="">Sin SFX</option>' + userSfxList.map(s => `<option value="${s.id}" ${s.id === sc.sfxId ? "selected" : ""}>${escapeHtml(s.name)}</option>`).join("");
     row.innerHTML = `
-      <img class="scene-thumb" src="${thumbUrl}" onclick="seekTo(${sc.start})" style="cursor:pointer;">
+      <img class="scene-thumb" src="${thumb}" onclick="seekTo(${sc.start})" style="cursor:pointer;" alt="">
       <div class="time-pair">
-        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
-        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); refreshSceneWordTimings(); renderCurrentFrame()" style="width:60px">s</div>
+        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); refreshSceneWordTimings(); renderCurrentFrame()" style="width:60px">s</div>
       </div>
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderSceneListUI(); renderCurrentFrame()">${imgOptions}</select>
-        <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderSceneListUI(); renderCurrentFrame()">${imgOpts}</select>
+        <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${efOpts}</select>
       </div>
-      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
-      <div style="display:flex; flex-direction:column; gap:3px;">
-        <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:0.75rem;">${sfxOptions}</select>
-        <div style="font-size:0.68rem; color:var(--text-muted); display:flex; gap:2px;">
-          <span>Emp:<input type="number" step="0.1" value="${sc.sfxStart !== undefined ? sc.sfxStart : 2.0}" onchange="scenes[${idx}].sfxStart=Number(this.value)" style="width:36px; font-size:0.68rem; padding:1px;"></span>
-          <span>Acab:<input type="number" step="0.1" value="${sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0}" onchange="scenes[${idx}].sfxEnd=Number(this.value)" style="width:36px; font-size:0.68rem; padding:1px;"></span>
+      <div><input type="text" value="${escapeHtml(sc.text)}" oninput="scenes[${idx}].text=this.value; scenes[${idx}].wordTimings=[]" onchange="refreshSceneWordTimings(); renderCurrentFrame()"></div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:.75rem;">${sfxOpts}</select>
+        <div style="font-size:.68rem;color:var(--text-muted);display:flex;gap:2px;">
+          <span>Emp:<input type="number" step="0.1" value="${sc.sfxStart !== undefined ? sc.sfxStart : 2.0}" onchange="scenes[${idx}].sfxStart=Number(this.value)" style="width:40px;font-size:.68rem;padding:1px;"></span>
+          <span>Acab:<input type="number" step="0.1" value="${sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0}" onchange="scenes[${idx}].sfxEnd=Number(this.value)" style="width:40px;font-size:.68rem;padding:1px;"></span>
         </div>
       </div>
-      <button class="btn" onclick="scenes.splice(${idx},1); renderSceneListUI(); renderCurrentFrame()" style="padding:6px 9px;">🗑️</button>
-    `;
-    container.appendChild(row);
+      <button class="btn" onclick="scenes.splice(${idx},1); renderSceneListUI(); renderCurrentFrame()" style="padding:6px 9px;">🗑️</button>`;
+    c.appendChild(row);
   });
 }
-
 function addBlankScene() {
-  const lastEnd = scenes.length > 0 ? scenes[scenes.length - 1].end : 0;
-  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length > 0 ? 0 : -1, effect: EFFECTS[0], sfxId: "", sfxStart: 2.0, sfxEnd: 3.0 });
-  renderSceneListUI(); renderCurrentFrame();
+  const lastEnd = scenes.length ? scenes[scenes.length - 1].end : 0;
+  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length ? 0 : -1, effect: EFFECTS[0], sfxId: "", sfxStart: 2.0, sfxEnd: 3.0, wordTimings: [] });
+  refreshSceneWordTimings(); renderSceneListUI(); renderCurrentFrame();
 }
-
 function changeAspectRatio(ratio) {
-  const canvas = document.getElementById("previewCanvas");
-  if (ratio === "9:16") { canvas.width = 720; canvas.height = 1280; } else { canvas.width = 1280; canvas.height = 720; }
+  const cv = $("previewCanvas");
+  if (ratio === "9:16") { cv.width = 720; cv.height = 1280; } else { cv.width = 1280; cv.height = 720; }
   renderCurrentFrame();
 }
 
+/* ============ RENDER ============ */
 function findSceneIndexAtTime(t) {
-  if (scenes.length === 0) return -1;
+  if (!scenes.length) return -1;
   for (let i = 0; i < scenes.length; i++) {
-    const isLast = i === scenes.length - 1;
-    if (t >= scenes[i].start && (t < scenes[i].end || (isLast && t <= scenes[i].end))) return i;
+    const last = i === scenes.length - 1;
+    if (t >= scenes[i].start && (t < scenes[i].end || (last && t <= scenes[i].end))) return i;
   }
   return t < scenes[0].start ? 0 : scenes.length - 1;
 }
-
 function drawSceneLayer(ctx, w, h, scene, progress) {
-  const imgEntry = (scene && scene.imgIndex >= 0) ? loadedImages[scene.imgIndex] : null;
-  if (!imgEntry || !imgEntry.imgObj) {
+  const entry = (scene && scene.imgIndex >= 0) ? loadedImages[scene.imgIndex] : null;
+  if (!entry || !entry.imgObj) {
     ctx.fillStyle = "#1e293b"; ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = "#94a3b8"; ctx.font = "bold 22px 'Segoe UI'"; ctx.textAlign = "center"; ctx.fillText("Sin imagen", w / 2, h / 2);
     return;
   }
-  const img = imgEntry.imgObj;
-  const fitMode = document.getElementById("fitSelect").value;
-  let zoom = 1.0, offsetX = 0, offsetY = 0;
-  const p = Math.max(0, Math.min(1, progress));
-  if (scene.effect === "Zoom In Suave") zoom = 1.0 + 0.12 * p;
-  else if (scene.effect === "Zoom Out Suave") zoom = 1.12 - 0.12 * p;
-  else if (scene.effect === "Zoom In Dramático") zoom = 1.0 + 0.24 * p;
-  else if (scene.effect === "Pan Derecha") { zoom = 1.12; offsetX = (p - 0.5) * w * 0.12; }
-  else if (scene.effect === "Pan Izquierda") { zoom = 1.12; offsetX = (0.5 - p) * w * 0.12; }
-  else if (scene.effect === "Pan Arriba") { zoom = 1.12; offsetY = (0.5 - p) * h * 0.12; }
-  else if (scene.effect === "Pan Abajo") { zoom = 1.12; offsetY = (p - 0.5) * h * 0.12; }
-  else if (scene.effect === "Zoom + Pan") { zoom = 1.0 + 0.16 * p; offsetX = (p - 0.5) * w * 0.06; }
-  else if (scene.effect === "Movimiento Ken Burns") { zoom = 1.04 + 0.08 * p; offsetX = (p - 0.5) * w * 0.045; offsetY = (0.5 - p) * h * 0.025; }
-  else if (scene.effect === "Pulso Suave") zoom = 1.04 + 0.035 * Math.sin(p * Math.PI * 2);
-
-  const imgRatio = img.width / img.height; const canvasRatio = w / h;
-  if (fitMode === "blur") {
+  const img = entry.imgObj, iw = img.width || img.naturalWidth, ih = img.height || img.naturalHeight;
+  if (!iw || !ih) return;
+  const fit = $("fitSelect").value, p = Math.max(0, Math.min(1, progress));
+  let zoom = 1, ox = 0, oy = 0;
+  switch (scene.effect) {
+    case "Zoom In Suave": zoom = 1 + 0.12 * p; break;
+    case "Zoom Out Suave": zoom = 1.12 - 0.12 * p; break;
+    case "Zoom In Dramático": zoom = 1 + 0.24 * p; break;
+    case "Pan Derecha": zoom = 1.12; ox = (p - 0.5) * w * 0.12; break;
+    case "Pan Izquierda": zoom = 1.12; ox = (0.5 - p) * w * 0.12; break;
+    case "Pan Arriba": zoom = 1.12; oy = (0.5 - p) * h * 0.12; break;
+    case "Pan Abajo": zoom = 1.12; oy = (p - 0.5) * h * 0.12; break;
+    case "Zoom + Pan": zoom = 1 + 0.16 * p; ox = (p - 0.5) * w * 0.06; break;
+    case "Movimiento Ken Burns": zoom = 1.04 + 0.08 * p; ox = (p - 0.5) * w * 0.045; oy = (0.5 - p) * h * 0.025; break;
+    case "Pulso Suave": zoom = 1.04 + 0.035 * Math.sin(p * Math.PI * 2); break;
+  }
+  const imgRatio = iw / ih, canvasRatio = w / h;
+  if (fit === "blur") {
     ctx.save(); ctx.filter = "blur(22px) brightness(0.6)";
-    const bgScale = Math.max(w / img.width, h / img.height) * 1.2;
-    ctx.drawImage(img, (w - img.width * bgScale) / 2, (h - img.height * bgScale) / 2, img.width * bgScale, img.height * bgScale);
+    const bs = Math.max(w / iw, h / ih) * 1.2;
+    ctx.drawImage(img, (w - iw * bs) / 2, (h - ih * bs) / 2, iw * bs, ih * bs);
     ctx.restore();
-    let baseW = imgRatio > canvasRatio ? w : h * imgRatio;
-    let baseH = imgRatio > canvasRatio ? w / imgRatio : h;
-    ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
+    const bw = imgRatio > canvasRatio ? w : h * imgRatio, bh = imgRatio > canvasRatio ? w / imgRatio : h;
+    ctx.drawImage(img, (w - bw * zoom) / 2 + ox, (h - bh * zoom) / 2 + oy, bw * zoom, bh * zoom);
   } else {
-    const scale = Math.max(w / img.width, h / img.height) * zoom;
-    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - baseH * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+    const sc = Math.max(w / iw, h / ih) * zoom, dw = iw * sc, dh = ih * sc;
+    ctx.drawImage(img, (w - dw) / 2 + ox, (h - dh) / 2 + oy, dw, dh);
   }
 }
-
-function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
-  const subsMode = document.getElementById("subsSelect").value;
-  if (subsMode === "none" || !scene || !scene.text) return;
-
+function drawSubtitlesOnCanvas(ctx, w, h, scene, t) {
+  const mode = $("subsSelect").value;
+  if (mode === "none" || !scene || !scene.text) return;
   const words = scene.text.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return;
-
-  const wordWeights = getSpeechTimingWeights(words);
-  const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0);
-  const sceneDuration = Math.max(0.1, scene.end - scene.start);
-  const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
-  const weightedTime = Math.min(
-    Math.max(0, totalSpeechWeight - 0.000001),
-    (timeInScene / sceneDuration) * totalSpeechWeight
-  );
-
-  let activeWordIndex = 0;
-  let accumulatedWeight = 0;
-  for (let i = 0; i < wordWeights.length; i++) {
-    if (weightedTime < accumulatedWeight + wordWeights[i]) {
-      activeWordIndex = i;
-      break;
+  if (!words.length) return;
+  let active = 0;
+  const precise = Array.isArray(scene.wordTimings) && scene.wordTimings.length === words.length;
+  if (precise) {
+    const tm = scene.wordTimings;
+    if (t < tm[0].start - 0.025) return;
+    let found = false;
+    for (let i = 0; i < tm.length; i++) if (t >= tm[i].start && t < tm[i].end) { active = i; found = true; break; }
+    if (!found) active = t >= tm[tm.length - 1].end ? words.length - 1 : Math.max(0, tm.findIndex(x => t < x.end));
+  } else {
+    const ww = getSpeechTimingWeights(words), tw = ww.reduce((a, b) => a + b, 0) || words.length;
+    const dur = Math.max(0.1, scene.end - scene.start), tis = Math.max(0, Math.min(dur, t - scene.start));
+    const wt = Math.min(Math.max(0, tw - 1e-6), (tis / dur) * tw);
+    let accW = 0;
+    for (let i = 0; i < ww.length; i++) {
+      if (wt < accW + ww[i]) { active = i; break; }
+      accW += ww[i]; active = Math.min(i + 1, words.length - 1);
     }
-    accumulatedWeight += wordWeights[i];
-    activeWordIndex = Math.min(i + 1, words.length - 1);
   }
-
-  const activeChunkIndex = Math.floor(activeWordIndex / 3);
-  const chunkStart = activeChunkIndex * 3;
-  const currentChunkWords = words.slice(chunkStart, chunkStart + 3);
-  const activeWordInChunk = activeWordIndex - chunkStart;
-
-  if (isPlaying && activeChunkIndex !== lastPlayedChunkIndex) {
-    lastPlayedChunkIndex = activeChunkIndex;
-  }
+  const chunkIdx = Math.floor(active / 3), cs = chunkIdx * 3;
+  const chunk = words.slice(cs, cs + 3), activeInChunk = active - cs;
+  if (isPlaying && chunkIdx !== lastPlayedChunkIndex) lastPlayedChunkIndex = chunkIdx;
 
   ctx.save();
-  const fontSize = Math.round(h * 0.052);
-  const subFont = getSubtitleFont();
-  ctx.font = `${subFont.weight} ${fontSize}px ${subFont.family}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const subColorText = document.getElementById("subColorText");
-  const subColor = subColorText && isValidHex(subColorText.value.trim()) ? subColorText.value.trim() : "#ffffff";
-
-  const fullChunkStr = currentChunkWords.join(" ");
-  const chunkW = ctx.measureText(fullChunkStr).width;
+  const fontSize = Math.round(h * 0.052), f = getSubtitleFont();
+  ctx.font = `${f.weight} ${fontSize}px ${f.family}`; ctx.textBaseline = "middle";
+  const sct = $("subColorText"), color = sct && isValidHex(sct.value.trim()) ? sct.value.trim() : "#ffffff";
   const baseY = h * 0.82;
-
-  if (subsMode === "box") {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.82)";
-    ctx.beginPath();
-    ctx.roundRect(w / 2 - chunkW / 2 - 32, baseY - fontSize * 0.7 - 12, chunkW + 64, fontSize * 1.4 + 24, 14);
+  const maxW = w * 0.92;
+  let totalW = 0; const widths = chunk.map((wd, i) => { const ww2 = ctx.measureText(wd + (i < chunk.length - 1 ? " " : "")).width; totalW += ww2; return ww2; });
+  if (totalW > maxW) { ctx.font = `${f.weight} ${Math.floor(fontSize * maxW / totalW)}px ${f.family}`; totalW = 0; chunk.forEach((wd, i) => { widths[i] = ctx.measureText(wd + (i < chunk.length - 1 ? " " : "")).width; totalW += widths[i]; }); }
+  if (mode === "box") {
+    ctx.fillStyle = "rgba(0,0,0,.82)"; ctx.beginPath();
+    const bx = w / 2 - totalW / 2 - 32, by = baseY - fontSize * 0.7 - 12, bw = totalW + 64, bh = fontSize * 1.4 + 24;
+    if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 14); else ctx.rect(bx, by, bw, bh);
     ctx.fill();
   }
-
   ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  let totalW = 0;
-  currentChunkWords.forEach((word, i) => {
-    totalW += ctx.measureText(word + (i < currentChunkWords.length - 1 ? " " : "")).width;
+  let cx = w / 2 - totalW / 2;
+  chunk.forEach((wd, i) => {
+    const txt = wd + (i < chunk.length - 1 ? " " : "");
+    ctx.lineWidth = 6; ctx.lineJoin = "round"; ctx.strokeStyle = "#000"; ctx.strokeText(txt, cx, baseY);
+    ctx.fillStyle = i === activeInChunk ? color : "#cbd5e1"; ctx.fillText(txt, cx, baseY);
+    cx += widths[i];
   });
-  let cursorX = w / 2 - totalW / 2;
-
-  currentChunkWords.forEach((word, i) => {
-    const wordWithSpace = word + (i < currentChunkWords.length - 1 ? " " : "");
-    const wordW = ctx.measureText(wordWithSpace).width;
-
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = "#000000";
-    ctx.strokeText(wordWithSpace, cursorX, baseY);
-
-    ctx.fillStyle = i === activeWordInChunk ? subColor : "#cbd5e1";
-    ctx.fillText(wordWithSpace, cursorX, baseY);
-    cursorX += wordW;
-  });
-
   ctx.restore();
 }
-
 function renderCurrentFrame() {
-  const canvas = document.getElementById("previewCanvas");
-  const ctx = canvas.getContext("2d"); const w = canvas.width, h = canvas.height;
+  const canvas = $("previewCanvas"), ctx = canvas.getContext("2d"), w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
   const idx = findSceneIndexAtTime(currentTime);
-  
-  if (isPlaying && idx >= 0 && scenes[idx]) {
-    const sc = scenes[idx];
-    if (sc.sfxId) {
-      const targetStart = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
-      const targetEnd = sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0;
-      const timeInScene = currentTime - sc.start;
-      const key = idx + "_" + sc.sfxId;
-      
-      if (timeInScene >= targetStart && timeInScene <= (targetStart + 0.1)) {
-        if (!triggeredSfxInCurrentScene[key]) {
-          triggeredSfxInCurrentScene[key] = true;
-          playAssignedSfx(sc.sfxId, targetStart, targetEnd);
-        }
-      } else if (timeInScene < targetStart - 0.2) {
-        triggeredSfxInCurrentScene[key] = false;
-      }
-    }
-  }
-
   if (idx < 0 || !scenes[idx]) {
     ctx.fillStyle = "#131b2e"; ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = "#a78bfa"; ctx.font = "bold 24px 'Segoe UI'"; ctx.textAlign = "center";
-    ctx.fillText("🤖 AutoVideo Faceless Studio Master Pro", w / 2, h / 2 - 10);
+    ctx.fillText("🤖 AutoVideo Faceless Studio Master Pro", w / 2, h / 2);
     return;
   }
   const sc = scenes[idx];
-  const progress = (currentTime - sc.start) / Math.max(0.1, sc.end - sc.start);
-  drawSceneLayer(ctx, w, h, sc, progress);
+  drawSceneLayer(ctx, w, h, sc, (currentTime - sc.start) / Math.max(0.1, sc.end - sc.start));
   drawSubtitlesOnCanvas(ctx, w, h, sc, currentTime);
-  document.getElementById("currentSceneBadge").textContent = `Escena ${idx + 1} / ${scenes.length}`;
+  $("currentSceneBadge").textContent = "Escena " + (idx + 1) + " / " + scenes.length;
+}
+function updateTimeUI() {
+  $("seekSlider").value = currentTime;
+  $("timeDisplay").textContent = formatMMSS(currentTime) + " / " + formatMMSS(totalDuration);
 }
 
-function formatMMSS(sec) { let s = Math.floor(sec); return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; }
-function updateTimeUI() { document.getElementById("seekSlider").value = currentTime; document.getElementById("timeDisplay").textContent = `${formatMMSS(currentTime)} / ${formatMMSS(totalDuration)}`; }
+/* ============ REPRODUCCIÓN ============ */
 function seekTo(val) {
-  const resumeAfterSeek = isPlaying;
-  if (resumeAfterSeek) pausePlayback();
+  const resume = isPlaying;
+  if (resume) pausePlayback();
   currentTime = Math.max(0, Math.min(totalDuration, Number(val) || 0));
-  updateTimeUI();
-  renderCurrentFrame();
-  if (resumeAfterSeek) startPlayback();
+  updateTimeUI(); renderCurrentFrame();
+  if (resume) startPlayback();
 }
-function togglePlay() { if (scenes.length === 0) { alert("Sincroniza primero."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
-
-// Reloj de reproducción compensado con la marca temporal exacta del contexto de audio
-function getPreciseAudioTime() {
+function togglePlay() {
+  if (!scenes.length) { alert("Sincroniza primero."); return; }
+  if (isPlaying) pausePlayback(); else startPlayback();
+}
+// Reloj de lo que se OYE realmente (compensa la latencia de salida de audio)
+function getAudibleAudioContextTime() {
   if (!audioCtx) return 0;
-  if (typeof audioCtx.getOutputTimestamp === "function") {
-    const stamp = audioCtx.getOutputTimestamp();
-    if (stamp && Number.isFinite(stamp.contextTime) && Number.isFinite(stamp.performanceTime) && stamp.performanceTime > 0) {
-      return stamp.contextTime + Math.max(0, (performance.now() - stamp.performanceTime) / 1000);
+  try {
+    if (typeof audioCtx.getOutputTimestamp === "function") {
+      const st = audioCtx.getOutputTimestamp();
+      if (st && Number.isFinite(st.contextTime) && Number.isFinite(st.performanceTime) && st.performanceTime > 0) {
+        const ex = st.contextTime + Math.max(0, (performance.now() - st.performanceTime) / 1000);
+        return Math.max(0, Math.min(audioCtx.currentTime, ex));
+      }
     }
-  }
-  return audioCtx.currentTime;
+  } catch (_) {}
+  const lat = Number(audioCtx.outputLatency) || Number(audioCtx.baseLatency) || 0;
+  return Math.max(0, audioCtx.currentTime - Math.min(0.35, Math.max(0, lat)));
 }
-
-async function startPlayback() {
-  if (currentTime >= totalDuration - 0.1) currentTime = 0;
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") await audioCtx.resume();
-
-  playbackStartOffset = currentTime;
-  playbackStartContextTime = getPreciseAudioTime();
-  playbackStartPerfTime = performance.now();
-  isPlaying = true;
-  document.getElementById("playBtn").textContent = "⏸ Pausa";
-
-  if (voiceBuffer && !isDemoSynthMode) {
-    if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} }
-    voiceAudioNode = audioCtx.createBufferSource();
-    voiceAudioNode.buffer = voiceBuffer;
-    voiceAudioNode.connect(audioCtx.destination);
-    voiceAudioNode.start(playbackStartContextTime, playbackStartOffset);
-  }
-
-  if (bgmBuffer) {
-    if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} }
-    activeBgmSource = audioCtx.createBufferSource();
-    activeBgmSource.buffer = bgmBuffer;
-    activeBgmSource.loop = true;
-    const gainNode = audioCtx.createGain();
-    gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
-    activeBgmSource.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
-    activeBgmSource.start(playbackStartContextTime, Math.max(0, offsetVal + playbackStartOffset));
-  }
-
-  lastFrameTimestamp = performance.now();
-  animFrameId = requestAnimationFrame(playbackLoop);
+function getPlaybackElapsedSeconds(now) {
+  if (audioCtx && playbackStartContextTime !== null) return Math.max(0, getAudibleAudioContextTime() - playbackStartContextTime);
+  return Math.max(0, ((now || performance.now()) - playbackStartPerfTime) / 1000);
 }
-
-function pausePlayback() {
-  if (isPlaying && audioCtx && playbackStartContextTime !== null) {
-    const elapsed = Math.max(0, getPreciseAudioTime() - playbackStartContextTime);
-    currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + elapsed));
-  }
-  isPlaying = false;
-  playbackStartContextTime = null;
-  document.getElementById("playBtn").textContent = "▶ Play";
+function stopAllPlaybackAudio() {
   if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} voiceAudioNode = null; }
   if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} activeBgmSource = null; }
-  if (animFrameId) cancelAnimationFrame(animFrameId);
-  updateTimeUI();
-  renderCurrentFrame();
+  stopSfxNodes();
 }
+async function startPlayback() {
+  if (currentTime >= totalDuration - 0.1) currentTime = 0;
+  ensureAudio();
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+  stopAllPlaybackAudio();
+  playbackStartOffset = currentTime;
+  playbackStartContextTime = audioCtx.currentTime + 0.05;
+  playbackStartPerfTime = performance.now();
+  isPlaying = true; $("playBtn").textContent = "⏸ Pausa";
 
+  if (voiceBuffer && !isDemoSynthMode) {
+    voiceAudioNode = audioCtx.createBufferSource(); voiceAudioNode.buffer = voiceBuffer;
+    voiceAudioNode.connect(audioCtx.destination);
+    voiceAudioNode.start(playbackStartContextTime, Math.min(playbackStartOffset, voiceBuffer.duration - 0.01));
+  }
+  if (bgmBuffer) {
+    activeBgmSource = audioCtx.createBufferSource(); activeBgmSource.buffer = bgmBuffer; activeBgmSource.loop = true;
+    const g = audioCtx.createGain(); g.gain.value = Number($("bgmVolSlider").value) / 100;
+    activeBgmSource.connect(g); g.connect(audioCtx.destination);
+    const off = parseFloat($("bgmOffsetInput").value) || 0;
+    activeBgmSource.start(playbackStartContextTime, Math.max(0, (off + playbackStartOffset) % bgmBuffer.duration));
+  }
+  scheduleSfx(playbackStartContextTime, playbackStartOffset, [audioCtx.destination]);
+  lastPlayedChunkIndex = -1;
+  animFrameId = requestAnimationFrame(playbackLoop);
+}
+function pausePlayback() {
+  if (isPlaying && playbackStartContextTime !== null) {
+    currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + getPlaybackElapsedSeconds(performance.now())));
+  }
+  isPlaying = false; playbackStartContextTime = null;
+  $("playBtn").textContent = "▶ Play";
+  stopAllPlaybackAudio();
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  animFrameId = null;
+  updateTimeUI(); renderCurrentFrame();
+}
 function playbackLoop(now) {
   if (!isPlaying) return;
-  const elapsed = getPreciseAudioTime() - playbackStartContextTime;
-  currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + Math.max(0, elapsed)));
+  currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + getPlaybackElapsedSeconds(now)));
   if (currentTime >= totalDuration) {
     currentTime = totalDuration;
-    updateTimeUI();
-    renderCurrentFrame();
-    pausePlayback();
+    pausePlayback(); currentTime = totalDuration; updateTimeUI(); renderCurrentFrame();
     return;
   }
-  updateTimeUI();
-  renderCurrentFrame();
+  updateTimeUI(); renderCurrentFrame();
   animFrameId = requestAnimationFrame(playbackLoop);
 }
 
+/* ============ DEMO ============ */
 function loadBuiltInDemo() {
-  pausePlayback(); isDemoSynthMode = true; totalDuration = 15.0; currentTime = 0.0;
-  document.getElementById("seekSlider").max = totalDuration;
-  document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.
-En septiembre, completamente verde.
-Ningún rey lo ordenó. Lo hizo un viento.
-El monzón trae el 70% de la lluvia del país en solo cuatro meses.
-Casi 1.500 millones de personas viven de él.";
+  pausePlayback(); isDemoSynthMode = true; speechActivityMap = null; totalDuration = 15.0; currentTime = 0;
+  $("seekSlider").max = totalDuration;
+  $("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas viven de él.";
   updateScriptStatus();
   loadedImages = [
     createProceduralSceneImage("001_Mayo", "#451a03", "#78350f", "#f59e0b", "🌍🏜️"),
@@ -1772,174 +1415,108 @@ Casi 1.500 millones de personas viven de él.";
   ];
   renderMediaGrid(); autoSyncProject(true); startPlayback();
 }
-
-function createProceduralSceneImage(title, topColor, bottomColor, accentColor, iconText) {
+function createProceduralSceneImage(title, top, bottom, accent, icon) {
   const c = document.createElement("canvas"); c.width = 1280; c.height = 720;
   const ctx = c.getContext("2d");
-  const g = ctx.createLinearGradient(0, 0, 0, 720); g.addColorStop(0, topColor); g.addColorStop(1, bottomColor);
+  const g = ctx.createLinearGradient(0, 0, 0, 720); g.addColorStop(0, top); g.addColorStop(1, bottom);
   ctx.fillStyle = g; ctx.fillRect(0, 0, 1280, 720);
-  ctx.fillStyle = accentColor; ctx.globalAlpha = 0.22; ctx.beginPath(); ctx.arc(640, 320, 230, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0;
-  ctx.font = "130px 'Segoe UI Emoji'"; ctx.textAlign = "center"; ctx.fillText(iconText, 640, 320);
+  ctx.fillStyle = accent; ctx.globalAlpha = 0.22; ctx.beginPath(); ctx.arc(640, 320, 230, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+  ctx.font = "130px 'Segoe UI Emoji', sans-serif"; ctx.textAlign = "center"; ctx.fillText(icon, 640, 320);
   ctx.font = "700 34px 'Segoe UI'"; ctx.fillStyle = "#fff"; ctx.fillText(title, 640, 460);
-  const url = c.toDataURL("image/png"); const img = new Image(); img.src = url;
-  return { name: title + ".png", url, imgObj: img };
+  return { name: title + ".png", url: c.toDataURL("image/png"), imgObj: c };
 }
 
+/* ============ EXPORTAR ============ */
 async function exportVideoYouTubeMaster() {
-  if (scenes.length === 0) { alert("Sincroniza el guion antes de exportar."); return; }
+  if (!scenes.length) { alert("Sincroniza el guion antes de exportar."); return; }
+  const pend = loadedImages.filter(i => i && i.isPending).length;
+  if (pend > 0 && !confirm(`Hay ${pend} imagen(es) pendientes (placeholder). ¿Exportar igualmente? Pulsa Cancelar para reintentarlas primero.`)) { switchTab(3); return; }
   pausePlayback();
-  const statusEl = document.getElementById("exportStatus");
-  const progOuter = document.getElementById("exportProgressOuter");
-  const progInner = document.getElementById("exportProgressInner");
-  const btn = document.getElementById("exportVideoBtn");
-  btn.disabled = true; progOuter.style.display = "block"; progInner.style.width = "0%";
-  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio Master Pro con SFX (inicio/fin exactos)...";
-
+  isExportingVideo = true;
+  const statusEl = $("exportStatus"), outer = $("exportProgressOuter"), inner = $("exportProgressInner"), btn = $("exportVideoBtn");
+  btn.disabled = true; outer.style.display = "block"; inner.style.width = "0%";
+  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio...";
   try {
     await loadSubFontAsset(getSubtitleFont());
-    const canvas = document.getElementById("previewCanvas");
-    const canvasStream = canvas.captureStream(30);
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") await audioCtx.resume();
-
+    ensureAudio(); if (audioCtx.state === "suspended") await audioCtx.resume();
+    stopAllPlaybackAudio();
+    const canvas = $("previewCanvas"), canvasStream = canvas.captureStream(30);
     const dest = audioCtx.createMediaStreamDestination();
-    let exportVoiceNode = null; 
-    let exportBgmNode = null;
-
-    if (voiceBuffer && !isDemoSynthMode) {
-      exportVoiceNode = audioCtx.createBufferSource();
-      exportVoiceNode.buffer = voiceBuffer;
-      exportVoiceNode.connect(dest); 
-      exportVoiceNode.connect(audioCtx.destination);
-    }
-    
+    let vNode = null, bNode = null;
+    if (voiceBuffer && !isDemoSynthMode) { vNode = audioCtx.createBufferSource(); vNode.buffer = voiceBuffer; vNode.connect(dest); }
     if (bgmBuffer) {
-      exportBgmNode = audioCtx.createBufferSource();
-      exportBgmNode.buffer = bgmBuffer; 
-      exportBgmNode.loop = true;
-      const gainNode = audioCtx.createGain();
-      gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
-      exportBgmNode.connect(gainNode); 
-      gainNode.connect(dest); 
-      gainNode.connect(audioCtx.destination);
+      bNode = audioCtx.createBufferSource(); bNode.buffer = bgmBuffer; bNode.loop = true;
+      const g = audioCtx.createGain(); g.gain.value = Number($("bgmVolSlider").value) / 100; bNode.connect(g); g.connect(dest);
     }
-
-    const exportSfxNodes = [];
-    scenes.forEach(sc => {
-      if (sc.sfxId) {
-        const item = userSfxList.find(x => x.id === sc.sfxId);
-        if (item && item.buffer) {
-          try {
-            const sfxNode = audioCtx.createBufferSource();
-            sfxNode.buffer = item.buffer;
-            sfxNode.connect(dest);
-            sfxNode.connect(audioCtx.destination);
-            
-            const startSec = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
-            const endSec = sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0;
-            const triggerTime = sc.start + startSec;
-            const duration = Math.max(0.1, endSec - startSec);
-            
-            exportSfxNodes.push({ node: sfxNode, time: triggerTime, duration: duration });
-          } catch(e) {}
-        }
-      }
-    });
-
-    const combinedTracks = [...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()];
-    const combinedStream = new MediaStream(combinedTracks);
-
-    let mimeType = "video/webm;codecs=vp9,opus";
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "video/webm";
-    const recorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 12000000 });
+    const tracks = [...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()];
+    let mime = "video/webm;codecs=vp9,opus";
+    if (!MediaRecorder.isTypeSupported(mime)) mime = "video/webm";
+    const recorder = new MediaRecorder(new MediaStream(tracks), { mimeType: mime, videoBitsPerSecond: 12000000 });
     const chunks = [];
-
     recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = "video_faceless_youtube_master.webm";
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "video_faceless_youtube_master.webm";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      btn.disabled = false; progInner.style.width = "100%";
-      statusEl.innerHTML = "✅ <b>¡Vídeo Master Pro descargado con éxito!</b>";
+      btn.disabled = false; inner.style.width = "100%"; isExportingVideo = false;
+      statusEl.innerHTML = "✅ <b>¡Vídeo descargado con éxito!</b>";
     };
-
-    currentTime = 0;
+    currentTime = 0; renderCurrentFrame();
     recorder.start(100);
-    const exportStartAt = audioCtx.currentTime;
-
-    if (exportVoiceNode) exportVoiceNode.start(exportStartAt, 0);
-
-    if (exportBgmNode) {
-      const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
-      exportBgmNode.start(exportStartAt, Math.max(0, offsetVal));
-    }
-
-    exportSfxNodes.forEach(sfx => {
-      try {
-        sfx.node.start(exportStartAt + sfx.time, 0, sfx.duration);
-      } catch(e) {}
-    });
-
-    function step() {
-      let elapsed = Math.max(0, audioCtx.currentTime - exportStartAt);
+    await waitMs(250);                                  // el grabador ya está activo antes de que suene nada
+    const startAt = audioCtx.currentTime + 0.1;
+    if (vNode) vNode.start(startAt, 0);
+    if (bNode) bNode.start(startAt, Math.max(0, (parseFloat($("bgmOffsetInput").value) || 0) % bgmBuffer.duration));
+    scheduleSfx(startAt, 0, [dest]);
+    const perfStart = performance.now() + 100;
+    const step = () => {
+      const elapsed = Math.max(0, audioCtx.currentTime - startAt);
       currentTime = Math.min(elapsed, totalDuration);
       updateTimeUI(); renderCurrentFrame();
-      let pct = Math.min(100, Math.round((currentTime / totalDuration) * 100));
-      progInner.style.width = pct + "%";
-      statusEl.textContent = `⏳ Renderizando: ${pct}%...`;
-      if (elapsed < totalDuration) { requestAnimationFrame(step); } else {
-        if (exportVoiceNode) { try{exportVoiceNode.stop();}catch(e){} }
-        if (exportBgmNode) { try{exportBgmNode.stop();}catch(e){} }
-        exportSfxNodes.forEach(s => { try{s.node.stop();}catch(e){} });
-        recorder.stop();
+      const pct = Math.min(100, Math.round(currentTime / totalDuration * 100));
+      inner.style.width = pct + "%"; statusEl.textContent = "⏳ Renderizando: " + pct + "%...";
+      if (elapsed < totalDuration) setTimeout(step, 16);   // setTimeout: sigue funcionando si cambias de pestaña
+      else {
+        if (vNode) try { vNode.stop(); } catch (e) {}
+        if (bNode) try { bNode.stop(); } catch (e) {}
+        stopSfxNodes();
+        setTimeout(() => recorder.stop(), 300);
       }
-    }
-    requestAnimationFrame(step);
+    };
+    step();
   } catch (err) {
-    alert("Error: " + err.message); btn.disabled = false; statusEl.textContent = "❌ Error en exportación.";
+    isExportingVideo = false; alert("Error: " + err.message); btn.disabled = false; statusEl.textContent = "❌ Error en exportación.";
   }
 }
-
 function toSrtTime(sec) {
-  const hrs = Math.floor(sec / 3600); const mins = Math.floor((sec % 3600) / 60);
-  const secs = Math.floor(sec % 60); const ms = Math.round((sec - Math.floor(sec)) * 1000);
-  return `${String(hrs).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")},${String(ms).padStart(3,"0")}`;
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+  let ms = Math.round((sec - Math.floor(sec)) * 1000), ss = s;
+  if (ms === 1000) { ms = 0; ss++; }
+  return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":" + String(ss).padStart(2, "0") + "," + String(ms).padStart(3, "0");
 }
-
+function downloadBlob(blob, name) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
 function downloadSRT() {
-  if (scenes.length === 0) return;
-  const srt = scenes.map((sc, i) => `${i+1}
-${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}
-${sc.text}
-`).join("
-");
-  const blob = new Blob([srt], { type: "text/plain;charset=utf-8" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "subtitulos.srt";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  if (!scenes.length) return;
+  const srt = scenes.map((sc, i) => (i + 1) + "\n" + toSrtTime(sc.start) + " --> " + toSrtTime(sc.end) + "\n" + sc.text + "\n").join("\n");
+  downloadBlob(new Blob([srt], { type: "text/plain;charset=utf-8" }), "subtitulos.srt");
 }
-
 function downloadProjectJSON() {
-  const data = JSON.stringify({ totalDuration, scenes }, null, 2);
-  const blob = new Blob([data], { type: "application/json" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "proyecto.json";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  downloadBlob(new Blob([JSON.stringify({ totalDuration, scenes }, null, 2)], { type: "application/json" }), "proyecto.json");
 }
 
+/* ============ INICIO ============ */
 window.addEventListener("DOMContentLoaded", () => {
-  const imageModelSelect = document.getElementById("aiImageModel");
-  if (imageModelSelect) {
-    try {
-      imageModelSelect.value = "cloudflare";
-      const workerUrl = localStorage.getItem("autovideo_cloudflare_worker_url") || IMAGE_WORKER_DEFAULT_URL;
-      const accessKey = localStorage.getItem("autovideo_cloudflare_access_key") || "";
-      document.getElementById("cloudflareWorkerUrl").value = workerUrl;
-      document.getElementById("cloudflareAccessKey").value = accessKey;
-    } catch (_) {}
-  }
-  Object.values(SUB_FONTS).forEach(def => { loadSubFontAsset(def).then(() => renderCurrentFrame()); });
-  renderCurrentFrame();
-  updateScriptStatus();
+  try {
+    $("aiImageModel").value = "cloudflare";
+    $("cloudflareWorkerUrl").value = localStorage.getItem("autovideo_cloudflare_worker_url") || IMAGE_WORKER_DEFAULT_URL;
+    $("cloudflareAccessKey").value = localStorage.getItem("autovideo_cloudflare_access_key") || "";
+  } catch (_) {}
+  changeAspectRatio($("aspectSelect").value);
+  Object.values(SUB_FONTS).forEach(def => loadSubFontAsset(def).then(renderCurrentFrame));
+  renderCurrentFrame(); updateScriptStatus();
 });
 </script>
 </body>
