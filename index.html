@@ -1081,6 +1081,12 @@ async function generateImagesFromPromptsAI() {
     showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount} en orden...`);
     let res = null;
     let success = false;
+    
+    // Pausa de cortesía anti-saturación para vídeos largos y cortos
+    if (i > 0) {
+      await new Promise(r => setTimeout(r, 600));
+    }
+
     try {
       res = await fetchCloudflareImage(imagePrompts[i], aspect, true);
       success = true;
@@ -1089,6 +1095,7 @@ async function generateImagesFromPromptsAI() {
       showAILog(`⚠️ Error en imagen ${i + 1}: ${escapeHtml(err.message)}. Reintentando sin referencia...`, true);
       if (autoVideoReferenceImageData) {
         try {
+          await new Promise(r => setTimeout(r, 800));
           res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
           success = true;
           refFallbackIndices.push(i + 1);
