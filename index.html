@@ -69,8 +69,8 @@
   .btn-amber { background: rgba(245, 158, 11, 0.18); border-color: var(--accent-amber); color: #fbbf24; }
 
   .workspace { display: grid; grid-template-columns: 240px 1fr 440px; flex: 1; overflow: hidden; }
-  .format-gate { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
-  .format-gate.hidden { display:none; }
+  .format-gate { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
+  .format-gate.hidden { display:none !important; pointer-events:none; }
   .format-panel { width:min(760px,100%); background:var(--bg-card,#111827); border:1px solid var(--border); border-radius:18px; padding:clamp(20px,4vw,36px); box-shadow:0 25px 80px #0009; }
   .format-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:22px 0; }
   .format-option { display:block; border:1px solid var(--border); background:var(--bg-input); border-radius:14px; padding:18px; cursor:pointer; }
@@ -98,7 +98,7 @@
   .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
   .card.ai-card { border-color: rgba(139, 92, 246, 0.45); background: linear-gradient(180deg, rgba(139, 92, 246, 0.07) 0%, var(--bg-panel) 100%); }
   .card h2 { font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-  .card p.sub { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 14px; }
+  .card p.sub, .sub { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 14px; }
 
   .dropzone { border: 2px dashed var(--border); background: var(--bg-input); border-radius: 10px; padding: 22px; text-align: center; cursor: pointer; transition: 0.2s; }
   .dropzone:hover { border-color: var(--accent); background: rgba(59, 130, 246, 0.08); }
@@ -139,7 +139,7 @@
   .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; }
   .settings-grid label { display: block; color: var(--text-muted); margin-bottom: 4px; }
   .status-banner { padding: 10px 12px; border-radius: 8px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.82rem; color: #93c5fd; }
-  .ai-log { padding: 10px 12px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.35); font-size: 0.82rem; color: #ddd6fe; margin-top: 10px; display: none; }
+  .ai-log { padding: 10px 12px; border-radius: 8px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.35); font-size: 0.82rem; color: #ddd6fe; margin-top: 10px; display: none; overflow-wrap: anywhere; }
   .progress-outer { width: 100%; height: 10px; background: var(--bg-input); border-radius: 99px; overflow: hidden; display: none; }
   .progress-inner { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.1s; }
 </style>
@@ -152,12 +152,27 @@
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
     <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos sincronizados y automatización por IA de tus efectos SFX.</p>
     <div class="format-options">
-      <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
-      <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
+      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="short" checked style="cursor:pointer;"> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
+      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="long" style="cursor:pointer;"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
     </div>
-    <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
+    <button type="button" id="startBtn" class="btn btn-primary" style="width:100%;padding:14px;cursor:pointer;position:relative;z-index:9999;justify-content:center;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
   </div>
 </div>
+
+<!-- Script de rescate: cierra el menú aunque el script principal tuviera algún error, y muestra el error en una barra roja -->
+<script>
+window.addEventListener('error', function (e) {
+  var b = document.getElementById('jsErr');
+  if (!b) { b = document.createElement('div'); b.id = 'jsErr'; b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:100000;background:#7f1d1d;color:#fff;padding:8px 12px;font:13px monospace'; document.body.appendChild(b); }
+  b.textContent = 'Error JS: ' + e.message + ' (línea ' + e.lineno + ')';
+});
+document.addEventListener('click', function (e) {
+  var t = e.target && e.target.closest ? e.target.closest('#startBtn') : null;
+  if (!t) return;
+  var g = document.getElementById('formatGate');
+  if (g) g.classList.add('hidden');
+});
+</script>
 
 <header>
   <div class="brand">
@@ -322,7 +337,7 @@
     <div class="tab-View" id="tab2">
       <div class="card">
         <h2>📝 2. Tu guion</h2>
-        <p class="sub">Pega aquí tu guion completo. AutoVideo lo dividirá en escenas proporcionales.</p>
+        <p class="sub">Pega aquí tu guion completo. Con audio cargado, AutoVideo detecta pausas y sincroniza cada escena y palabra con la voz.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
@@ -350,9 +365,11 @@
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
+            <button class="btn btn-amber" id="retryFailedImagesBtn" onclick="retryFailedImages()" disabled>🔁 Reintentar fallidas (0)</button>
             <button class="btn" onclick="clearAllImages()">🗑️ Vaciar</button>
           </div>
         </div>
+        <div id="aiStatusLog3" class="ai-log" style="margin:0 0 12px;"></div>
         <div class="dropzone" onclick="document.getElementById('imgInput').click()">
           <div style="font-size:1.8rem; margin-bottom:6px;">🖼️</div>
           <div style="font-weight:600;">Haz clic o arrastra tus imágenes aquí</div>
@@ -436,7 +453,7 @@
           <label>🎨 Color de los Subtítulos (Hex o Básico)</label>
           <div style="display:flex; gap:8px; align-items:center; margin-top:4px;">
             <input type="color" id="subColorPicker" value="#ffffff" style="width:40px; height:38px; padding:2px; cursor:pointer; background:var(--bg-input); border:1px solid var(--border); border-radius:8px;" oninput="document.getElementById('subColorText').value = this.value; renderCurrentFrame();">
-            <input type="text" id="subColorText" value="#ffffff" placeholder="#ffffff o white" style="flex:1;" oninput="document.getElementById('subColorPicker').value = isValidHex(this.value) ? this.value : '#ffffff'; renderCurrentFrame();">
+            <input type="text" id="subColorText" value="#ffffff" placeholder="#ffffff o white" style="flex:1;" oninput="document.getElementById('subColorPicker').value = isValidHex(this.value) && this.value.charAt(0)==='#' && (this.value.length===7) ? this.value : '#ffffff'; renderCurrentFrame();">
             <select id="subColorPreset" style="width:110px;" onchange="if(this.value){document.getElementById('subColorText').value = this.value; document.getElementById('subColorPicker').value = isValidHex(this.value)?this.value:'#ffffff'; renderCurrentFrame();}">
               <option value="">Básicos...</option>
               <option value="#ffffff">Blanco</option>
@@ -494,6 +511,8 @@
 let audioCtx = null;
 let voiceBuffer = null;
 let voiceAudioNode = null;
+let speechActivityMap = null;
+let isExportingVideo = false;
 let bgmBuffer = null;
 let activeBgmSource = null;
 
@@ -510,9 +529,12 @@ let playbackStartPerfTime = 0;
 let loadedImages = [];
 let scenes = [];
 let userSfxList = [];
+let imageGenerationInProgress = false;
+let currentImagePrompts = [];
 let lastPlayedSceneIndex = -1;
 let lastPlayedChunkIndex = -1;
 let triggeredSfxInCurrentScene = {};
+let activeSfxNodes = [];
 
 const EFFECTS = [
   "Sin movimiento", "Zoom In Suave", "Zoom Out Suave", "Zoom In Dramático",
@@ -712,6 +734,31 @@ function playAssignedSfx(id, startSec = 2.0, endSec = 3.0) {
   } catch(e) {}
 }
 
+// SFX programados sobre el reloj del AudioContext (misma referencia que la voz => sin desfase)
+function stopSfxNodes() {
+  activeSfxNodes.forEach(n => { try { n.stop(); } catch (e) {} });
+  activeSfxNodes = [];
+}
+
+function scheduleSfx(baseContextTime, fromTime, targets) {
+  scenes.forEach(sc => {
+    if (!sc.sfxId) return;
+    const item = userSfxList.find(x => x.id === sc.sfxId);
+    if (!item || !item.buffer) return;
+    const s = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
+    const e = sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0;
+    const trig = sc.start + s;
+    if (trig < fromTime - 0.02) return;
+    try {
+      const node = audioCtx.createBufferSource();
+      node.buffer = item.buffer;
+      targets.forEach(t => node.connect(t));
+      node.start(baseContextTime + (trig - fromTime), 0, Math.max(0.1, e - s));
+      activeSfxNodes.push(node);
+    } catch (err) {}
+  });
+}
+
 function autoDetectAndAssignSFXWithAI() {
   if (userSfxList.length === 0) {
     alert("Sube primero al menos un archivo SFX en la Pestaña 1.");
@@ -743,8 +790,14 @@ function autoDetectAndAssignSFXWithAI() {
     if (!best) return;
 
     const sceneDur = Math.max(0.1, sc.end - sc.start);
-    const frac = best.pos / Math.max(1, normText.length);
-    let startRel = Math.round(frac * sceneDur * 10) / 10;
+    let startRel;
+    const wordIdx = normText.slice(0, best.pos).trim().split(/\s+/).filter(Boolean).length;
+    if (sc.wordTimings && sc.wordTimings[wordIdx]) {
+      startRel = sc.wordTimings[wordIdx].start - sc.start;
+    } else {
+      startRel = (best.pos / Math.max(1, normText.length)) * sceneDur;
+    }
+    startRel = Math.round(startRel * 10) / 10;
     startRel = Math.max(0, Math.min(startRel, Math.max(0, sceneDur - 0.3)));
     const sfxLen = Math.min(best.sfx.buffer ? best.sfx.buffer.duration : 2.0, 4.0);
     const endRel = Math.round((startRel + Math.max(0.1, sfxLen)) * 10) / 10;
@@ -796,6 +849,8 @@ function handleReferenceImageSelection(event) {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
       ctx.drawImage(img, 0, 0, width, height);
 
       const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.80);
@@ -841,12 +896,14 @@ function switchTab(num) {
 }
 
 function showAILog(msg, isError = false) {
-  const el = document.getElementById("aiStatusLog");
-  if (!el) return;
-  el.style.display = "block";
-  el.style.borderColor = isError ? "#ef4444" : "rgba(139, 92, 246, 0.45)";
-  el.style.color = isError ? "#fca5a5" : "#ddd6fe";
-  el.innerHTML = msg;
+  ["aiStatusLog", "aiStatusLog3"].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = "block";
+    el.style.borderColor = isError ? "#ef4444" : "rgba(139, 92, 246, 0.45)";
+    el.style.color = isError ? "#fca5a5" : "#ddd6fe";
+    el.innerHTML = msg;
+  });
 }
 
 const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
@@ -884,15 +941,24 @@ async function testCloudflareWorker() {
     if (!res.ok || !data.ok) throw new Error(data.error || ("HTTP " + res.status));
     showAILog("✅ <b>Cloudflare conectado con éxito.</b>");
   } catch (err) {
-    showAILog("❌ <b>Error:</b> " + err.message, true);
+    showAILog("❌ <b>Error:</b> " + escapeHtml(err.message), true);
   }
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error("No se pudo leer la imagen."));
+    r.readAsDataURL(blob);
+  });
 }
 
 async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
   const workerUrl = getCloudflareWorkerUrl();
   const accessKey = getCloudflareAccessKey();
-  if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave de tu Worker.");
-  
+  if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave (APP_SECRET) de tu Worker en la Pestaña 0.");
+
   let cleanRefImage = null;
   let refMime = null;
   if (useReference && autoVideoReferenceImageData) {
@@ -909,29 +975,51 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
     payload.referenceImageMimeType = refMime;
   }
 
-  const response = await fetch(workerUrl + "/generate", {
-    method: "POST",
-    mode: "cors",
-    headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
-    body: JSON.stringify(payload)
-  });
-  
-  const rawText = await response.text();
-  let data = {};
+  const controller = new AbortController();
+  const requestTimeout = setTimeout(() => controller.abort(), 120000);
+  let response;
   try {
-    data = JSON.parse(rawText);
-  } catch (e) {
-    throw new Error("Respuesta inválida del Worker (no es JSON): " + rawText.substring(0, 100));
+    response = await fetch(workerUrl + "/generate", {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw new Error("La solicitud de imagen superó los 120 segundos (timeout).");
+    }
+    throw new Error("No se pudo conectar con el Worker (" + (err && err.message ? err.message : err) + ").");
+  } finally {
+    clearTimeout(requestTimeout);
   }
 
-  if (!response.ok) {
-    const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : ("HTTP " + response.status));
-    throw new Error(msg);
+  // El Worker puede devolver JSON o la imagen directamente
+  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  let dataUrl = "";
+  if (contentType.startsWith("image/")) {
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    dataUrl = await blobToDataURL(await response.blob());
+  } else {
+    const rawText = await response.text();
+    let data = {};
+    try {
+      data = JSON.parse(rawText);
+    } catch (e) {
+      throw new Error("Respuesta inválida del Worker (HTTP " + response.status + "): " + rawText.substring(0, 120));
+    }
+    if (!response.ok) {
+      const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : (data.message || ("HTTP " + response.status)));
+      throw new Error(msg);
+    }
+    const nested = data.result && typeof data.result === "object" ? data.result : {};
+    let v = data.dataURI || data.dataUrl || data.url || data.image || data.b64_json || nested.image || "";
+    if (v && !/^(data:|https?:)/.test(v)) v = "data:image/jpeg;base64," + v;
+    dataUrl = v;
   }
-
-  const dataUrl = data.dataURI || data.dataUrl || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
   if (!dataUrl) throw new Error("El Worker respondió OK pero no devolvió ninguna imagen.");
-  return await loadImageCrossOrigin(dataUrl, 180000);
+  return await loadImageCrossOrigin(dataUrl, 60000);
 }
 
 function loadImageCrossOrigin(url, timeoutMs = 45000) {
@@ -961,18 +1049,24 @@ function loadImageCrossOrigin(url, timeoutMs = 45000) {
           clearTimeout(timeoutId);
           resolve({ dataUrl: safeDataUrl, imgObj: localImg });
         };
+        localImg.onerror = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          reject(new Error("La imagen recibida está corrupta."));
+        };
         localImg.src = safeDataUrl;
       } catch (e) {
         settled = true;
         clearTimeout(timeoutId);
-        reject(new Error("Error al preparar imagen."));
+        reject(new Error("Error al preparar imagen: " + e.message));
       }
     };
     img.onerror = () => {
       if (settled) return;
       settled = true;
       clearTimeout(timeoutId);
-      reject(new Error("Error al cargar imagen."));
+      reject(new Error("Error al cargar la imagen recibida."));
     };
     img.src = url;
   });
@@ -981,7 +1075,7 @@ function loadImageCrossOrigin(url, timeoutMs = 45000) {
 function parseManualList(rawText) {
   if (!rawText || !rawText.trim()) return [];
   const negRegex = /,?\s*strictly no text, no words, no letters, no numbers, no typography, pure visual graphics\.?$/i;
-  const text = rawText.replace(/\r/g, "\n").trim();
+  const text = rawText.replace(/\r\n?/g, "\n").trim();
   const lines = text.split("\n");
 
   const startNumRegex = /^\s*(?:(?:\*\*|__)?(?:scene|escena|imagen|image|prompt|shot|paso)?\s*#?\s*\d+[\.\)\-:]|\d+[\.\)\-:])\s*/i;
@@ -991,7 +1085,7 @@ function parseManualList(rawText) {
   if (numberedLinesCount >= 2) {
     let current = "";
     for (const rawLine of lines) {
-      const line = rawLine.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim();
+      const line = rawLine.replace(/^[\u200b-\u200d\ufeff\s]+/, "").trim();
       if (!line) continue;
       if (startNumRegex.test(line)) {
         if (current) items.push(current.trim());
@@ -1007,7 +1101,7 @@ function parseManualList(rawText) {
     if (current) items.push(current.trim());
   } else {
     items = lines
-      .map(l => l.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+      .map(l => l.replace(/^[\u200b-\u200d\ufeff\s]+/, "").trim())
       .filter(Boolean)
       .map(l => l.replace(startNumRegex, "").trim());
   }
@@ -1018,7 +1112,129 @@ function parseManualList(rawText) {
     .filter(Boolean);
 }
 
+function isCloudflareImageQuotaError(error) {
+  const message = normalizeText(error && error.message ? error.message : String(error || ""));
+  return message.includes("4006") ||
+    message.includes("daily free allocation") ||
+    message.includes("used up your daily") ||
+    message.includes("quota exceeded") ||
+    message.includes("daily limit");
+}
+
+function waitMs(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Placeholder para una escena cuya imagen no se pudo generar (se puede reintentar sin perder el orden)
+function createPendingSceneImage(sceneNumber, prompt, reason) {
+  const c = document.createElement("canvas");
+  c.width = 1280; c.height = 720;
+  const ctx = c.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 1280, 720);
+  g.addColorStop(0, "#111827"); g.addColorStop(0.55, "#172554"); g.addColorStop(1, "#312e81");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.fillStyle = "rgba(15,23,42,.88)"; ctx.fillRect(115, 155, 1050, 405);
+  ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 4; ctx.strokeRect(115, 155, 1050, 405);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fbbf24"; ctx.font = "800 34px 'Segoe UI', sans-serif";
+  ctx.fillText("ESCENA " + sceneNumber + " · IMAGEN PENDIENTE", 640, 245);
+  ctx.fillStyle = "#f8fafc"; ctx.font = "700 54px 'Segoe UI', sans-serif";
+  ctx.fillText("REINTENTAR GENERACIÓN", 640, 330);
+  ctx.fillStyle = "#94a3b8"; ctx.font = "24px 'Segoe UI', sans-serif";
+  ctx.fillText("Pulsa «Reintentar fallidas» en Recursos Visuales", 640, 485);
+  return {
+    name: String(sceneNumber).padStart(3, "0") + "_PENDIENTE.png",
+    url: c.toDataURL("image/png"), imgObj: c, sceneIndex: sceneNumber - 1,
+    prompt: String(prompt || ""), isPending: true,
+    lastError: String(reason || "Error desconocido")
+  };
+}
+
+function updateRetryFailedButton() {
+  const btn = document.getElementById("retryFailedImagesBtn");
+  if (!btn) return;
+  const count = loadedImages.filter(item => item && item.isPending).length;
+  btn.textContent = `🔁 Reintentar fallidas (${count})`;
+  btn.disabled = imageGenerationInProgress || count === 0;
+}
+
+// Hasta 3 intentos por escena. Intento 1 con referencia (si existe); 2 y 3 sin ella.
+async function generateImageWithRetries(prompt, aspect, sceneNumber, totalCount) {
+  const maxAttempts = 3;
+  const hasReference = Boolean(autoVideoReferenceImageData);
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const useReference = hasReference && attempt === 1;
+    try {
+      const result = await fetchCloudflareImage(prompt, aspect, useReference);
+      return { result, usedReferenceFallback: hasReference && !useReference };
+    } catch (error) {
+      lastError = error;
+      console.warn(`Escena ${sceneNumber}, intento ${attempt}:`, error.message);
+      if (isCloudflareImageQuotaError(error)) throw error;
+      if (attempt < maxAttempts) {
+        showAILog(`⚠️ Escena ${sceneNumber}/${totalCount}: intento ${attempt}/${maxAttempts} fallido (${escapeHtml(error.message)}). Reintentando...`, true);
+        await waitMs(attempt * 2000);
+      }
+    }
+  }
+  throw lastError || new Error("No se pudo generar la imagen.");
+}
+
+async function retryPendingImageItems(items) {
+  if (imageGenerationInProgress) return;
+  const pending = items.filter(i => i && i.isPending && i.prompt);
+  if (pending.length === 0) { showAILog("No hay imágenes pendientes con un prompt guardado."); return; }
+
+  imageGenerationInProgress = true;
+  updateRetryFailedButton();
+  let recovered = 0, quotaError = null, lastMsg = "";
+  const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
+  try {
+    for (let k = 0; k < pending.length; k++) {
+      const item = pending[k];
+      if (loadedImages.indexOf(item) < 0) continue;
+      const n = (item.sceneIndex != null ? item.sceneIndex : loadedImages.indexOf(item)) + 1;
+      showAILog(`🔁 Reintentando imagen ${n} (${k + 1} de ${pending.length})...`);
+      try {
+        const g = await generateImageWithRetries(item.prompt, aspect, n, pending.length);
+        loadedImages[loadedImages.indexOf(item)] = {
+          name: String(n).padStart(3, "0") + "_IA.jpg", url: g.result.dataUrl, imgObj: g.result.imgObj,
+          sceneIndex: n - 1, prompt: item.prompt, isPending: false
+        };
+        recovered++;
+      } catch (e) {
+        lastMsg = e.message; item.lastError = e.message;
+        if (isCloudflareImageQuotaError(e)) { quotaError = e; break; }
+      }
+      renderMediaGrid(); renderSceneListUI(); renderCurrentFrame();
+      if (k < pending.length - 1) await waitMs(1200);
+    }
+  } finally {
+    imageGenerationInProgress = false;
+    renderMediaGrid(); renderSceneListUI(); renderCurrentFrame(); updateRetryFailedButton();
+  }
+  const still = loadedImages.filter(i => i && i.isPending).length;
+  if (still === 0) showAILog("✅ <b>Perfecto:</b> imágenes recuperadas. Ya puedes exportar.");
+  else if (quotaError) showAILog(`❌ <b>Cuota diaria de Cloudflare agotada.</b> Siguen ${still} pendientes.`, true);
+  else showAILog(`⚠️ <b>${recovered} recuperadas.</b> Quedan ${still}. Último error: <i>${escapeHtml(lastMsg)}</i>`, true);
+}
+
+async function retryFailedImages() {
+  await retryPendingImageItems(loadedImages.filter(item => item && item.isPending));
+}
+
+async function retryImageAtSlot(index) {
+  const item = loadedImages[index];
+  if (item && item.isPending) await retryPendingImageItems([item]);
+}
+
+// Bucle con reintentos automáticos de hasta 3 intentos por escena y pausas entre imágenes
 async function generateImagesFromPromptsAI() {
+  if (imageGenerationInProgress) {
+    showAILog("La generación actual sigue en marcha. Espera a que termine.", true);
+    return;
+  }
   const promptMode = document.getElementById("promptGenMode").value;
   const rawScript = document.getElementById("scriptArea").value.trim();
   const manualText = document.getElementById("aiManualPrompts19").value.trim();
@@ -1064,97 +1280,114 @@ async function generateImagesFromPromptsAI() {
   }
 
   const targetCount = imagePrompts.length;
+  currentImagePrompts = imagePrompts.slice();
   const promptsAreaEl = document.getElementById("promptsArea");
   if (promptsAreaEl) {
     promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("\n\n");
   }
 
+  imageGenerationInProgress = true;
   loadedImages = [];
   renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias en orden (1 a " + targetCount + ")...</b>");
+  switchTab(3);
+  showAILog("🎨 <b>Generando " + targetCount + " imágenes en orden...</b>");
 
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  let failedIndices = [];
-  let refFallbackIndices = [];
+  const failed = [], refFallback = [];
+  let quotaError = null, lastMsg = "";
 
-  for (let i = 0; i < targetCount; i++) {
-    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount} en orden...`);
-    let res = null;
-    let success = false;
-    
-    // Pausa de cortesía anti-saturación para vídeos largos y cortos
-    if (i > 0) {
-      await new Promise(r => setTimeout(r, 600));
-    }
+  try {
+    for (let i = 0; i < targetCount; i++) {
+      const n = i + 1;
+      // Pausa de 1.2 segundos entre imágenes para no saturar Cloudflare
+      if (i > 0 && !quotaError) await waitMs(1200);
 
-    try {
-      res = await fetchCloudflareImage(imagePrompts[i], aspect, true);
-      success = true;
-    } catch (err) {
-      console.error(`Error en escena ${i + 1}:`, err);
-      showAILog(`⚠️ Error en imagen ${i + 1}: ${escapeHtml(err.message)}. Reintentando sin referencia...`, true);
-      if (autoVideoReferenceImageData) {
+      let gen = null, failure = quotaError;
+      if (!quotaError) {
+        showAILog(`🎨 Generando imagen ${n} de ${targetCount}...`);
         try {
-          await new Promise(r => setTimeout(r, 800));
-          res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
-          success = true;
-          refFallbackIndices.push(i + 1);
-        } catch (err2) {
-          console.error(`Error (sin referencia) en escena ${i + 1}:`, err2);
-          showAILog(`❌ Falló definitivamente la imagen ${i + 1}: ${escapeHtml(err2.message)}`, true);
+          gen = await generateImageWithRetries(imagePrompts[i], aspect, n, targetCount);
+          if (gen.usedReferenceFallback) refFallback.push(n);
+        } catch (err) {
+          failure = err; lastMsg = err.message;
+          if (isCloudflareImageQuotaError(err)) quotaError = err;
         }
       }
+
+      if (gen && gen.result) {
+        loadedImages.push({
+          name: String(n).padStart(3, "0") + "_IA.jpg",
+          url: gen.result.dataUrl, imgObj: gen.result.imgObj,
+          sceneIndex: i, prompt: imagePrompts[i], isPending: false
+        });
+      } else {
+        loadedImages.push(createPendingSceneImage(n, imagePrompts[i], failure && failure.message));
+        failed.push(n);
+      }
+      renderMediaGrid();
     }
 
-    if (success && res) {
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA.jpg",
-        url: res.dataUrl,
-        imgObj: res.imgObj,
-        sceneIndex: i
-      });
+    autoSyncProject(false);
+
+    if (failed.length > 0) {
+      if (quotaError) {
+        showAILog(`❌ <b>Cuota diaria de Cloudflare agotada.</b> Faltan las imágenes #${failed.join(", ")}. Reintenta cuando se restablezca.`, true);
+      } else {
+        showAILog(`⚠️ <b>Faltan ${failed.length} imagen(es): #${failed.join(", ")}.</b> Último error: <i>${escapeHtml(lastMsg)}</i><br>Pulsa «Reintentar fallidas».`, true);
+      }
+    } else if (refFallback.length > 0) {
+      showAILog(`✅ <b>Todas las imágenes generadas.</b> Las escenas ${refFallback.join(", ")} se hicieron sin imagen de referencia.`);
     } else {
-      const fallbackPlaceholder = createProceduralSceneImage(
-        String(i + 1).padStart(3, "0") + "_Reintentar",
-        "#1e1b4b", "#0f172a", "#ef4444", "⚠️"
-      );
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA_Pendiente.png",
-        url: fallbackPlaceholder.url,
-        imgObj: fallbackPlaceholder.imgObj,
-        sceneIndex: i
-      });
-      failedIndices.push(i + 1);
+      showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron correctamente en orden!</b>");
     }
+  } catch (error) {
+    console.error(error);
+    showAILog("❌ Error inesperado: " + escapeHtml(error.message || String(error)), true);
+  } finally {
+    imageGenerationInProgress = false;
     renderMediaGrid();
+    updateRetryFailedButton();
   }
-
-  autoSyncProject(false);
-
-  if (failedIndices.length > 0) {
-    const failedStr = failedIndices.join(", ");
-    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>. Revisa la consola (F12) para ver el error exacto del Worker.`, true);
-  } else if (refFallbackIndices.length > 0) {
-    showAILog(`⚠️ Imágenes generadas en orden, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
-  } else {
-    showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron en orden con éxito!</b>");
-  }
-  switchTab(3);
 }
 
 async function handleVoiceUpload(file) {
   if (!file) return;
+  if (isPlaying) pausePlayback();
+  isDemoSynthMode = false;
   document.getElementById("voiceLabel").textContent = "✅ " + file.name;
   document.getElementById("st1").textContent = "Audio listo";
   document.getElementById("st1").classList.add("ok");
 
-  const arrayBuf = await file.arrayBuffer();
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
-  totalDuration = voiceBuffer.duration;
-  document.getElementById("seekSlider").max = totalDuration.toFixed(2);
-  autoSyncProject(false);
-  updateTimeUI();
+  try {
+    const arrayBuf = await file.arrayBuffer();
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
+    speechActivityMap = buildSpeechActivityMap(voiceBuffer);
+    totalDuration = voiceBuffer.duration;
+    currentTime = 0;
+    document.getElementById("seekSlider").max = totalDuration.toFixed(2);
+    drawWaveform(voiceBuffer);
+    autoSyncProject(false);
+    updateTimeUI();
+  } catch (err) {
+    speechActivityMap = null;
+    alert("No se pudo cargar el audio: " + err.message);
+  }
+}
+
+function drawWaveform(buffer) {
+  const c = document.getElementById("waveformCanvas");
+  if (!c || !buffer) return;
+  const ctx = c.getContext("2d"), w = c.width, h = c.height;
+  const data = buffer.getChannelData(0), step = Math.max(1, Math.floor(data.length / w));
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#3b82f6";
+  for (let x = 0; x < w; x++) {
+    let max = 0;
+    for (let j = 0; j < step; j += Math.max(1, Math.floor(step / 20))) max = Math.max(max, Math.abs(data[x * step + j] || 0));
+    const bh = Math.max(1, max * h * 0.95);
+    ctx.fillRect(x, (h - bh) / 2, 1, bh);
+  }
 }
 
 async function handleBgmUpload(file) {
@@ -1169,11 +1402,23 @@ function updateBgmVol(val) {
   document.getElementById("bgmVolText").textContent = val + "%";
 }
 
+// Divide en frases sin romper números como "1.500" (corta solo en . ! ? … seguidos de espacio)
+function splitSentences(text) {
+  const res = [];
+  let cur = "";
+  text.split(/\s+/).forEach(tok => {
+    cur += (cur ? " " : "") + tok;
+    if (/[.!?…]["”’')\]]*$/.test(tok)) { res.push(cur); cur = ""; }
+  });
+  if (cur) res.push(cur);
+  return res;
+}
+
 function splitScriptIntoScenes(rawText) {
   const paragraphs = String(rawText || "")
-    .replace(/\r/g, "\n")
+    .replace(/\r\n?/g, "\n")
     .split(/\n+/)
-    .map(p => p.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+    .map(p => p.replace(/^[\u200b-\u200d\ufeff\s]+/, "").trim())
     .filter(Boolean);
 
   const numberedCount = paragraphs.filter(p => /^\d+[\.\)\-:]\s+/.test(p)).length;
@@ -1184,8 +1429,7 @@ function splitScriptIntoScenes(rawText) {
   const sentences = [];
   for (const paragraph of paragraphs) {
     const cleanedParagraph = paragraph.replace(/^\d+[\.\)\-:]\s+/, "");
-    const parts = cleanedParagraph.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [cleanedParagraph];
-    for (const part of parts) {
+    for (const part of splitSentences(cleanedParagraph)) {
       if (part.trim()) sentences.push(part.trim());
     }
   }
@@ -1200,13 +1444,13 @@ function getWordSpeechWeight(word) {
   const raw = String(word || "");
   const normalized = raw.toLocaleLowerCase("es-ES").normalize("NFD");
   const plain = normalized.replace(/[\u0300-\u036f]/g, "");
-  const vowelGroups = (plain.match(/[aeiouü]+/g) || []).length;
+  const vowelGroups = (plain.match(/[aeiou\u00fc]+/g) || []).length;
   const fallbackUnits = Math.max(1, Math.ceil(plain.replace(/[^a-z0-9]/g, "").length / 4));
   let weight = Math.max(1, vowelGroups || fallbackUnits);
 
-  if (/[;,]/.test(raw)) weight += raw.includes(";") ? 1.5 : 0.8;
-  if (/:/.test(raw)) weight += 1.1;
-  if (/[.!?…]/.test(raw)) weight += 1.6;
+  if (/[;,]["”’')\]]*$/.test(raw)) weight += raw.includes(";") ? 1.5 : 0.8;
+  if (/:["”’')\]]*$/.test(raw)) weight += 1.1;
+  if (/[.!?…]["”’')\]]*$/.test(raw)) weight += 1.6;
   if (/[—–]/.test(raw)) weight += 1.0;
   return weight;
 }
@@ -1220,6 +1464,179 @@ function getSpeechTimingWeights(textOrWords) {
 
 function getSpeechTimingWeight(text) {
   return getSpeechTimingWeights(text).reduce((sum, weight) => sum + weight, 0);
+}
+
+// --- Detección real de voz/pausas en el audio (para cortar escenas y palabras donde de verdad se habla) ---
+function buildSpeechActivityMap(buffer) {
+  if (!buffer || !buffer.length || !buffer.sampleRate || !buffer.duration) return null;
+  try {
+    const duration = buffer.duration;
+    const hop = 0.02;
+    const frameCount = Math.ceil(duration / hop);
+    const rms = new Float32Array(frameCount);
+    const channels = [];
+    for (let c = 0; c < buffer.numberOfChannels; c++) channels.push(buffer.getChannelData(c));
+
+    for (let i = 0; i < frameCount; i++) {
+      const startSample = Math.floor(i * hop * buffer.sampleRate);
+      const endSample = Math.min(buffer.length, Math.floor(Math.min(duration, (i + 1) * hop) * buffer.sampleRate));
+      let sumSquares = 0, count = 0;
+      for (const channel of channels) {
+        for (let s = startSample; s < endSample; s += 2) {
+          const v = channel[s] || 0;
+          sumSquares += v * v;
+          count++;
+        }
+      }
+      rms[i] = count ? Math.sqrt(sumSquares / count) : 0;
+    }
+
+    const sorted = Array.from(rms).sort((a, b) => a - b);
+    const percentile = p => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))] || 0;
+    const noiseFloor = percentile(0.15);
+    const speechLevel = percentile(0.90);
+    if (speechLevel < 0.0012) return null;
+    let threshold = Math.max(0.0008, speechLevel * 0.085, noiseFloor * 2.2);
+    threshold = Math.min(threshold, speechLevel * 0.55);
+
+    const voiced = Array.from(rms, value => value >= threshold);
+
+    for (let i = 1; i < voiced.length - 1;) {
+      if (!voiced[i]) {
+        let j = i;
+        while (j < voiced.length && !voiced[j]) j++;
+        if (j < voiced.length && voiced[i - 1] && voiced[j] && j - i <= 2) {
+          for (let k = i; k < j; k++) voiced[k] = true;
+        }
+        i = Math.max(j, i + 1);
+      } else i++;
+    }
+    for (let i = 0; i < voiced.length;) {
+      if (voiced[i]) {
+        let j = i;
+        while (j < voiced.length && voiced[j]) j++;
+        if (j - i < 3) for (let k = i; k < j; k++) voiced[k] = false;
+        i = j;
+      } else i++;
+    }
+
+    const prefix = new Float64Array(frameCount + 1);
+    let activeFrames = 0;
+    for (let i = 0; i < frameCount; i++) {
+      const frameDuration = Math.max(0, Math.min(hop, duration - i * hop));
+      prefix[i + 1] = prefix[i] + (voiced[i] ? frameDuration : 0);
+      if (voiced[i]) activeFrames++;
+    }
+    const activeDuration = prefix[frameCount];
+    if (activeDuration < Math.min(0.35, duration * 0.08) || activeFrames < 4) return null;
+
+    const silenceIntervals = [];
+    for (let i = 0; i < frameCount;) {
+      if (!voiced[i]) {
+        let j = i;
+        while (j < frameCount && !voiced[j]) j++;
+        const start = i * hop;
+        const end = Math.min(duration, j * hop);
+        if (end - start >= 0.10 && start > 0.04 && end < duration - 0.04) {
+          silenceIntervals.push({ start, end, center: (start + end) / 2, duration: end - start });
+        }
+        i = j;
+      } else i++;
+    }
+
+    return { duration, hop, frameCount, voiced, prefix, activeDuration, silenceIntervals };
+  } catch (err) {
+    return null;
+  }
+}
+
+function speechSecondsAt(map, time) {
+  if (!map) return Math.max(0, time || 0);
+  const t = Math.max(0, Math.min(map.duration, Number(time) || 0));
+  if (t >= map.duration) return map.activeDuration;
+  const index = Math.max(0, Math.min(map.frameCount - 1, Math.floor(t / map.hop)));
+  const frameStart = index * map.hop;
+  const frameDuration = Math.max(0, Math.min(map.hop, map.duration - frameStart));
+  return map.prefix[index] + (map.voiced[index] ? Math.max(0, Math.min(frameDuration, t - frameStart)) : 0);
+}
+
+function wallTimeAtSpeechSeconds(map, target) {
+  if (!map) return Math.max(0, Number(target) || 0);
+  const wanted = Math.max(0, Math.min(map.activeDuration, Number(target) || 0));
+  if (wanted <= 0) {
+    const firstVoice = map.voiced.findIndex(Boolean);
+    return firstVoice < 0 ? 0 : firstVoice * map.hop;
+  }
+  if (wanted >= map.activeDuration) return map.duration;
+
+  let lo = 0, hi = map.frameCount - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (map.prefix[mid + 1] < wanted - 1e-7) lo = mid + 1;
+    else hi = mid;
+  }
+  const i = lo;
+  const before = map.prefix[i];
+  const after = map.prefix[i + 1];
+  if (map.voiced[i] && wanted > before + 1e-7 && wanted < after - 1e-7) {
+    return i * map.hop + (wanted - before);
+  }
+  if (Math.abs(wanted - after) <= 0.025) {
+    let j = i + 1;
+    while (j < map.frameCount && !map.voiced[j] && Math.abs(map.prefix[j] - wanted) < 1e-6) j++;
+    return Math.min(map.duration, j * map.hop);
+  }
+  if (map.voiced[i] && after > before) return i * map.hop + Math.max(0, Math.min(after - before, wanted - before));
+  return Math.min(map.duration, i * map.hop);
+}
+
+function snapSceneBoundaryToPause(target, map, minAllowed, maxAllowed, tolerance) {
+  if (!map || !map.silenceIntervals.length) return target;
+  let best = null;
+  let bestScore = Infinity;
+  for (const pause of map.silenceIntervals) {
+    if (pause.center < minAllowed || pause.center > maxAllowed) continue;
+    const distance = Math.abs(pause.center - target);
+    if (distance > tolerance) continue;
+    const score = distance - Math.min(0.12, Math.max(0, pause.duration - 0.10) * 0.30);
+    if (score < bestScore) { bestScore = score; best = pause.center; }
+  }
+  return best === null ? target : best;
+}
+
+function createWordTimings(text, start, end, activityMap) {
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const weights = getSpeechTimingWeights(words);
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0) || words.length;
+  const safeStart = Math.max(0, Number(start) || 0);
+  const safeEnd = Math.max(safeStart + 0.02, Number(end) || safeStart + 0.02);
+  const activeStart = activityMap ? speechSecondsAt(activityMap, safeStart) : 0;
+  const activeEnd = activityMap ? speechSecondsAt(activityMap, safeEnd) : 0;
+  const useActivity = !!activityMap && activeEnd - activeStart > 0.025;
+  let cumulative = 0;
+  return words.map((word, index) => {
+    const next = cumulative + (weights[index] || 1);
+    let wordStart, wordEnd;
+    if (useActivity) {
+      wordStart = wallTimeAtSpeechSeconds(activityMap, activeStart + (activeEnd - activeStart) * cumulative / totalWeight);
+      wordEnd = wallTimeAtSpeechSeconds(activityMap, activeStart + (activeEnd - activeStart) * next / totalWeight);
+    } else {
+      wordStart = safeStart + (safeEnd - safeStart) * cumulative / totalWeight;
+      wordEnd = safeStart + (safeEnd - safeStart) * next / totalWeight;
+    }
+    wordStart = Math.max(safeStart, Math.min(Math.max(safeStart, safeEnd - 0.015), wordStart));
+    wordEnd = Math.max(wordStart + 0.015, Math.min(safeEnd, wordEnd));
+    cumulative = next;
+    return { word, start: wordStart, end: wordEnd };
+  });
+}
+
+function refreshSceneWordTimings() {
+  const map = (voiceBuffer && !isDemoSynthMode) ? speechActivityMap : null;
+  scenes.forEach(scene => {
+    scene.wordTimings = createWordTimings(scene.text, scene.start, scene.end, map);
+  });
 }
 
 function updateScriptStatus() {
@@ -1323,11 +1740,12 @@ function renderMediaGrid() {
     const div = document.createElement("div");
     div.className = "media-item";
     div.innerHTML = `
-      <span class="m-badge">#${String(idx + 1).padStart(3, "0")}</span>
+      <span class="m-badge" style="${item.isPending ? 'background:rgba(245,158,11,.96);color:#111827;' : ''}">${item.isPending ? 'PENDIENTE' : '#' + String(idx + 1).padStart(3, "0")}</span>
       <button class="m-delete" onclick="removeImage(${idx})">×</button>
       <img src="${item.url}" alt="">
-      <div class="m-label">${escapeHtml(item.name)}</div>
+      <div class="m-label" style="${item.isPending ? 'color:#fbbf24;' : ''}" title="${escapeHtml(item.isPending ? item.lastError : item.name)}">${escapeHtml(item.name)}</div>
       <div class="m-controls">
+        ${item.isPending ? `<button onclick="retryImageAtSlot(${idx})" ${imageGenerationInProgress ? 'disabled' : ''} style="border-color:#f59e0b;color:#fbbf24;">↻ Reintentar esta imagen</button>` : ''}
         <div class="m-row-btns">
           <button onclick="moveImageLeft(${idx})" ${idx === 0 ? "disabled" : ""}>◀ Izq</button>
           <span style="font-size:0.68rem; color:var(--text-muted);">Pos ${idx+1}</span>
@@ -1342,6 +1760,7 @@ function renderMediaGrid() {
     grid.appendChild(div);
   });
   document.getElementById("st3").textContent = total + " imgs";
+  updateRetryFailedButton();
 }
 
 function distributeTextIntoTargetCount(lines, targetCount) {
@@ -1377,6 +1796,7 @@ function distributeTextIntoTargetCount(lines, targetCount) {
   }
 }
 
+// Sincronización: usa la duración real de la voz y ajusta los cortes a las pausas reales del audio
 function autoSyncProject(goToTimeline = true) {
   const rawScript = document.getElementById("scriptArea").value.trim();
   let lines = rawScript ? getScriptLines() : [];
@@ -1387,7 +1807,7 @@ function autoSyncProject(goToTimeline = true) {
   } else if (lines.length === 0) {
     lines = loadedImages.length > 0 ? loadedImages.map((_, i) => "Escena " + (i + 1)) : ["Escena inicial"];
   }
-  
+
   if (voiceBuffer && !isDemoSynthMode) {
     totalDuration = voiceBuffer.duration;
   } else if (!voiceBuffer && !isDemoSynthMode) {
@@ -1395,21 +1815,50 @@ function autoSyncProject(goToTimeline = true) {
   }
   document.getElementById("seekSlider").max = totalDuration.toFixed(2);
 
-  const weights = lines.map(l => Math.max(getSpeechTimingWeight(l), 1));
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-  let acc = 0; const cuts = [0.0];
-  for (let w of weights) {
-    acc += w;
-    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
+  const weights = lines.map(line => Math.max(getSpeechTimingWeight(line), 1));
+  const totalWeight = weights.reduce((a, b) => a + b, 0) || lines.length || 1;
+  const useActivity = !!(voiceBuffer && !isDemoSynthMode && speechActivityMap && speechActivityMap.activeDuration > 0);
+  const predictedCuts = [0];
+  let accumulatedWeight = 0;
+  for (let i = 0; i < lines.length - 1; i++) {
+    accumulatedWeight += weights[i];
+    const ratio = accumulatedWeight / totalWeight;
+    predictedCuts.push(useActivity
+      ? wallTimeAtSpeechSeconds(speechActivityMap, ratio * speechActivityMap.activeDuration)
+      : ratio * totalDuration);
   }
-  scenes = lines.map((text, idx) => ({
-    start: cuts[idx], end: cuts[idx + 1], text,
-    imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
-    effect: EFFECTS[idx % EFFECTS.length],
-    sfxId: "",
-    sfxStart: 2.0,
-    sfxEnd: 3.0
-  }));
+  predictedCuts.push(totalDuration);
+
+  const cuts = [0];
+  const minGap = Math.min(0.12, totalDuration / Math.max(4, lines.length * 3));
+  for (let i = 1; i < lines.length; i++) {
+    const predicted = predictedCuts[i];
+    const previous = cuts[i - 1];
+    const maxAllowed = Math.max(previous + minGap, totalDuration - (lines.length - i) * minGap);
+    const predictedSpan = Math.max(0.2, predictedCuts[i + 1] - predictedCuts[i - 1]);
+    const tolerance = Math.min(0.70, Math.max(0.22, predictedSpan * 0.20));
+    let cut = useActivity
+      ? snapSceneBoundaryToPause(predicted, speechActivityMap, previous + minGap, maxAllowed, tolerance)
+      : predicted;
+    cut = Math.max(previous + minGap, Math.min(maxAllowed, cut));
+    cuts.push(Number(cut.toFixed(3)));
+  }
+  cuts.push(totalDuration);
+
+  const oldScenes = scenes;
+  scenes = lines.map((text, idx) => {
+    const old = oldScenes.length === lines.length ? oldScenes[idx] : null;
+    return {
+      start: cuts[idx], end: cuts[idx + 1], text,
+      imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
+      effect: EFFECTS[idx % EFFECTS.length],
+      sfxId: old ? old.sfxId : "",
+      sfxStart: old ? old.sfxStart : 2.0,
+      sfxEnd: old ? old.sfxEnd : 3.0,
+      wordTimings: []
+    };
+  });
+  refreshSceneWordTimings();
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
   renderSceneListUI();
@@ -1428,25 +1877,25 @@ function renderSceneListUI() {
     let imgOptions = loadedImages.map((im, iIdx) => `<option value="${iIdx}" ${iIdx === sc.imgIndex ? "selected" : ""}>#${String(iIdx+1).padStart(3,"0")}</option>`).join("");
     if (!imgOptions) imgOptions = `<option value="-1">Sin imagen</option>`;
     let effectOptions = EFFECTS.map(ef => `<option value="${ef}" ${ef === sc.effect ? "selected" : ""}>${ef}</option>`).join("");
-    
-    let sfxOptions = `<option value="">Sin SFX</option>` + userSfxList.map(s => `<option value="${s.id}" ${s.id === sc.sfxId ? "selected" : ""}>${s.name}</option>`).join("");
+
+    let sfxOptions = `<option value="">Sin SFX</option>` + userSfxList.map(s => `<option value="${s.id}" ${s.id === sc.sfxId ? "selected" : ""}>${escapeHtml(s.name)}</option>`).join("");
 
     row.innerHTML = `
       <img class="scene-thumb" src="${thumbUrl}" onclick="seekTo(${sc.start})" style="cursor:pointer;">
       <div class="time-pair">
-        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
-        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); refreshSceneWordTimings(); renderCurrentFrame()" style="width:60px">s</div>
+        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); refreshSceneWordTimings(); renderCurrentFrame()" style="width:60px">s</div>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderSceneListUI(); renderCurrentFrame()">${imgOptions}</select>
         <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
       </div>
-      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
+      <div><input type="text" value="${escapeHtml(sc.text)}" oninput="scenes[${idx}].text=this.value; scenes[${idx}].wordTimings=[]" onchange="refreshSceneWordTimings(); renderCurrentFrame()"></div>
       <div style="display:flex; flex-direction:column; gap:3px;">
         <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:0.75rem;">${sfxOptions}</select>
         <div style="font-size:0.68rem; color:var(--text-muted); display:flex; gap:2px;">
-          <span>Emp:<input type="number" step="0.1" value="${sc.sfxStart !== undefined ? sc.sfxStart : 2.0}" onchange="scenes[${idx}].sfxStart=Number(this.value)" style="width:36px; font-size:0.68rem; padding:1px;"></span>
-          <span>Acab:<input type="number" step="0.1" value="${sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0}" onchange="scenes[${idx}].sfxEnd=Number(this.value)" style="width:36px; font-size:0.68rem; padding:1px;"></span>
+          <span>Emp:<input type="number" step="0.1" value="${sc.sfxStart !== undefined ? sc.sfxStart : 2.0}" onchange="scenes[${idx}].sfxStart=Number(this.value)" style="width:40px; font-size:0.68rem; padding:1px;"></span>
+          <span>Acab:<input type="number" step="0.1" value="${sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0}" onchange="scenes[${idx}].sfxEnd=Number(this.value)" style="width:40px; font-size:0.68rem; padding:1px;"></span>
         </div>
       </div>
       <button class="btn" onclick="scenes.splice(${idx},1); renderSceneListUI(); renderCurrentFrame()" style="padding:6px 9px;">🗑️</button>
@@ -1457,7 +1906,8 @@ function renderSceneListUI() {
 
 function addBlankScene() {
   const lastEnd = scenes.length > 0 ? scenes[scenes.length - 1].end : 0;
-  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length > 0 ? 0 : -1, effect: EFFECTS[0], sfxId: "", sfxStart: 2.0, sfxEnd: 3.0 });
+  scenes.push({ start: lastEnd, end: lastEnd + 3.0, text: "Nueva escena...", imgIndex: loadedImages.length > 0 ? 0 : -1, effect: EFFECTS[0], sfxId: "", sfxStart: 2.0, sfxEnd: 3.0, wordTimings: [] });
+  refreshSceneWordTimings();
   renderSceneListUI(); renderCurrentFrame();
 }
 
@@ -1484,6 +1934,8 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
     return;
   }
   const img = imgEntry.imgObj;
+  const iw = img.width || img.naturalWidth, ih = img.height || img.naturalHeight;
+  if (!iw || !ih) return;
   const fitMode = document.getElementById("fitSelect").value;
   let zoom = 1.0, offsetX = 0, offsetY = 0;
   const p = Math.max(0, Math.min(1, progress));
@@ -1498,18 +1950,18 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
   else if (scene.effect === "Movimiento Ken Burns") { zoom = 1.04 + 0.08 * p; offsetX = (p - 0.5) * w * 0.045; offsetY = (0.5 - p) * h * 0.025; }
   else if (scene.effect === "Pulso Suave") zoom = 1.04 + 0.035 * Math.sin(p * Math.PI * 2);
 
-  const imgRatio = img.width / img.height; const canvasRatio = w / h;
+  const imgRatio = iw / ih; const canvasRatio = w / h;
   if (fitMode === "blur") {
     ctx.save(); ctx.filter = "blur(22px) brightness(0.6)";
-    const bgScale = Math.max(w / img.width, h / img.height) * 1.2;
-    ctx.drawImage(img, (w - img.width * bgScale) / 2, (h - img.height * bgScale) / 2, img.width * bgScale, img.height * bgScale);
+    const bgScale = Math.max(w / iw, h / ih) * 1.2;
+    ctx.drawImage(img, (w - iw * bgScale) / 2, (h - ih * bgScale) / 2, iw * bgScale, ih * bgScale);
     ctx.restore();
     let baseW = imgRatio > canvasRatio ? w : h * imgRatio;
     let baseH = imgRatio > canvasRatio ? w / imgRatio : h;
     ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
   } else {
-    const scale = Math.max(w / img.width, h / img.height) * zoom;
-    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - baseH * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+    const scale = Math.max(w / iw, h / ih) * zoom;
+    ctx.drawImage(img, (w - iw * scale) / 2 + offsetX, (h - ih * scale) / 2 + offsetY, iw * scale, ih * scale);
   }
 }
 
@@ -1520,24 +1972,42 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const words = scene.text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return;
 
-  const wordWeights = getSpeechTimingWeights(words);
-  const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0);
-  const sceneDuration = Math.max(0.1, scene.end - scene.start);
-  const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
-  const weightedTime = Math.min(
-    Math.max(0, totalSpeechWeight - 0.000001),
-    (timeInScene / sceneDuration) * totalSpeechWeight
-  );
-
   let activeWordIndex = 0;
-  let accumulatedWeight = 0;
-  for (let i = 0; i < wordWeights.length; i++) {
-    if (weightedTime < accumulatedWeight + wordWeights[i]) {
-      activeWordIndex = i;
-      break;
+  const preciseWordTiming = Array.isArray(scene.wordTimings) && scene.wordTimings.length === words.length;
+  if (preciseWordTiming) {
+    const timings = scene.wordTimings;
+    if (currentTime < timings[0].start - 0.025) return;
+    let found = false;
+    for (let i = 0; i < timings.length; i++) {
+      if (currentTime >= timings[i].start && currentTime < timings[i].end) {
+        activeWordIndex = i;
+        found = true;
+        break;
+      }
     }
-    accumulatedWeight += wordWeights[i];
-    activeWordIndex = Math.min(i + 1, words.length - 1);
+    if (!found) {
+      activeWordIndex = currentTime >= timings[timings.length - 1].end
+        ? words.length - 1
+        : Math.max(0, timings.findIndex(t => currentTime < t.end));
+    }
+  } else {
+    const wordWeights = getSpeechTimingWeights(words);
+    const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0) || words.length;
+    const sceneDuration = Math.max(0.1, scene.end - scene.start);
+    const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
+    const weightedTime = Math.min(
+      Math.max(0, totalSpeechWeight - 0.000001),
+      (timeInScene / sceneDuration) * totalSpeechWeight
+    );
+    let accumulatedWeight = 0;
+    for (let i = 0; i < wordWeights.length; i++) {
+      if (weightedTime < accumulatedWeight + wordWeights[i]) {
+        activeWordIndex = i;
+        break;
+      }
+      accumulatedWeight += wordWeights[i];
+      activeWordIndex = Math.min(i + 1, words.length - 1);
+    }
   }
 
   const activeChunkIndex = Math.floor(activeWordIndex / 3);
@@ -1599,25 +2069,6 @@ function renderCurrentFrame() {
   const ctx = canvas.getContext("2d"); const w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
   const idx = findSceneIndexAtTime(currentTime);
-  
-  if (isPlaying && idx >= 0 && scenes[idx]) {
-    const sc = scenes[idx];
-    if (sc.sfxId) {
-      const targetStart = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
-      const targetEnd = sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0;
-      const timeInScene = currentTime - sc.start;
-      const key = idx + "_" + sc.sfxId;
-      
-      if (timeInScene >= targetStart && timeInScene <= (targetStart + 0.1)) {
-        if (!triggeredSfxInCurrentScene[key]) {
-          triggeredSfxInCurrentScene[key] = true;
-          playAssignedSfx(sc.sfxId, targetStart, targetEnd);
-        }
-      } else if (timeInScene < targetStart - 0.2) {
-        triggeredSfxInCurrentScene[key] = false;
-      }
-    }
-  }
 
   if (idx < 0 || !scenes[idx]) {
     ctx.fillStyle = "#131b2e"; ctx.fillRect(0, 0, w, h);
@@ -1644,27 +2095,55 @@ function seekTo(val) {
 }
 function togglePlay() { if (scenes.length === 0) { alert("Sincroniza primero."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
 
+// Reloj de lo que se OYE realmente: compensa la latencia de salida del audio (evita el desfase imagen/subtítulo vs voz)
+function getAudibleAudioContextTime() {
+  if (!audioCtx) return 0;
+  try {
+    if (typeof audioCtx.getOutputTimestamp === "function") {
+      const stamp = audioCtx.getOutputTimestamp();
+      if (stamp && Number.isFinite(stamp.contextTime) && Number.isFinite(stamp.performanceTime) && stamp.performanceTime > 0) {
+        const extrapolated = stamp.contextTime + Math.max(0, (performance.now() - stamp.performanceTime) / 1000);
+        return Math.max(0, Math.min(audioCtx.currentTime, extrapolated));
+      }
+    }
+  } catch (_) {}
+  const latency = Number(audioCtx.outputLatency) || Number(audioCtx.baseLatency) || 0;
+  return Math.max(0, audioCtx.currentTime - Math.min(0.35, Math.max(0, latency)));
+}
+
+function getPlaybackElapsedSeconds(now) {
+  if (audioCtx && playbackStartContextTime !== null) {
+    return Math.max(0, getAudibleAudioContextTime() - playbackStartContextTime);
+  }
+  return Math.max(0, ((now || performance.now()) - playbackStartPerfTime) / 1000);
+}
+
+function stopAllPlaybackAudio() {
+  if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} voiceAudioNode = null; }
+  if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} activeBgmSource = null; }
+  stopSfxNodes();
+}
+
 async function startPlayback() {
   if (currentTime >= totalDuration - 0.1) currentTime = 0;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") await audioCtx.resume();
+  stopAllPlaybackAudio();
 
   playbackStartOffset = currentTime;
-  playbackStartContextTime = audioCtx.currentTime;
+  playbackStartContextTime = audioCtx.currentTime + 0.05;
   playbackStartPerfTime = performance.now();
   isPlaying = true;
   document.getElementById("playBtn").textContent = "⏸ Pausa";
 
   if (voiceBuffer && !isDemoSynthMode) {
-    if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} }
     voiceAudioNode = audioCtx.createBufferSource();
     voiceAudioNode.buffer = voiceBuffer;
     voiceAudioNode.connect(audioCtx.destination);
-    voiceAudioNode.start(playbackStartContextTime, playbackStartOffset);
+    voiceAudioNode.start(playbackStartContextTime, Math.min(playbackStartOffset, voiceBuffer.duration - 0.01));
   }
 
   if (bgmBuffer) {
-    if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} }
     activeBgmSource = audioCtx.createBufferSource();
     activeBgmSource.buffer = bgmBuffer;
     activeBgmSource.loop = true;
@@ -1673,42 +2152,40 @@ async function startPlayback() {
     activeBgmSource.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
-    activeBgmSource.start(playbackStartContextTime, Math.max(0, offsetVal + playbackStartOffset));
+    activeBgmSource.start(playbackStartContextTime, Math.max(0, (offsetVal + playbackStartOffset) % bgmBuffer.duration));
   }
 
+  scheduleSfx(playbackStartContextTime, playbackStartOffset, [audioCtx.destination]);
+
   lastFrameTimestamp = performance.now();
+  lastPlayedChunkIndex = -1;
   animFrameId = requestAnimationFrame(playbackLoop);
 }
 
 function pausePlayback() {
-  if (isPlaying && audioCtx && playbackStartContextTime !== null) {
-    const elapsed = Math.max(0, audioCtx.currentTime - playbackStartContextTime);
+  if (isPlaying && playbackStartContextTime !== null) {
+    const elapsed = getPlaybackElapsedSeconds(performance.now());
     currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + elapsed));
   }
   isPlaying = false;
   playbackStartContextTime = null;
   document.getElementById("playBtn").textContent = "▶ Play";
-  if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} voiceAudioNode = null; }
-  if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} activeBgmSource = null; }
+  stopAllPlaybackAudio();
   if (animFrameId) cancelAnimationFrame(animFrameId);
+  animFrameId = null;
   updateTimeUI();
   renderCurrentFrame();
 }
 
 function playbackLoop(now) {
   if (!isPlaying) return;
-  let elapsed;
-  if (audioCtx && playbackStartContextTime !== null) {
-    elapsed = audioCtx.currentTime - playbackStartContextTime;
-  } else {
-    elapsed = (now - playbackStartPerfTime) / 1000;
-  }
+  const elapsed = getPlaybackElapsedSeconds(now);
   currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + Math.max(0, elapsed)));
   if (currentTime >= totalDuration) {
+    pausePlayback();
     currentTime = totalDuration;
     updateTimeUI();
     renderCurrentFrame();
-    pausePlayback();
     return;
   }
   updateTimeUI();
@@ -1717,7 +2194,7 @@ function playbackLoop(now) {
 }
 
 function loadBuiltInDemo() {
-  pausePlayback(); isDemoSynthMode = true; totalDuration = 15.0; currentTime = 0.0;
+  pausePlayback(); isDemoSynthMode = true; speechActivityMap = null; totalDuration = 15.0; currentTime = 0.0;
   document.getElementById("seekSlider").max = totalDuration;
   document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas viven de él.";
   updateScriptStatus();
@@ -1739,13 +2216,18 @@ function createProceduralSceneImage(title, topColor, bottomColor, accentColor, i
   ctx.fillStyle = accentColor; ctx.globalAlpha = 0.22; ctx.beginPath(); ctx.arc(640, 320, 230, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1.0;
   ctx.font = "130px 'Segoe UI Emoji'"; ctx.textAlign = "center"; ctx.fillText(iconText, 640, 320);
   ctx.font = "700 34px 'Segoe UI'"; ctx.fillStyle = "#fff"; ctx.fillText(title, 640, 460);
-  const url = c.toDataURL("image/png"); const img = new Image(); img.src = url;
-  return { name: title + ".png", url, imgObj: img };
+  const url = c.toDataURL("image/png"); return { name: title + ".png", url, imgObj: c };
 }
 
 async function exportVideoYouTubeMaster() {
   if (scenes.length === 0) { alert("Sincroniza el guion antes de exportar."); return; }
+  const pendingImages = loadedImages.filter(item => item && item.isPending).length;
+  if (pendingImages > 0 && !confirm(`Hay ${pendingImages} imagen(es) pendientes (placeholder). ¿Exportar igualmente? Pulsa Cancelar para reintentarlas primero.`)) {
+    switchTab(3);
+    return;
+  }
   pausePlayback();
+  isExportingVideo = true;
   const statusEl = document.getElementById("exportStatus");
   const progOuter = document.getElementById("exportProgressOuter");
   const progInner = document.getElementById("exportProgressInner");
@@ -1759,50 +2241,27 @@ async function exportVideoYouTubeMaster() {
     const canvasStream = canvas.captureStream(30);
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === "suspended") await audioCtx.resume();
+    stopAllPlaybackAudio();
 
     const dest = audioCtx.createMediaStreamDestination();
-    let exportVoiceNode = null; 
+    let exportVoiceNode = null;
     let exportBgmNode = null;
 
     if (voiceBuffer && !isDemoSynthMode) {
       exportVoiceNode = audioCtx.createBufferSource();
       exportVoiceNode.buffer = voiceBuffer;
-      exportVoiceNode.connect(dest); 
-      exportVoiceNode.connect(audioCtx.destination);
+      exportVoiceNode.connect(dest);
     }
-    
+
     if (bgmBuffer) {
       exportBgmNode = audioCtx.createBufferSource();
-      exportBgmNode.buffer = bgmBuffer; 
+      exportBgmNode.buffer = bgmBuffer;
       exportBgmNode.loop = true;
       const gainNode = audioCtx.createGain();
       gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
-      exportBgmNode.connect(gainNode); 
-      gainNode.connect(dest); 
-      gainNode.connect(audioCtx.destination);
+      exportBgmNode.connect(gainNode);
+      gainNode.connect(dest);
     }
-
-    const exportSfxNodes = [];
-    scenes.forEach(sc => {
-      if (sc.sfxId) {
-        const item = userSfxList.find(x => x.id === sc.sfxId);
-        if (item && item.buffer) {
-          try {
-            const sfxNode = audioCtx.createBufferSource();
-            sfxNode.buffer = item.buffer;
-            sfxNode.connect(dest);
-            sfxNode.connect(audioCtx.destination);
-            
-            const startSec = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
-            const endSec = sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0;
-            const triggerTime = sc.start + startSec;
-            const duration = Math.max(0.1, endSec - startSec);
-            
-            exportSfxNodes.push({ node: sfxNode, time: triggerTime, duration: duration });
-          } catch(e) {}
-        }
-      }
-    });
 
     const combinedTracks = [...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()];
     const combinedStream = new MediaStream(combinedTracks);
@@ -1819,25 +2278,24 @@ async function exportVideoYouTubeMaster() {
       const a = document.createElement("a"); a.href = url; a.download = "video_faceless_youtube_master.webm";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       btn.disabled = false; progInner.style.width = "100%";
+      isExportingVideo = false;
       statusEl.innerHTML = "✅ <b>¡Vídeo Master Pro descargado con éxito!</b>";
     };
 
     currentTime = 0;
+    renderCurrentFrame();
     recorder.start(100);
-    const exportStartAt = audioCtx.currentTime;
+    await waitMs(250); // el grabador ya está activo antes de que empiece el audio
+    const exportStartAt = audioCtx.currentTime + 0.1;
 
     if (exportVoiceNode) exportVoiceNode.start(exportStartAt, 0);
 
     if (exportBgmNode) {
       const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
-      exportBgmNode.start(exportStartAt, Math.max(0, offsetVal));
+      exportBgmNode.start(exportStartAt, Math.max(0, offsetVal % bgmBuffer.duration));
     }
 
-    exportSfxNodes.forEach(sfx => {
-      try {
-        sfx.node.start(exportStartAt + sfx.time, 0, sfx.duration);
-      } catch(e) {}
-    });
+    scheduleSfx(exportStartAt, 0, [dest]);
 
     function step() {
       let elapsed = Math.max(0, audioCtx.currentTime - exportStartAt);
@@ -1846,15 +2304,16 @@ async function exportVideoYouTubeMaster() {
       let pct = Math.min(100, Math.round((currentTime / totalDuration) * 100));
       progInner.style.width = pct + "%";
       statusEl.textContent = `⏳ Renderizando: ${pct}%...`;
-      if (elapsed < totalDuration) { requestAnimationFrame(step); } else {
+      if (elapsed < totalDuration) { setTimeout(step, 16); } else {
         if (exportVoiceNode) { try{exportVoiceNode.stop();}catch(e){} }
         if (exportBgmNode) { try{exportBgmNode.stop();}catch(e){} }
-        exportSfxNodes.forEach(s => { try{s.node.stop();}catch(e){} });
-        recorder.stop();
+        stopSfxNodes();
+        setTimeout(() => recorder.stop(), 300);
       }
     }
-    requestAnimationFrame(step);
+    step();
   } catch (err) {
+    isExportingVideo = false;
     alert("Error: " + err.message); btn.disabled = false; statusEl.textContent = "❌ Error en exportación.";
   }
 }
@@ -1891,6 +2350,7 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("cloudflareAccessKey").value = accessKey;
     } catch (_) {}
   }
+  changeAspectRatio(document.getElementById("aspectSelect").value);
   Object.values(SUB_FONTS).forEach(def => { loadSubFontAsset(def).then(() => renderCurrentFrame()); });
   renderCurrentFrame();
   updateScriptStatus();
