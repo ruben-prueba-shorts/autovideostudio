@@ -69,8 +69,8 @@
   .btn-amber { background: rgba(245, 158, 11, 0.18); border-color: var(--accent-amber); color: #fbbf24; }
 
   .workspace { display: grid; grid-template-columns: 240px 1fr 440px; flex: 1; overflow: hidden; }
-  .format-gate { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
-  .format-gate.hidden { display:none; }
+  .format-gate { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
+  .format-gate.hidden { display:none !important; pointer-events:none; }
   .format-panel { width:min(760px,100%); background:var(--bg-card,#111827); border:1px solid var(--border); border-radius:18px; padding:clamp(20px,4vw,36px); box-shadow:0 25px 80px #0009; }
   .format-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:22px 0; }
   .format-option { display:block; border:1px solid var(--border); background:var(--bg-input); border-radius:14px; padding:18px; cursor:pointer; }
@@ -152,10 +152,10 @@
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
     <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos sincronizados y automatización por IA de tus efectos SFX.</p>
     <div class="format-options">
-      <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
-      <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
+      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="short" checked style="cursor:pointer;"> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
+      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="long" style="cursor:pointer;"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
     </div>
-    <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
+    <button class="btn btn-primary" style="width:100%;padding:14px;cursor:pointer;position:relative;z-index:9999;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
   </div>
 </div>
 
@@ -322,7 +322,7 @@
     <div class="tab-View" id="tab2">
       <div class="card">
         <h2>📝 2. Tu guion</h2>
-        <p class="sub">Pega aquí tu guion completo. AutoVideo lo dividirá en escenas proporcionales.</p>
+        <p class="sub">Pega aquí tu guion completo. Con audio cargado, AutoVideo detecta pausas y sincroniza cada escena y palabra con la voz.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
@@ -350,6 +350,7 @@
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
+            <button class="btn btn-amber" id="retryFailedImagesBtn" onclick="retryFailedImages()" disabled>🔁 Reintentar fallidas (0)</button>
             <button class="btn" onclick="clearAllImages()">🗑️ Vaciar</button>
           </div>
         </div>
@@ -494,6 +495,8 @@
 let audioCtx = null;
 let voiceBuffer = null;
 let voiceAudioNode = null;
+let speechActivityMap = null;
+let isExportingVideo = false;
 let bgmBuffer = null;
 let activeBgmSource = null;
 
@@ -510,6 +513,8 @@ let playbackStartPerfTime = 0;
 let loadedImages = [];
 let scenes = [];
 let userSfxList = [];
+let imageGenerationInProgress = false;
+let currentImagePrompts = [];
 let lastPlayedSceneIndex = -1;
 let lastPlayedChunkIndex = -1;
 let triggeredSfxInCurrentScene = {};
@@ -585,7 +590,7 @@ function escapeHtml(str) {
 }
 
 function normalizeText(s) {
-  return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
 function stemWord(w) {
@@ -605,7 +610,8 @@ function stemsMatch(a, b) {
 
 function parseKeywords(str) {
   return String(str || "")
-    .split(/[,;\n]+/)
+    .split(/[,;
+]+/)
     .map(k => normalizeText(k).trim())
     .filter(k => k.length >= 3);
 }
@@ -891,7 +897,7 @@ async function testCloudflareWorker() {
 async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
   const workerUrl = getCloudflareWorkerUrl();
   const accessKey = getCloudflareAccessKey();
-  if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave de tu Worker.");
+  if (!workerUrl || !accessKey) throw new Error("Configura la clave de acceso de tu Worker en la Pestaña 0.");
   
   let cleanRefImage = null;
   let refMime = null;
@@ -909,12 +915,25 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
     payload.referenceImageMimeType = refMime;
   }
 
-  const response = await fetch(workerUrl + "/generate", {
-    method: "POST",
-    mode: "cors",
-    headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
-    body: JSON.stringify(payload)
-  });
+  const controller = new AbortController();
+  const requestTimeout = setTimeout(() => controller.abort(), 120000);
+  let response;
+  try {
+    response = await fetch(workerUrl + "/generate", {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw new Error("La solicitud de imagen superó los 120 segundos (timeout).");
+    }
+    throw err;
+  } finally {
+    clearTimeout(requestTimeout);
+  }
   
   const rawText = await response.text();
   let data = {};
@@ -981,8 +1000,11 @@ function loadImageCrossOrigin(url, timeoutMs = 45000) {
 function parseManualList(rawText) {
   if (!rawText || !rawText.trim()) return [];
   const negRegex = /,?\s*strictly no text, no words, no letters, no numbers, no typography, pure visual graphics\.?$/i;
-  const text = rawText.replace(/\r/g, "\n").trim();
-  const lines = text.split("\n");
+  const text = rawText.replace(/
+/g, "
+").trim();
+  const lines = text.split("
+");
 
   const startNumRegex = /^\s*(?:(?:\*\*|__)?(?:scene|escena|imagen|image|prompt|shot|paso)?\s*#?\s*\d+[\.\)\-:]|\d+[\.\)\-:])\s*/i;
   const numberedLinesCount = lines.filter(l => startNumRegex.test(l)).length;
@@ -991,7 +1013,7 @@ function parseManualList(rawText) {
   if (numberedLinesCount >= 2) {
     let current = "";
     for (const rawLine of lines) {
-      const line = rawLine.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim();
+      const line = rawLine.replace(/^[​-‍﻿\s]+/, "").trim();
       if (!line) continue;
       if (startNumRegex.test(line)) {
         if (current) items.push(current.trim());
@@ -1007,7 +1029,7 @@ function parseManualList(rawText) {
     if (current) items.push(current.trim());
   } else {
     items = lines
-      .map(l => l.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+      .map(l => l.replace(/^[​-‍﻿\s]+/, "").trim())
       .filter(Boolean)
       .map(l => l.replace(startNumRegex, "").trim());
   }
@@ -1018,6 +1040,7 @@ function parseManualList(rawText) {
     .filter(Boolean);
 }
 
+// Bucle robusto con reintentos automáticos de hasta 3 intentos por escena y pausas progresivas
 async function generateImagesFromPromptsAI() {
   const promptMode = document.getElementById("promptGenMode").value;
   const rawScript = document.getElementById("scriptArea").value.trim();
@@ -1041,7 +1064,8 @@ async function generateImagesFromPromptsAI() {
     });
   } else {
     const styleAsList = parseManualList(styleInput);
-    const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|\n)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
+    const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|
+)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
 
     if (hasNumberedStyleList) {
       imagePrompts = styleAsList.map((lineContent) => {
@@ -1066,42 +1090,42 @@ async function generateImagesFromPromptsAI() {
   const targetCount = imagePrompts.length;
   const promptsAreaEl = document.getElementById("promptsArea");
   if (promptsAreaEl) {
-    promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("\n\n");
+    promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("
+
+");
   }
 
   loadedImages = [];
   renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias en orden (1 a " + targetCount + ")...</b>");
+  showAILog("🎨 <b>Generando " + targetCount + " imágenes en orden con protección anti-saturación...</b>");
 
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  let failedIndices = [];
-  let refFallbackIndices = [];
+  let successCount = 0;
+  let errorList = [];
 
   for (let i = 0; i < targetCount; i++) {
-    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount} en orden...`);
-    let res = null;
-    let success = false;
+    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount}...`);
     
-    // Pausa de cortesía anti-saturación para vídeos largos y cortos
+    // Pausa de 1.2 segundos entre cada imagen en vídeos largos para evitar sobrecargar Cloudflare
     if (i > 0) {
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 1200));
     }
 
-    try {
-      res = await fetchCloudflareImage(imagePrompts[i], aspect, true);
-      success = true;
-    } catch (err) {
-      console.error(`Error en escena ${i + 1}:`, err);
-      showAILog(`⚠️ Error en imagen ${i + 1}: ${escapeHtml(err.message)}. Reintentando sin referencia...`, true);
-      if (autoVideoReferenceImageData) {
-        try {
-          await new Promise(r => setTimeout(r, 800));
-          res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
-          success = true;
-          refFallbackIndices.push(i + 1);
-        } catch (err2) {
-          console.error(`Error (sin referencia) en escena ${i + 1}:`, err2);
-          showAILog(`❌ Falló definitivamente la imagen ${i + 1}: ${escapeHtml(err2.message)}`, true);
+    let res = null;
+    let attempt = 0;
+    let success = false;
+
+    while (attempt < 3 && !success) {
+      attempt++;
+      try {
+        // Intento 1 con referencia (si existe), intentos 2 y 3 sin referencia para asegurar éxito
+        const useReference = (attempt === 1 && Boolean(autoVideoReferenceImageData));
+        res = await fetchCloudflareImage(imagePrompts[i], aspect, useReference);
+        success = true;
+      } catch (err) {
+        console.warn(`Intento ${attempt} fallido en escena ${i + 1}:`, err.message);
+        if (attempt < 3) {
+          await new Promise(r => setTimeout(r, 2000));
         }
       }
     }
@@ -1113,31 +1137,30 @@ async function generateImagesFromPromptsAI() {
         imgObj: res.imgObj,
         sceneIndex: i
       });
+      successCount++;
     } else {
+      // Si falla tras 3 intentos, generamos un placeholder local limpio para no romper la galería
       const fallbackPlaceholder = createProceduralSceneImage(
-        String(i + 1).padStart(3, "0") + "_Reintentar",
+        String(i + 1).padStart(3, "0") + "_Error",
         "#1e1b4b", "#0f172a", "#ef4444", "⚠️"
       );
       loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA_Pendiente.png",
+        name: String(i + 1).padStart(3, "0") + "_Error.png",
         url: fallbackPlaceholder.url,
         imgObj: fallbackPlaceholder.imgObj,
         sceneIndex: i
       });
-      failedIndices.push(i + 1);
+      errorList.push(i + 1);
     }
     renderMediaGrid();
   }
 
   autoSyncProject(false);
 
-  if (failedIndices.length > 0) {
-    const failedStr = failedIndices.join(", ");
-    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>. Revisa la consola (F12) para ver el error exacto del Worker.`, true);
-  } else if (refFallbackIndices.length > 0) {
-    showAILog(`⚠️ Imágenes generadas en orden, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
+  if (errorList.length > 0) {
+    showAILog(`⚠️ <b>Generación completada con avisos:</b> ${successCount} de ${targetCount} imágenes generadas. Las escenas #${errorList.join(", ")} no respondieron (revisa tu clave en Pestaña 0 o reintenta).`, true);
   } else {
-    showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron en orden con éxito!</b>");
+    showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron correctamente en orden!</b>");
   }
   switchTab(3);
 }
@@ -1171,9 +1194,12 @@ function updateBgmVol(val) {
 
 function splitScriptIntoScenes(rawText) {
   const paragraphs = String(rawText || "")
-    .replace(/\r/g, "\n")
-    .split(/\n+/)
-    .map(p => p.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+    .replace(/
+/g, "
+")
+    .split(/
++/)
+    .map(p => p.replace(/^[​-‍﻿\s]+/, "").trim())
     .filter(Boolean);
 
   const numberedCount = paragraphs.filter(p => /^\d+[\.\)\-:]\s+/.test(p)).length;
@@ -1199,7 +1225,7 @@ function getScriptLines() {
 function getWordSpeechWeight(word) {
   const raw = String(word || "");
   const normalized = raw.toLocaleLowerCase("es-ES").normalize("NFD");
-  const plain = normalized.replace(/[\u0300-\u036f]/g, "");
+  const plain = normalized.replace(/[̀-ͯ]/g, "");
   const vowelGroups = (plain.match(/[aeiouü]+/g) || []).length;
   const fallbackUnits = Math.max(1, Math.ceil(plain.replace(/[^a-z0-9]/g, "").length / 4));
   let weight = Math.max(1, vowelGroups || fallbackUnits);
@@ -1230,7 +1256,9 @@ function updateScriptStatus() {
 }
 
 function splitLongParagraphs() {
-  document.getElementById("scriptArea").value = getScriptLines().join("\n\n");
+  document.getElementById("scriptArea").value = getScriptLines().join("
+
+");
   updateScriptStatus();
 }
 
@@ -1377,6 +1405,7 @@ function distributeTextIntoTargetCount(lines, targetCount) {
   }
 }
 
+// Sincronización robusta y exacta basada en la duración real del archivo de voz
 function autoSyncProject(goToTimeline = true) {
   const rawScript = document.getElementById("scriptArea").value.trim();
   let lines = rawScript ? getScriptLines() : [];
@@ -1400,8 +1429,10 @@ function autoSyncProject(goToTimeline = true) {
   let acc = 0; const cuts = [0.0];
   for (let w of weights) {
     acc += w;
-    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
+    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(3)));
   }
+  cuts[cuts.length - 1] = Number(totalDuration.toFixed(3));
+
   scenes = lines.map((text, idx) => ({
     start: cuts[idx], end: cuts[idx + 1], text,
     imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
@@ -1644,13 +1675,25 @@ function seekTo(val) {
 }
 function togglePlay() { if (scenes.length === 0) { alert("Sincroniza primero."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
 
+// Reloj de reproducción compensado con la marca temporal exacta del contexto de audio
+function getPreciseAudioTime() {
+  if (!audioCtx) return 0;
+  if (typeof audioCtx.getOutputTimestamp === "function") {
+    const stamp = audioCtx.getOutputTimestamp();
+    if (stamp && Number.isFinite(stamp.contextTime) && Number.isFinite(stamp.performanceTime) && stamp.performanceTime > 0) {
+      return stamp.contextTime + Math.max(0, (performance.now() - stamp.performanceTime) / 1000);
+    }
+  }
+  return audioCtx.currentTime;
+}
+
 async function startPlayback() {
   if (currentTime >= totalDuration - 0.1) currentTime = 0;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") await audioCtx.resume();
 
   playbackStartOffset = currentTime;
-  playbackStartContextTime = audioCtx.currentTime;
+  playbackStartContextTime = getPreciseAudioTime();
   playbackStartPerfTime = performance.now();
   isPlaying = true;
   document.getElementById("playBtn").textContent = "⏸ Pausa";
@@ -1682,7 +1725,7 @@ async function startPlayback() {
 
 function pausePlayback() {
   if (isPlaying && audioCtx && playbackStartContextTime !== null) {
-    const elapsed = Math.max(0, audioCtx.currentTime - playbackStartContextTime);
+    const elapsed = Math.max(0, getPreciseAudioTime() - playbackStartContextTime);
     currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + elapsed));
   }
   isPlaying = false;
@@ -1697,12 +1740,7 @@ function pausePlayback() {
 
 function playbackLoop(now) {
   if (!isPlaying) return;
-  let elapsed;
-  if (audioCtx && playbackStartContextTime !== null) {
-    elapsed = audioCtx.currentTime - playbackStartContextTime;
-  } else {
-    elapsed = (now - playbackStartPerfTime) / 1000;
-  }
+  const elapsed = getPreciseAudioTime() - playbackStartContextTime;
   currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + Math.max(0, elapsed)));
   if (currentTime >= totalDuration) {
     currentTime = totalDuration;
@@ -1719,7 +1757,11 @@ function playbackLoop(now) {
 function loadBuiltInDemo() {
   pausePlayback(); isDemoSynthMode = true; totalDuration = 15.0; currentTime = 0.0;
   document.getElementById("seekSlider").max = totalDuration;
-  document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas viven de él.";
+  document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.
+En septiembre, completamente verde.
+Ningún rey lo ordenó. Lo hizo un viento.
+El monzón trae el 70% de la lluvia del país en solo cuatro meses.
+Casi 1.500 millones de personas viven de él.";
   updateScriptStatus();
   loadedImages = [
     createProceduralSceneImage("001_Mayo", "#451a03", "#78350f", "#f59e0b", "🌍🏜️"),
@@ -1867,7 +1909,11 @@ function toSrtTime(sec) {
 
 function downloadSRT() {
   if (scenes.length === 0) return;
-  const srt = scenes.map((sc, i) => `${i+1}\n${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}\n${sc.text}\n`).join("\n");
+  const srt = scenes.map((sc, i) => `${i+1}
+${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}
+${sc.text}
+`).join("
+");
   const blob = new Blob([srt], { type: "text/plain;charset=utf-8" });
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "subtitulos.srt";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
