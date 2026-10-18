@@ -521,17 +521,17 @@ const EFFECTS = [
 ];
 
 const SUB_FONTS = {
-  "segoe":             { family: "'Segoe UI', sans-serif",        weight: 700, load: null },
-  "montserrat-black": { family: "'Montserrat', sans-serif",        weight: 900, load: "Montserrat" },
-  "bebas":            { family: "'Bebas Neue', sans-serif",        weight: 400, load: "Bebas Neue" },
-  "cinzel":           { family: "'Cinzel', serif",                 weight: 700, load: "Cinzel" },
-  "anton":            { family: "'Anton', sans-serif",             weight: 400, load: "Anton" },
-  "oswald":           { family: "'Oswald', sans-serif",            weight: 700, load: "Oswald" },
-  "poppins":          { family: "'Poppins', sans-serif",           weight: 700, load: "Poppins" },
-  "roboto":           { family: "'Roboto', sans-serif",            weight: 700, load: "Roboto" },
-  "bangers":          { family: "'Bangers', cursive",              weight: 400, load: "Bangers" },
-  "lobster":          { family: "'Lobster', cursive",              weight: 400, load: "Lobster" },
-  "marker":           { family: "'Permanent Marker', cursive",     weight: 400, load: "Permanent Marker" },
+  "segoe":            { family: "'Segoe UI', sans-serif",         weight: 700, load: null },
+  "montserrat-black": { family: "'Montserrat', sans-serif",       weight: 900, load: "Montserrat" },
+  "bebas":            { family: "'Bebas Neue', sans-serif",       weight: 400, load: "Bebas Neue" },
+  "cinzel":           { family: "'Cinzel', serif",                weight: 700, load: "Cinzel" },
+  "anton":            { family: "'Anton', sans-serif",            weight: 400, load: "Anton" },
+  "oswald":           { family: "'Oswald', sans-serif",           weight: 700, load: "Oswald" },
+  "poppins":          { family: "'Poppins', sans-serif",          weight: 700, load: "Poppins" },
+  "roboto":           { family: "'Roboto', sans-serif",           weight: 700, load: "Roboto" },
+  "bangers":          { family: "'Bangers', cursive",             weight: 400, load: "Bangers" },
+  "lobster":          { family: "'Lobster', cursive",             weight: 400, load: "Lobster" },
+  "marker":           { family: "'Permanent Marker', cursive",    weight: 400, load: "Permanent Marker" },
   "impact":           { family: "Impact, 'Arial Narrow Bold', sans-serif", weight: 400, load: null },
   "arial-black":      { family: "'Arial Black', Gadget, sans-serif", weight: 400, load: null }
 };
@@ -972,65 +972,106 @@ function loadImageCrossOrigin(url, timeoutMs = 45000) {
 function parseManualList(rawText) {
   if (!rawText || !rawText.trim()) return [];
   const negRegex = /,?\s*strictly no text, no words, no letters, no numbers, no typography, pure visual graphics\.?$/i;
-  return rawText
-    .replace(/\r/g, "\n")
-    .split(/\n+/)
-    .map(l => l.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
-    .filter(Boolean)
-    .map(l => l.replace(/^scene\s+\d+[\.:\-\)]\s*/i, "").trim())
-    .map(l => l.replace(/^\d+[\.\)\-:]\s*/, "").trim())
+  const text = rawText.replace(/\r/g, "\n").trim();
+  const lines = text.split("\n");
+
+  const startNumRegex = /^\s*(?:(?:\*\*|__)?(?:scene|escena|imagen|image|prompt|shot|paso)?\s*#?\s*\d+[\.\)\-:]|\d+[\.\)\-:])\s*/i;
+  const numberedLinesCount = lines.filter(l => startNumRegex.test(l)).length;
+
+  let items = [];
+  if (numberedLinesCount >= 2) {
+    let current = "";
+    for (const rawLine of lines) {
+      const line = rawLine.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim();
+      if (!line) continue;
+      if (startNumRegex.test(line)) {
+        if (current) items.push(current.trim());
+        current = line.replace(startNumRegex, "").trim();
+      } else {
+        if (current) {
+          current += " " + line;
+        } else {
+          current = line;
+        }
+      }
+    }
+    if (current) items.push(current.trim());
+  } else {
+    items = lines
+      .map(l => l.replace(/^[\u200B-\u200D\uFEFF\s]+/, "").trim())
+      .filter(Boolean)
+      .map(l => l.replace(startNumRegex, "").trim());
+  }
+
+  return items
+    .map(l => l.replace(/^(?:\*\*|__)\s*|\s*(?:\*\*|__)$/g, "").trim())
     .map(l => l.replace(negRegex, "").trim())
     .filter(Boolean);
 }
 
 async function generateImagesFromPromptsAI() {
-  const scriptLines = getScriptLines();
-  if (scriptLines.length === 0) {
-    showAILog("Pega primero tu guion en la pestaña 2.", true);
-    switchTab(2);
-    return;
-  }
-
   const promptMode = document.getElementById("promptGenMode").value;
-  const stylePrefix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
-  const targetCount = scriptLines.length;
+  const rawScript = document.getElementById("scriptArea").value.trim();
+  const manualText = document.getElementById("aiManualPrompts19").value.trim();
+  const styleInput = document.getElementById("aiVisualStyle").value.trim();
+
+  const styleSuffix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
   let imagePrompts = [];
 
   if (promptMode === "manual19") {
-    const manualText = document.getElementById("aiManualPrompts19").value;
     const manualLines = parseManualList(manualText);
     if (manualLines.length === 0) {
       showAILog("Has seleccionado el modo de lista manual, pero la caja de prompts está vacía.", true);
+      switchTab(0);
       return;
     }
-    imagePrompts = scriptLines.map((_, i) => {
-      const lineContent = manualLines[i] || manualLines[manualLines.length - 1] || "A cinematic scene";
-      return `Scene ${i + 1}: ${lineContent}. Style: ${stylePrefix}`;
+    // Respeta todas las imágenes de la lista exacta en su orden estricto (1, 2, 3...)
+    const extraStyle = styleInput ? `, ${styleInput}` : "";
+    imagePrompts = manualLines.map((lineContent) => {
+      const cleanLine = lineContent.replace(/\.+$/, "").trim();
+      return `${cleanLine}${extraStyle}, ${styleSuffix}`;
     });
   } else {
-    const styleInput = document.getElementById("aiVisualStyle").value.trim();
-    const styleDesc = styleInput ? `${styleInput}, ${stylePrefix}` : `2D minimalist vector animation style, ${stylePrefix}`;
-    imagePrompts = scriptLines.map((sceneText, i) => {
-      const cleanText = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").trim();
-      return `Scene ${i + 1}: ${cleanText}. Artistic direction: ${styleDesc}`;
-    });
+    // Si el usuario pegó una lista numerada en el cuadro de Estilo Visual General, la usamos en orden
+    const styleAsList = parseManualList(styleInput);
+    const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|\n)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
+
+    if (hasNumberedStyleList) {
+      imagePrompts = styleAsList.map((lineContent) => {
+        const cleanLine = lineContent.replace(/\.+$/, "").trim();
+        return `${cleanLine}, ${styleSuffix}`;
+      });
+    } else {
+      if (!rawScript) {
+        showAILog("Pega primero tu guion en la pestaña 2.", true);
+        switchTab(2);
+        return;
+      }
+      const scriptLines = getScriptLines();
+      const styleDesc = styleInput ? `${styleInput}, ${styleSuffix}` : `2D minimalist vector animation style, ${styleSuffix}`;
+      imagePrompts = scriptLines.map((sceneText) => {
+        const cleanText = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").replace(/\.+$/, "").trim();
+        return `${styleDesc}. Visual scene: ${cleanText}`;
+      });
+    }
   }
 
+  const targetCount = imagePrompts.length;
   const promptsAreaEl = document.getElementById("promptsArea");
   if (promptsAreaEl) {
-    promptsAreaEl.value = imagePrompts.join("\n\n");
+    promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("\n\n");
   }
 
   loadedImages = [];
   renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias...</b>");
+  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias en orden (1 a " + targetCount + ")...</b>");
 
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
   let failedIndices = [];
   let refFallbackIndices = [];
 
   for (let i = 0; i < targetCount; i++) {
-    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount}...`);
+    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount} en orden...`);
     let res = null;
     let success = false;
     try {
@@ -1057,10 +1098,21 @@ async function generateImagesFromPromptsAI() {
         imgObj: res.imgObj,
         sceneIndex: i
       });
-      renderMediaGrid();
     } else {
+      // Mantiene el hueco exacto con un placeholder para no desfasar el orden del resto de imágenes
+      const fallbackPlaceholder = createProceduralSceneImage(
+        String(i + 1).padStart(3, "0") + "_Reintentar",
+        "#1e1b4b", "#0f172a", "#ef4444", "⚠️"
+      );
+      loadedImages.push({
+        name: String(i + 1).padStart(3, "0") + "_IA_Pendiente.png",
+        url: fallbackPlaceholder.url,
+        imgObj: fallbackPlaceholder.imgObj,
+        sceneIndex: i
+      });
       failedIndices.push(i + 1);
     }
+    renderMediaGrid();
   }
 
   autoSyncProject(false);
@@ -1070,9 +1122,9 @@ async function generateImagesFromPromptsAI() {
     showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>.`, true);
     alert(`No se pudieron generar las imágenes de la(s) escena(s) número: #${failedStr}. Revisa tu conexión o vuelve a intentarlo.`);
   } else if (refFallbackIndices.length > 0) {
-    showAILog(`⚠️ Imágenes generadas, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
+    showAILog(`⚠️ Imágenes generadas en orden, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
   } else {
-    showAILog("✅ <b>¡Todas las imágenes se generaron con éxito!</b>");
+    showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron en orden con éxito!</b>");
   }
   switchTab(3);
 }
@@ -1171,23 +1223,45 @@ function splitLongParagraphs() {
 
 function handleImagesUpload(fileList) {
   if (!fileList || fileList.length === 0) return;
-  Array.from(fileList).forEach(file => {
+  const files = Array.from(fileList);
+  const startIdx = loadedImages.length;
+  files.forEach((_, idx) => {
+    loadedImages.push({ name: "", url: "", imgObj: null });
+  });
+  files.forEach((file, idx) => {
+    const targetSlot = startIdx + idx;
     const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => { renderMediaGrid(); };
+    img.onload = () => {
+      renderMediaGrid();
+      renderSceneListUI();
+      renderCurrentFrame();
+    };
     img.src = url;
-    loadedImages.push({ name: file.name, url, imgObj: img });
+    loadedImages[targetSlot] = { name: file.name, url, imgObj: img, sceneIndex: targetSlot };
   });
+  renderMediaGrid();
 }
 
 function clearAllImages() {
   loadedImages = [];
   renderMediaGrid();
+  renderSceneListUI();
+  renderCurrentFrame();
 }
 
 function removeImage(index) {
   loadedImages.splice(index, 1);
+  scenes.forEach((sc, idx) => {
+    if (loadedImages.length === 0) {
+      sc.imgIndex = -1;
+    } else if (sc.imgIndex >= loadedImages.length) {
+      sc.imgIndex = loadedImages.length - 1;
+    }
+  });
   renderMediaGrid();
+  renderSceneListUI();
+  renderCurrentFrame();
 }
 
 function moveImageLeft(index) {
@@ -1196,6 +1270,8 @@ function moveImageLeft(index) {
   loadedImages[index] = loadedImages[index - 1];
   loadedImages[index - 1] = temp;
   renderMediaGrid();
+  renderSceneListUI();
+  renderCurrentFrame();
 }
 
 function moveImageRight(index) {
@@ -1204,6 +1280,8 @@ function moveImageRight(index) {
   loadedImages[index] = loadedImages[index + 1];
   loadedImages[index + 1] = temp;
   renderMediaGrid();
+  renderSceneListUI();
+  renderCurrentFrame();
 }
 
 function changeImagePositionByInput(fromIndex, inputEl) {
@@ -1211,11 +1289,16 @@ function changeImagePositionByInput(fromIndex, inputEl) {
   if (isNaN(val)) return;
   const targetPos = Math.max(1, Math.min(val, loadedImages.length));
   const toIndex = targetPos - 1;
-  if (fromIndex === toIndex) return;
+  if (fromIndex === toIndex) {
+    renderMediaGrid();
+    return;
+  }
 
   const item = loadedImages.splice(fromIndex, 1)[0];
   loadedImages.splice(toIndex, 0, item);
   renderMediaGrid();
+  renderSceneListUI();
+  renderCurrentFrame();
 }
 
 function renderMediaGrid() {
@@ -1248,9 +1331,49 @@ function renderMediaGrid() {
   document.getElementById("st3").textContent = total + " imgs";
 }
 
+function distributeTextIntoTargetCount(lines, targetCount) {
+  if (targetCount <= 0) return lines;
+  if (lines.length === targetCount) return lines;
+  if (lines.length === 0) return Array.from({ length: targetCount }, (_, i) => "Escena " + (i + 1));
+
+  if (lines.length > targetCount) {
+    const grouped = [];
+    for (let i = 0; i < targetCount; i++) {
+      const start = Math.floor((i * lines.length) / targetCount);
+      const end = Math.floor(((i + 1) * lines.length) / targetCount);
+      const chunk = lines.slice(start, Math.max(start + 1, end)).join(" ");
+      grouped.push(chunk || lines[lines.length - 1]);
+    }
+    return grouped;
+  } else {
+    const allWords = lines.join(" ").trim().split(/\s+/).filter(Boolean);
+    if (allWords.length >= targetCount) {
+      const grouped = [];
+      for (let i = 0; i < targetCount; i++) {
+        const start = Math.floor((i * allWords.length) / targetCount);
+        const end = Math.floor(((i + 1) * allWords.length) / targetCount);
+        grouped.push(allWords.slice(start, Math.max(start + 1, end)).join(" "));
+      }
+      return grouped;
+    }
+    const padded = [...lines];
+    while (padded.length < targetCount) {
+      padded.push("");
+    }
+    return padded;
+  }
+}
+
 function autoSyncProject(goToTimeline = true) {
-  let lines = getScriptLines();
-  if (lines.length === 0) lines = loadedImages.map((_, i) => "Escena " + (i + 1));
+  const rawScript = document.getElementById("scriptArea").value.trim();
+  let lines = rawScript ? getScriptLines() : [];
+
+  const promptMode = document.getElementById("promptGenMode") ? document.getElementById("promptGenMode").value : "auto";
+  if (loadedImages.length > 0 && (promptMode === "manual19" || lines.length === 0)) {
+    lines = distributeTextIntoTargetCount(lines, loadedImages.length);
+  } else if (lines.length === 0) {
+    lines = loadedImages.length > 0 ? loadedImages.map((_, i) => "Escena " + (i + 1)) : ["Escena inicial"];
+  }
   
   if (voiceBuffer && !isDemoSynthMode) {
     totalDuration = voiceBuffer.duration;
@@ -1278,6 +1401,7 @@ function autoSyncProject(goToTimeline = true) {
   document.getElementById("st4").classList.add("ok");
   renderSceneListUI();
   updateTimeUI();
+  renderCurrentFrame();
   if (goToTimeline) switchTab(4);
 }
 
@@ -1301,7 +1425,7 @@ function renderSceneListUI() {
         <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
-        <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderCurrentFrame()">${imgOptions}</select>
+        <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderSceneListUI(); renderCurrentFrame()">${imgOptions}</select>
         <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
       </div>
       <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
@@ -1372,7 +1496,7 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
     ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
   } else {
     const scale = Math.max(w / img.width, h / img.height) * zoom;
-    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - baseH * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - img.height * scale) / 2 + offsetY, img.width * scale, img.height * scale);
   }
 }
 
