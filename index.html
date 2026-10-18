@@ -69,8 +69,8 @@
   .btn-amber { background: rgba(245, 158, 11, 0.18); border-color: var(--accent-amber); color: #fbbf24; }
 
   .workspace { display: grid; grid-template-columns: 240px 1fr 440px; flex: 1; overflow: hidden; }
-  .format-gate { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
-  .format-gate.hidden { display:none !important; pointer-events:none; }
+  .format-gate { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
+  .format-gate.hidden { display:none; }
   .format-panel { width:min(760px,100%); background:var(--bg-card,#111827); border:1px solid var(--border); border-radius:18px; padding:clamp(20px,4vw,36px); box-shadow:0 25px 80px #0009; }
   .format-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:22px 0; }
   .format-option { display:block; border:1px solid var(--border); background:var(--bg-input); border-radius:14px; padding:18px; cursor:pointer; }
@@ -152,10 +152,10 @@
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
     <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos sincronizados y automatización por IA de tus efectos SFX.</p>
     <div class="format-options">
-      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="short" checked style="cursor:pointer;"> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
-      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="long" style="cursor:pointer;"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
+      <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
+      <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
     </div>
-    <button class="btn btn-primary" style="width:100%;padding:14px;cursor:pointer;position:relative;z-index:9999;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
+    <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
   </div>
 </div>
 
@@ -322,7 +322,7 @@
     <div class="tab-View" id="tab2">
       <div class="card">
         <h2>📝 2. Tu guion</h2>
-        <p class="sub">Pega aquí tu guion completo. Con audio cargado, AutoVideo detecta pausas y sincroniza cada escena y palabra con la voz.</p>
+        <p class="sub">Pega aquí tu guion completo. AutoVideo lo dividirá en escenas proporcionales.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
@@ -350,7 +350,6 @@
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
-            <button class="btn btn-amber" id="retryFailedImagesBtn" onclick="retryFailedImages()" disabled>🔁 Reintentar fallidas (0)</button>
             <button class="btn" onclick="clearAllImages()">🗑️ Vaciar</button>
           </div>
         </div>
@@ -495,8 +494,6 @@
 let audioCtx = null;
 let voiceBuffer = null;
 let voiceAudioNode = null;
-let speechActivityMap = null;
-let isExportingVideo = false;
 let bgmBuffer = null;
 let activeBgmSource = null;
 
@@ -513,8 +510,6 @@ let playbackStartPerfTime = 0;
 let loadedImages = [];
 let scenes = [];
 let userSfxList = [];
-let imageGenerationInProgress = false;
-let currentImagePrompts = [];
 let lastPlayedSceneIndex = -1;
 let lastPlayedChunkIndex = -1;
 let triggeredSfxInCurrentScene = {};
@@ -897,7 +892,7 @@ async function testCloudflareWorker() {
 async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
   const workerUrl = getCloudflareWorkerUrl();
   const accessKey = getCloudflareAccessKey();
-  if (!workerUrl || !accessKey) throw new Error("Configura la clave de acceso de tu Worker en la Pestaña 0.");
+  if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave de tu Worker.");
   
   let cleanRefImage = null;
   let refMime = null;
@@ -915,41 +910,19 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
     payload.referenceImageMimeType = refMime;
   }
 
-  const controller = new AbortController();
-  const requestTimeout = setTimeout(() => controller.abort(), 120000);
-  let response;
-  try {
-    response = await fetch(workerUrl + "/generate", {
-      method: "POST",
-      mode: "cors",
-      headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-  } catch (err) {
-    if (err && err.name === "AbortError") {
-      throw new Error("La solicitud de imagen superó los 120 segundos (timeout).");
-    }
-    throw err;
-  } finally {
-    clearTimeout(requestTimeout);
-  }
-  
-  const rawText = await response.text();
-  let data = {};
-  try {
-    data = JSON.parse(rawText);
-  } catch (e) {
-    throw new Error("Respuesta inválida del Worker (no es JSON): " + rawText.substring(0, 100));
-  }
-
+  const response = await fetch(workerUrl + "/generate", {
+    method: "POST",
+    mode: "cors",
+    headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : ("HTTP " + response.status));
-    throw new Error(msg);
+    const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : "");
+    throw new Error(msg || ("HTTP " + response.status));
   }
-
-  const dataUrl = data.dataURI || data.dataUrl || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
-  if (!dataUrl) throw new Error("El Worker respondió OK pero no devolvió ninguna imagen.");
+  const dataUrl = data.dataURI || data.dataUrl || (data.image ? "data:image/jpeg;base64," + data.image : "");
+  if (!dataUrl) throw new Error("El Worker no devolvió ninguna imagen.");
   return await loadImageCrossOrigin(dataUrl, 180000);
 }
 
@@ -1040,92 +1013,71 @@ function parseManualList(rawText) {
     .filter(Boolean);
 }
 
-// Bucle robusto con reintentos automáticos de hasta 3 intentos por escena y pausas progresivas
 async function generateImagesFromPromptsAI() {
-  const promptMode = document.getElementById("promptGenMode").value;
-  const rawScript = document.getElementById("scriptArea").value.trim();
-  const manualText = document.getElementById("aiManualPrompts19").value.trim();
-  const styleInput = document.getElementById("aiVisualStyle").value.trim();
+  const scriptLines = getScriptLines();
+  if (scriptLines.length === 0) {
+    showAILog("Pega primero tu guion en la pestaña 2.", true);
+    switchTab(2);
+    return;
+  }
 
-  const styleSuffix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
+  const promptMode = document.getElementById("promptGenMode").value;
+  const stylePrefix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
+  const targetCount = scriptLines.length;
   let imagePrompts = [];
 
   if (promptMode === "manual19") {
+    const manualText = document.getElementById("aiManualPrompts19").value;
     const manualLines = parseManualList(manualText);
     if (manualLines.length === 0) {
       showAILog("Has seleccionado el modo de lista manual, pero la caja de prompts está vacía.", true);
-      switchTab(0);
       return;
     }
-    const extraStyle = styleInput ? `, ${styleInput}` : "";
-    imagePrompts = manualLines.map((lineContent) => {
-      const cleanLine = lineContent.replace(/\.+$/, "").trim();
-      return `${cleanLine}${extraStyle}, ${styleSuffix}`;
+    imagePrompts = scriptLines.map((_, i) => {
+      const lineContent = manualLines[i] || manualLines[manualLines.length - 1] || "A cinematic scene";
+      return `Scene ${i + 1}: ${lineContent}. Style: ${stylePrefix}`;
     });
   } else {
-    const styleAsList = parseManualList(styleInput);
-    const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|
-)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
-
-    if (hasNumberedStyleList) {
-      imagePrompts = styleAsList.map((lineContent) => {
-        const cleanLine = lineContent.replace(/\.+$/, "").trim();
-        return `${cleanLine}, ${styleSuffix}`;
-      });
-    } else {
-      if (!rawScript) {
-        showAILog("Pega primero tu guion en la pestaña 2.", true);
-        switchTab(2);
-        return;
-      }
-      const scriptLines = getScriptLines();
-      const styleDesc = styleInput ? `${styleInput}, ${styleSuffix}` : `2D minimalist vector animation style, ${styleSuffix}`;
-      imagePrompts = scriptLines.map((sceneText) => {
-        const cleanText = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").replace(/\.+$/, "").trim();
-        return `${styleDesc}. Visual scene: ${cleanText}`;
-      });
-    }
+    const styleInput = document.getElementById("aiVisualStyle").value.trim();
+    const styleDesc = styleInput ? `${styleInput}, ${stylePrefix}` : `2D minimalist vector animation style, ${stylePrefix}`;
+    imagePrompts = scriptLines.map((sceneText, i) => {
+      const cleanText = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").trim();
+      return `Scene ${i + 1}: ${cleanText}. Artistic direction: ${styleDesc}`;
+    });
   }
 
-  const targetCount = imagePrompts.length;
   const promptsAreaEl = document.getElementById("promptsArea");
   if (promptsAreaEl) {
-    promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("
+    promptsAreaEl.value = imagePrompts.join("
 
 ");
   }
 
   loadedImages = [];
   renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes en orden con protección anti-saturación...</b>");
+  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias...</b>");
 
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  let successCount = 0;
-  let errorList = [];
+  let failedIndices = [];
+  let refFallbackIndices = [];
 
   for (let i = 0; i < targetCount; i++) {
     showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount}...`);
-    
-    // Pausa de 1.2 segundos entre cada imagen en vídeos largos para evitar sobrecargar Cloudflare
-    if (i > 0) {
-      await new Promise(r => setTimeout(r, 1200));
-    }
-
     let res = null;
-    let attempt = 0;
     let success = false;
-
-    while (attempt < 3 && !success) {
-      attempt++;
-      try {
-        // Intento 1 con referencia (si existe), intentos 2 y 3 sin referencia para asegurar éxito
-        const useReference = (attempt === 1 && Boolean(autoVideoReferenceImageData));
-        res = await fetchCloudflareImage(imagePrompts[i], aspect, useReference);
-        success = true;
-      } catch (err) {
-        console.warn(`Intento ${attempt} fallido en escena ${i + 1}:`, err.message);
-        if (attempt < 3) {
-          await new Promise(r => setTimeout(r, 2000));
+    try {
+      res = await fetchCloudflareImage(imagePrompts[i], aspect, true);
+      success = true;
+    } catch (err) {
+      console.error(`Error en escena ${i + 1}:`, err);
+      if (autoVideoReferenceImageData) {
+        try {
+          showAILog(`⚠️ Falló con la imagen de referencia en la imagen ${i + 1}. Reintentando sin ella...`);
+          res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
+          success = true;
+          refFallbackIndices.push(i + 1);
+        } catch (err2) {
+          console.error(`Error (sin referencia) en escena ${i + 1}:`, err2);
         }
       }
     }
@@ -1137,30 +1089,22 @@ async function generateImagesFromPromptsAI() {
         imgObj: res.imgObj,
         sceneIndex: i
       });
-      successCount++;
+      renderMediaGrid();
     } else {
-      // Si falla tras 3 intentos, generamos un placeholder local limpio para no romper la galería
-      const fallbackPlaceholder = createProceduralSceneImage(
-        String(i + 1).padStart(3, "0") + "_Error",
-        "#1e1b4b", "#0f172a", "#ef4444", "⚠️"
-      );
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_Error.png",
-        url: fallbackPlaceholder.url,
-        imgObj: fallbackPlaceholder.imgObj,
-        sceneIndex: i
-      });
-      errorList.push(i + 1);
+      failedIndices.push(i + 1);
     }
-    renderMediaGrid();
   }
 
   autoSyncProject(false);
 
-  if (errorList.length > 0) {
-    showAILog(`⚠️ <b>Generación completada con avisos:</b> ${successCount} de ${targetCount} imágenes generadas. Las escenas #${errorList.join(", ")} no respondieron (revisa tu clave en Pestaña 0 o reintenta).`, true);
+  if (failedIndices.length > 0) {
+    const failedStr = failedIndices.join(", ");
+    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>.`, true);
+    alert(`No se pudieron generar las imágenes de la(s) escena(s) número: #${failedStr}. Revisa tu conexión o vuelve a intentarlo.`);
+  } else if (refFallbackIndices.length > 0) {
+    showAILog(`⚠️ Imágenes generadas, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
   } else {
-    showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron correctamente en orden!</b>");
+    showAILog("✅ <b>¡Todas las imágenes se generaron con éxito!</b>");
   }
   switchTab(3);
 }
@@ -1264,45 +1208,23 @@ function splitLongParagraphs() {
 
 function handleImagesUpload(fileList) {
   if (!fileList || fileList.length === 0) return;
-  const files = Array.from(fileList);
-  const startIdx = loadedImages.length;
-  files.forEach((_, idx) => {
-    loadedImages.push({ name: "", url: "", imgObj: null });
-  });
-  files.forEach((file, idx) => {
-    const targetSlot = startIdx + idx;
+  Array.from(fileList).forEach(file => {
     const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => {
-      renderMediaGrid();
-      renderSceneListUI();
-      renderCurrentFrame();
-    };
+    img.onload = () => { renderMediaGrid(); };
     img.src = url;
-    loadedImages[targetSlot] = { name: file.name, url, imgObj: img, sceneIndex: targetSlot };
+    loadedImages.push({ name: file.name, url, imgObj: img });
   });
-  renderMediaGrid();
 }
 
 function clearAllImages() {
   loadedImages = [];
   renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
 }
 
 function removeImage(index) {
   loadedImages.splice(index, 1);
-  scenes.forEach((sc, idx) => {
-    if (loadedImages.length === 0) {
-      sc.imgIndex = -1;
-    } else if (sc.imgIndex >= loadedImages.length) {
-      sc.imgIndex = loadedImages.length - 1;
-    }
-  });
   renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
 }
 
 function moveImageLeft(index) {
@@ -1311,8 +1233,6 @@ function moveImageLeft(index) {
   loadedImages[index] = loadedImages[index - 1];
   loadedImages[index - 1] = temp;
   renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
 }
 
 function moveImageRight(index) {
@@ -1321,8 +1241,6 @@ function moveImageRight(index) {
   loadedImages[index] = loadedImages[index + 1];
   loadedImages[index + 1] = temp;
   renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
 }
 
 function changeImagePositionByInput(fromIndex, inputEl) {
@@ -1330,16 +1248,11 @@ function changeImagePositionByInput(fromIndex, inputEl) {
   if (isNaN(val)) return;
   const targetPos = Math.max(1, Math.min(val, loadedImages.length));
   const toIndex = targetPos - 1;
-  if (fromIndex === toIndex) {
-    renderMediaGrid();
-    return;
-  }
+  if (fromIndex === toIndex) return;
 
   const item = loadedImages.splice(fromIndex, 1)[0];
   loadedImages.splice(toIndex, 0, item);
   renderMediaGrid();
-  renderSceneListUI();
-  renderCurrentFrame();
 }
 
 function renderMediaGrid() {
@@ -1372,50 +1285,9 @@ function renderMediaGrid() {
   document.getElementById("st3").textContent = total + " imgs";
 }
 
-function distributeTextIntoTargetCount(lines, targetCount) {
-  if (targetCount <= 0) return lines;
-  if (lines.length === targetCount) return lines;
-  if (lines.length === 0) return Array.from({ length: targetCount }, (_, i) => "Escena " + (i + 1));
-
-  if (lines.length > targetCount) {
-    const grouped = [];
-    for (let i = 0; i < targetCount; i++) {
-      const start = Math.floor((i * lines.length) / targetCount);
-      const end = Math.floor(((i + 1) * lines.length) / targetCount);
-      const chunk = lines.slice(start, Math.max(start + 1, end)).join(" ");
-      grouped.push(chunk || lines[lines.length - 1]);
-    }
-    return grouped;
-  } else {
-    const allWords = lines.join(" ").trim().split(/\s+/).filter(Boolean);
-    if (allWords.length >= targetCount) {
-      const grouped = [];
-      for (let i = 0; i < targetCount; i++) {
-        const start = Math.floor((i * allWords.length) / targetCount);
-        const end = Math.floor(((i + 1) * allWords.length) / targetCount);
-        grouped.push(allWords.slice(start, Math.max(start + 1, end)).join(" "));
-      }
-      return grouped;
-    }
-    const padded = [...lines];
-    while (padded.length < targetCount) {
-      padded.push("");
-    }
-    return padded;
-  }
-}
-
-// Sincronización robusta y exacta basada en la duración real del archivo de voz
 function autoSyncProject(goToTimeline = true) {
-  const rawScript = document.getElementById("scriptArea").value.trim();
-  let lines = rawScript ? getScriptLines() : [];
-
-  const promptMode = document.getElementById("promptGenMode") ? document.getElementById("promptGenMode").value : "auto";
-  if (loadedImages.length > 0 && (promptMode === "manual19" || lines.length === 0)) {
-    lines = distributeTextIntoTargetCount(lines, loadedImages.length);
-  } else if (lines.length === 0) {
-    lines = loadedImages.length > 0 ? loadedImages.map((_, i) => "Escena " + (i + 1)) : ["Escena inicial"];
-  }
+  let lines = getScriptLines();
+  if (lines.length === 0) lines = loadedImages.map((_, i) => "Escena " + (i + 1));
   
   if (voiceBuffer && !isDemoSynthMode) {
     totalDuration = voiceBuffer.duration;
@@ -1429,10 +1301,8 @@ function autoSyncProject(goToTimeline = true) {
   let acc = 0; const cuts = [0.0];
   for (let w of weights) {
     acc += w;
-    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(3)));
+    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
   }
-  cuts[cuts.length - 1] = Number(totalDuration.toFixed(3));
-
   scenes = lines.map((text, idx) => ({
     start: cuts[idx], end: cuts[idx + 1], text,
     imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
@@ -1445,7 +1315,6 @@ function autoSyncProject(goToTimeline = true) {
   document.getElementById("st4").classList.add("ok");
   renderSceneListUI();
   updateTimeUI();
-  renderCurrentFrame();
   if (goToTimeline) switchTab(4);
 }
 
@@ -1675,25 +1544,13 @@ function seekTo(val) {
 }
 function togglePlay() { if (scenes.length === 0) { alert("Sincroniza primero."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
 
-// Reloj de reproducción compensado con la marca temporal exacta del contexto de audio
-function getPreciseAudioTime() {
-  if (!audioCtx) return 0;
-  if (typeof audioCtx.getOutputTimestamp === "function") {
-    const stamp = audioCtx.getOutputTimestamp();
-    if (stamp && Number.isFinite(stamp.contextTime) && Number.isFinite(stamp.performanceTime) && stamp.performanceTime > 0) {
-      return stamp.contextTime + Math.max(0, (performance.now() - stamp.performanceTime) / 1000);
-    }
-  }
-  return audioCtx.currentTime;
-}
-
 async function startPlayback() {
   if (currentTime >= totalDuration - 0.1) currentTime = 0;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") await audioCtx.resume();
 
   playbackStartOffset = currentTime;
-  playbackStartContextTime = getPreciseAudioTime();
+  playbackStartContextTime = audioCtx.currentTime;
   playbackStartPerfTime = performance.now();
   isPlaying = true;
   document.getElementById("playBtn").textContent = "⏸ Pausa";
@@ -1725,7 +1582,7 @@ async function startPlayback() {
 
 function pausePlayback() {
   if (isPlaying && audioCtx && playbackStartContextTime !== null) {
-    const elapsed = Math.max(0, getPreciseAudioTime() - playbackStartContextTime);
+    const elapsed = Math.max(0, audioCtx.currentTime - playbackStartContextTime);
     currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + elapsed));
   }
   isPlaying = false;
@@ -1740,7 +1597,12 @@ function pausePlayback() {
 
 function playbackLoop(now) {
   if (!isPlaying) return;
-  const elapsed = getPreciseAudioTime() - playbackStartContextTime;
+  let elapsed;
+  if (audioCtx && playbackStartContextTime !== null) {
+    elapsed = audioCtx.currentTime - playbackStartContextTime;
+  } else {
+    elapsed = (now - playbackStartPerfTime) / 1000;
+  }
   currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + Math.max(0, elapsed)));
   if (currentTime >= totalDuration) {
     currentTime = totalDuration;
