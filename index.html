@@ -1901,8 +1901,13 @@ function speechRecognitionWorkerMain() {
           if (language) options.language = language;
           let output;
           for (let attempt = 0;; attempt++) {
-            try { output = await transcriber(fragment, options); break; }
-            catch (error) { if (attempt >= 1) throw error; }
+            // Transformers.js modifica las opciones y añade forced_decoder_ids.
+            // Cada llamada, incluido un reintento, debe recibir un objeto nuevo.
+            try { output = await transcriber(fragment, { ...options }); break; }
+            catch (error) {
+              if (attempt >= 1) throw new Error(`No se pudo analizar el fragmento ${i + 1} de ${ranges.length}: ${error.message || String(error)}`);
+              send({ type: "progress", phase: "audio", progress: i / ranges.length, message: `Reintentando el fragmento ${i + 1} de ${ranges.length}…` });
+            }
           }
           for (const chunk of output.chunks || []) {
             const times = chunk.timestamp || [];
@@ -1931,6 +1936,7 @@ function speechRecognitionWorkerMain() {
               end: start + Math.max(0.02, end - start) * (j + 1) / textWords.length
             }));
           }
+          send({ type: "progress", phase: "audio", progress: (i + 1) / ranges.length, message: `Audio analizado: fragmento ${i + 1} de ${ranges.length}.` });
         }
         send({ type: "result", words });
       } catch (error) { send({ type: "error", message: error.message || String(error) }); }
@@ -2248,6 +2254,7 @@ async function autoSyncProject(goToTimeline = true) {
     if (data.phase === "audio") button.textContent = `⏳ Sincronizando ${Math.round(data.progress * 100)}%`;
   };
   try {
+    renderCurrentFrame();
     let recognized = await getRecognizedSpeech(buffer, report);
     if (version !== syncRequestVersion) return false;
     report({ message: "Ajustando las palabras del guion a sus marcas de tiempo…" });
@@ -2287,7 +2294,10 @@ async function autoSyncProject(goToTimeline = true) {
     console.error("Sincronización de voz:", error);
     return false;
   } finally {
-    if (version === syncRequestVersion) { syncInProgress = false; button.disabled = false; button.textContent = "🔄 Sincronizar Todo"; }
+    if (version === syncRequestVersion) {
+      syncInProgress = false; button.disabled = false; button.textContent = "🔄 Sincronizar Todo";
+      renderCurrentFrame();
+    }
   }
 }
 
@@ -2555,6 +2565,13 @@ function renderCurrentFrame() {
   }
 
   if (idx < 0 || !scenes[idx]) {
+    const imageIndex = loadedImages.findIndex(item => item && !item.isPending && item.imgObj &&
+      (item.imgObj.naturalWidth || item.imgObj.width) > 0 && (item.imgObj.naturalHeight || item.imgObj.height) > 0);
+    if (imageIndex >= 0) {
+      drawSceneLayer(ctx, w, h, { imgIndex: imageIndex, effect: EFFECTS[0] }, 0);
+      document.getElementById("currentSceneBadge").textContent = syncInProgress ? "Sincronizando…" : "Sin sincronizar";
+      return;
+    }
     ctx.fillStyle = "#131b2e"; ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = "#a78bfa"; ctx.font = "bold 24px 'Segoe UI'"; ctx.textAlign = "center";
     ctx.fillText("🤖 AutoVideo Faceless Studio Master Pro", w / 2, h / 2 - 10);
