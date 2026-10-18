@@ -322,7 +322,7 @@
     <div class="tab-View" id="tab2">
       <div class="card">
         <h2>📝 2. Tu guion</h2>
-        <p class="sub">Pega aquí tu guion completo. Con audio cargado, AutoVideo detecta pausas y sincroniza cada escena y palabra con la voz.</p>
+        <p class="sub">Pega aquí tu guion completo. AutoVideo lo dividirá en escenas proporcionales.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
@@ -494,8 +494,6 @@
 let audioCtx = null;
 let voiceBuffer = null;
 let voiceAudioNode = null;
-let speechActivityMap = null;
-let isExportingVideo = false;
 let bgmBuffer = null;
 let activeBgmSource = null;
 
@@ -1146,30 +1144,17 @@ async function generateImagesFromPromptsAI() {
 
 async function handleVoiceUpload(file) {
   if (!file) return;
-  if (isPlaying) pausePlayback();
-  isDemoSynthMode = false;
   document.getElementById("voiceLabel").textContent = "✅ " + file.name;
   document.getElementById("st1").textContent = "Audio listo";
   document.getElementById("st1").classList.add("ok");
 
-  try {
-    const arrayBuf = await file.arrayBuffer();
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
-    speechActivityMap = buildSpeechActivityMap(voiceBuffer);
-    totalDuration = voiceBuffer.duration;
-    currentTime = 0;
-    document.getElementById("seekSlider").max = totalDuration.toFixed(2);
-    autoSyncProject(false);
-    updateTimeUI();
-    const mapStatus = speechActivityMap
-      ? `Sincronización por actividad de voz activada (${speechActivityMap.silenceIntervals.length} pausas detectadas).`
-      : "Audio cargado. Se usará sincronización proporcional porque no se han detectado pausas fiables.";
-    console.info("AutoVideo: " + mapStatus);
-  } catch (err) {
-    speechActivityMap = null;
-    alert("No se pudo cargar el audio: " + err.message);
-  }
+  const arrayBuf = await file.arrayBuffer();
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
+  totalDuration = voiceBuffer.duration;
+  document.getElementById("seekSlider").max = totalDuration.toFixed(2);
+  autoSyncProject(false);
+  updateTimeUI();
 }
 
 async function handleBgmUpload(file) {
@@ -1235,191 +1220,6 @@ function getSpeechTimingWeights(textOrWords) {
 
 function getSpeechTimingWeight(text) {
   return getSpeechTimingWeights(text).reduce((sum, weight) => sum + weight, 0);
-}
-
-
-// Construye un mapa de actividad acústica del audio real (ventanas de 20 ms).
-// Los silencios no consumen progreso de subtítulos: así las pausas de la voz
-// no hacen que las imágenes ni las palabras sigan avanzando por delante.
-function buildSpeechActivityMap(buffer) {
-  if (!buffer || !buffer.length || !buffer.sampleRate || !buffer.duration) return null;
-  try {
-    const duration = buffer.duration;
-    const hop = 0.02;
-    const frameCount = Math.ceil(duration / hop);
-    const rms = new Float32Array(frameCount);
-    const channels = [];
-    for (let c = 0; c < buffer.numberOfChannels; c++) channels.push(buffer.getChannelData(c));
-
-    for (let i = 0; i < frameCount; i++) {
-      const startSample = Math.floor(i * hop * buffer.sampleRate);
-      const endSample = Math.min(buffer.length, Math.floor(Math.min(duration, (i + 1) * hop) * buffer.sampleRate));
-      let sumSquares = 0;
-      let count = 0;
-      // Saltar alguna muestra reduce el coste en audios largos sin afectar la detección de pausas.
-      const stride = 2;
-      for (const channel of channels) {
-        for (let s = startSample; s < endSample; s += stride) {
-          const v = channel[s] || 0;
-          sumSquares += v * v;
-          count++;
-        }
-      }
-      rms[i] = count ? Math.sqrt(sumSquares / count) : 0;
-    }
-
-    const sorted = Array.from(rms).sort((a, b) => a - b);
-    const percentile = p => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))] || 0;
-    const noiseFloor = percentile(0.15);
-    const speechLevel = percentile(0.90);
-    if (speechLevel < 0.0012) return null;
-    let threshold = Math.max(0.0008, speechLevel * 0.085, noiseFloor * 2.2);
-    threshold = Math.min(threshold, speechLevel * 0.55);
-
-    const voiced = Array.from(rms, value => value >= threshold);
-
-    // Cierra huecos muy cortos y elimina chasquidos aislados para que no se interpreten como voz.
-    for (let i = 1; i < voiced.length - 1;) {
-      if (!voiced[i]) {
-        let j = i;
-        while (j < voiced.length && !voiced[j]) j++;
-        if (i > 0 && j < voiced.length && voiced[i - 1] && voiced[j] && j - i <= 2) {
-          for (let k = i; k < j; k++) voiced[k] = true;
-        }
-        i = Math.max(j, i + 1);
-      } else i++;
-    }
-    for (let i = 0; i < voiced.length;) {
-      if (voiced[i]) {
-        let j = i;
-        while (j < voiced.length && voiced[j]) j++;
-        if (j - i < 3) for (let k = i; k < j; k++) voiced[k] = false;
-        i = j;
-      } else i++;
-    }
-
-    const prefix = new Float64Array(frameCount + 1);
-    const silenceIntervals = [];
-    let activeFrames = 0;
-    for (let i = 0; i < frameCount; i++) {
-      const frameDuration = Math.max(0, Math.min(hop, duration - i * hop));
-      prefix[i + 1] = prefix[i] + (voiced[i] ? frameDuration : 0);
-      if (voiced[i]) activeFrames++;
-    }
-    const activeDuration = prefix[frameCount];
-    if (activeDuration < Math.min(0.35, duration * 0.08) || activeFrames < 4) return null;
-
-    for (let i = 0; i < frameCount;) {
-      if (!voiced[i]) {
-        let j = i;
-        while (j < frameCount && !voiced[j]) j++;
-        const start = i * hop;
-        const end = Math.min(duration, j * hop);
-        if (end - start >= 0.10 && start > 0.04 && end < duration - 0.04) {
-          silenceIntervals.push({ start, end, center: (start + end) / 2, duration: end - start });
-        }
-        i = j;
-      } else i++;
-    }
-
-    return { duration, hop, frameCount, voiced, prefix, activeDuration, silenceIntervals };
-  } catch (err) {
-    console.warn('No se pudo analizar la actividad de voz; se usará la sincronización proporcional.', err);
-    return null;
-  }
-}
-
-function speechSecondsAt(map, time) {
-  if (!map) return Math.max(0, time || 0);
-  const t = Math.max(0, Math.min(map.duration, Number(time) || 0));
-  if (t >= map.duration) return map.activeDuration;
-  const index = Math.max(0, Math.min(map.frameCount - 1, Math.floor(t / map.hop)));
-  const frameStart = index * map.hop;
-  const frameDuration = Math.max(0, Math.min(map.hop, map.duration - frameStart));
-  return map.prefix[index] + (map.voiced[index] ? Math.max(0, Math.min(frameDuration, t - frameStart)) : 0);
-}
-
-// Convierte segundos de voz activa a tiempo real. En una pausa, desplaza el
-// límite hasta el inicio de la siguiente zona hablada para mantener la palabra visible.
-function wallTimeAtSpeechSeconds(map, target) {
-  if (!map) return Math.max(0, Number(target) || 0);
-  const wanted = Math.max(0, Math.min(map.activeDuration, Number(target) || 0));
-  if (wanted <= 0) {
-    const firstVoice = map.voiced.findIndex(Boolean);
-    return firstVoice < 0 ? 0 : firstVoice * map.hop;
-  }
-  if (wanted >= map.activeDuration) return map.duration;
-
-  let lo = 0, hi = map.frameCount - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (map.prefix[mid + 1] < wanted - 1e-7) lo = mid + 1;
-    else hi = mid;
-  }
-  const i = lo;
-  const before = map.prefix[i];
-  const after = map.prefix[i + 1];
-  if (map.voiced[i] && wanted > before + 1e-7 && wanted < after - 1e-7) {
-    return i * map.hop + (wanted - before);
-  }
-  if (Math.abs(wanted - after) <= 0.025) {
-    let j = i + 1;
-    while (j < map.frameCount && !map.voiced[j] && Math.abs(map.prefix[j] - wanted) < 1e-6) j++;
-    return Math.min(map.duration, j * map.hop);
-  }
-  if (map.voiced[i] && after > before) return i * map.hop + Math.max(0, Math.min(after - before, wanted - before));
-  return Math.min(map.duration, i * map.hop);
-}
-
-function snapSceneBoundaryToPause(target, map, minAllowed, maxAllowed, tolerance) {
-  if (!map || !map.silenceIntervals.length) return target;
-  let best = null;
-  let bestScore = Infinity;
-  for (const pause of map.silenceIntervals) {
-    if (pause.center < minAllowed || pause.center > maxAllowed) continue;
-    const distance = Math.abs(pause.center - target);
-    if (distance > tolerance) continue;
-    // Prioriza ligeramente las pausas claras, sin desplazar demasiado el corte.
-    const score = distance - Math.min(0.12, Math.max(0, pause.duration - 0.10) * 0.30);
-    if (score < bestScore) { bestScore = score; best = pause.center; }
-  }
-  return best === null ? target : best;
-}
-
-function createWordTimings(text, start, end, activityMap) {
-  const words = String(text || '').trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return [];
-  const weights = getSpeechTimingWeights(words);
-  const totalWeight = weights.reduce((sum, value) => sum + value, 0) || words.length;
-  const safeStart = Math.max(0, Number(start) || 0);
-  const safeEnd = Math.max(safeStart + 0.02, Number(end) || safeStart + 0.02);
-  const activeStart = activityMap ? speechSecondsAt(activityMap, safeStart) : 0;
-  const activeEnd = activityMap ? speechSecondsAt(activityMap, safeEnd) : 0;
-  const useActivity = !!activityMap && activeEnd - activeStart > 0.025;
-  let cumulative = 0;
-  return words.map((word, index) => {
-    const next = cumulative + (weights[index] || 1);
-    let wordStart, wordEnd;
-    if (useActivity) {
-      wordStart = wallTimeAtSpeechSeconds(activityMap, activeStart + (activeEnd - activeStart) * cumulative / totalWeight);
-      wordEnd = wallTimeAtSpeechSeconds(activityMap, activeStart + (activeEnd - activeStart) * next / totalWeight);
-    } else {
-      wordStart = safeStart + (safeEnd - safeStart) * cumulative / totalWeight;
-      wordEnd = safeStart + (safeEnd - safeStart) * next / totalWeight;
-    }
-    wordStart = Math.max(safeStart, Math.min(Math.max(safeStart, safeEnd - 0.015), wordStart));
-    wordEnd = Math.max(wordStart + 0.015, Math.min(safeEnd, wordEnd));
-    if (wordEnd > safeEnd) wordEnd = safeEnd;
-    cumulative = next;
-    return { word, start: wordStart, end: wordEnd };
-  });
-}
-
-function refreshSceneWordTimings() {
-  const map = (voiceBuffer && !isDemoSynthMode) ? speechActivityMap : null;
-  scenes.forEach(scene => {
-    scene.wordTimings = createWordTimings(scene.text, scene.start, scene.end, map);
-  });
 }
 
 function updateScriptStatus() {
@@ -1587,7 +1387,7 @@ function autoSyncProject(goToTimeline = true) {
   } else if (lines.length === 0) {
     lines = loadedImages.length > 0 ? loadedImages.map((_, i) => "Escena " + (i + 1)) : ["Escena inicial"];
   }
-
+  
   if (voiceBuffer && !isDemoSynthMode) {
     totalDuration = voiceBuffer.duration;
   } else if (!voiceBuffer && !isDemoSynthMode) {
@@ -1595,46 +1395,21 @@ function autoSyncProject(goToTimeline = true) {
   }
   document.getElementById("seekSlider").max = totalDuration.toFixed(2);
 
-  const weights = lines.map(line => Math.max(getSpeechTimingWeight(line), 1));
-  const totalWeight = weights.reduce((a, b) => a + b, 0) || lines.length || 1;
-  const useActivity = !!(voiceBuffer && !isDemoSynthMode && speechActivityMap && speechActivityMap.activeDuration > 0);
-  const predictedCuts = [0];
-  let accumulatedWeight = 0;
-  for (let i = 0; i < lines.length - 1; i++) {
-    accumulatedWeight += weights[i];
-    const ratio = accumulatedWeight / totalWeight;
-    predictedCuts.push(useActivity
-      ? wallTimeAtSpeechSeconds(speechActivityMap, ratio * speechActivityMap.activeDuration)
-      : ratio * totalDuration);
+  const weights = lines.map(l => Math.max(getSpeechTimingWeight(l), 1));
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  let acc = 0; const cuts = [0.0];
+  for (let w of weights) {
+    acc += w;
+    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
   }
-  predictedCuts.push(totalDuration);
-
-  const cuts = [0];
-  const minGap = Math.min(0.12, totalDuration / Math.max(4, lines.length * 3));
-  for (let i = 1; i < lines.length; i++) {
-    const predicted = predictedCuts[i];
-    const previous = cuts[i - 1];
-    const maxAllowed = Math.max(previous + minGap, totalDuration - (lines.length - i) * minGap);
-    const predictedSpan = Math.max(0.2, predictedCuts[i + 1] - predictedCuts[i - 1]);
-    const tolerance = Math.min(0.70, Math.max(0.22, predictedSpan * 0.20));
-    let cut = useActivity
-      ? snapSceneBoundaryToPause(predicted, speechActivityMap, previous + minGap, maxAllowed, tolerance)
-      : predicted;
-    cut = Math.max(previous + minGap, Math.min(maxAllowed, cut));
-    cuts.push(Number(cut.toFixed(3)));
-  }
-  cuts.push(totalDuration);
-
   scenes = lines.map((text, idx) => ({
     start: cuts[idx], end: cuts[idx + 1], text,
     imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
     effect: EFFECTS[idx % EFFECTS.length],
     sfxId: "",
     sfxStart: 2.0,
-    sfxEnd: 3.0,
-    wordTimings: []
+    sfxEnd: 3.0
   }));
-  refreshSceneWordTimings();
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
   renderSceneListUI();
@@ -1659,14 +1434,14 @@ function renderSceneListUI() {
     row.innerHTML = `
       <img class="scene-thumb" src="${thumbUrl}" onclick="seekTo(${sc.start})" style="cursor:pointer;">
       <div class="time-pair">
-        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); refreshSceneWordTimings(); renderSceneListUI(); renderCurrentFrame()" style="width:48px">s</div>
-        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); refreshSceneWordTimings(); renderSceneListUI(); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderSceneListUI(); renderCurrentFrame()">${imgOptions}</select>
         <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
       </div>
-      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value; scenes[${idx}].wordTimings=[]" onchange="refreshSceneWordTimings(); renderCurrentFrame()"></div>
+      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
       <div style="display:flex; flex-direction:column; gap:3px;">
         <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:0.75rem;">${sfxOptions}</select>
         <div style="font-size:0.68rem; color:var(--text-muted); display:flex; gap:2px;">
@@ -1734,7 +1509,7 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
     ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
   } else {
     const scale = Math.max(w / img.width, h / img.height) * zoom;
-    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - img.height * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - baseH * scale) / 2 + offsetY, img.width * scale, img.height * scale);
   }
 }
 
@@ -1745,43 +1520,24 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const words = scene.text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return;
 
+  const wordWeights = getSpeechTimingWeights(words);
+  const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0);
+  const sceneDuration = Math.max(0.1, scene.end - scene.start);
+  const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
+  const weightedTime = Math.min(
+    Math.max(0, totalSpeechWeight - 0.000001),
+    (timeInScene / sceneDuration) * totalSpeechWeight
+  );
+
   let activeWordIndex = 0;
-  const preciseWordTiming = Array.isArray(scene.wordTimings) && scene.wordTimings.length === words.length;
-  if (preciseWordTiming) {
-    const timings = scene.wordTimings;
-    // No mostrar la primera palabra antes de que empiece la voz (por ejemplo, tras una pausa inicial).
-    if (currentTime < timings[0].start - 0.025) return;
-    let found = false;
-    for (let i = 0; i < timings.length; i++) {
-      if (currentTime >= timings[i].start && currentTime < timings[i].end) {
-        activeWordIndex = i;
-        found = true;
-        break;
-      }
+  let accumulatedWeight = 0;
+  for (let i = 0; i < wordWeights.length; i++) {
+    if (weightedTime < accumulatedWeight + wordWeights[i]) {
+      activeWordIndex = i;
+      break;
     }
-    if (!found) {
-      activeWordIndex = currentTime >= timings[timings.length - 1].end
-        ? words.length - 1
-        : Math.max(0, timings.findIndex(t => currentTime < t.end));
-    }
-  } else {
-    const wordWeights = getSpeechTimingWeights(words);
-    const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0) || words.length;
-    const sceneDuration = Math.max(0.1, scene.end - scene.start);
-    const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
-    const weightedTime = Math.min(
-      Math.max(0, totalSpeechWeight - 0.000001),
-      (timeInScene / sceneDuration) * totalSpeechWeight
-    );
-    let accumulatedWeight = 0;
-    for (let i = 0; i < wordWeights.length; i++) {
-      if (weightedTime < accumulatedWeight + wordWeights[i]) {
-        activeWordIndex = i;
-        break;
-      }
-      accumulatedWeight += wordWeights[i];
-      activeWordIndex = Math.min(i + 1, words.length - 1);
-    }
+    accumulatedWeight += wordWeights[i];
+    activeWordIndex = Math.min(i + 1, words.length - 1);
   }
 
   const activeChunkIndex = Math.floor(activeWordIndex / 3);
@@ -1844,7 +1600,7 @@ function renderCurrentFrame() {
   ctx.clearRect(0, 0, w, h);
   const idx = findSceneIndexAtTime(currentTime);
   
-  if (isPlaying && !isExportingVideo && idx >= 0 && scenes[idx]) {
+  if (isPlaying && idx >= 0 && scenes[idx]) {
     const sc = scenes[idx];
     if (sc.sfxId) {
       const targetStart = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
@@ -1888,38 +1644,13 @@ function seekTo(val) {
 }
 function togglePlay() { if (scenes.length === 0) { alert("Sincroniza primero."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
 
-
-function getAudibleAudioContextTime() {
-  if (!audioCtx) return 0;
-  try {
-    if (typeof audioCtx.getOutputTimestamp === "function") {
-      const stamp = audioCtx.getOutputTimestamp();
-      if (stamp && Number.isFinite(stamp.contextTime) && Number.isFinite(stamp.performanceTime) && stamp.performanceTime > 0) {
-        const extrapolated = stamp.contextTime + Math.max(0, (performance.now() - stamp.performanceTime) / 1000);
-        return Math.max(0, Math.min(audioCtx.currentTime, extrapolated));
-      }
-    }
-  } catch (_) {}
-  const latency = Number(audioCtx.outputLatency) || Number(audioCtx.baseLatency) || 0;
-  return Math.max(0, audioCtx.currentTime - Math.min(0.35, Math.max(0, latency)));
-}
-
-function getPlaybackElapsedSeconds(now) {
-  if (audioCtx && playbackStartContextTime !== null) {
-    const usesRealVoiceClock = !!(voiceBuffer && !isDemoSynthMode && !isExportingVideo);
-    const clockTime = usesRealVoiceClock ? getAudibleAudioContextTime() : audioCtx.currentTime;
-    return Math.max(0, clockTime - playbackStartContextTime);
-  }
-  return Math.max(0, ((now || performance.now()) - playbackStartPerfTime) / 1000);
-}
-
 async function startPlayback() {
   if (currentTime >= totalDuration - 0.1) currentTime = 0;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") await audioCtx.resume();
 
   playbackStartOffset = currentTime;
-  playbackStartContextTime = audioCtx.currentTime + 0.025;
+  playbackStartContextTime = audioCtx.currentTime;
   playbackStartPerfTime = performance.now();
   isPlaying = true;
   document.getElementById("playBtn").textContent = "⏸ Pausa";
@@ -1946,13 +1677,12 @@ async function startPlayback() {
   }
 
   lastFrameTimestamp = performance.now();
-  lastPlayedChunkIndex = -1;
   animFrameId = requestAnimationFrame(playbackLoop);
 }
 
 function pausePlayback() {
-  if (isPlaying && playbackStartContextTime !== null) {
-    const elapsed = getPlaybackElapsedSeconds(performance.now());
+  if (isPlaying && audioCtx && playbackStartContextTime !== null) {
+    const elapsed = Math.max(0, audioCtx.currentTime - playbackStartContextTime);
     currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + elapsed));
   }
   isPlaying = false;
@@ -1967,21 +1697,18 @@ function pausePlayback() {
 
 function playbackLoop(now) {
   if (!isPlaying) return;
-  const elapsed = getPlaybackElapsedSeconds(now);
+  let elapsed;
+  if (audioCtx && playbackStartContextTime !== null) {
+    elapsed = audioCtx.currentTime - playbackStartContextTime;
+  } else {
+    elapsed = (now - playbackStartPerfTime) / 1000;
+  }
   currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + Math.max(0, elapsed)));
   if (currentTime >= totalDuration) {
-    // No volver a calcular currentTime con la latencia de salida al finalizar:
-    // la reproducción debe quedarse exactamente al final del archivo.
     currentTime = totalDuration;
-    isPlaying = false;
-    playbackStartContextTime = null;
-    document.getElementById("playBtn").textContent = "▶ Play";
-    if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} voiceAudioNode = null; }
-    if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} activeBgmSource = null; }
-    if (animFrameId) cancelAnimationFrame(animFrameId);
-    animFrameId = null;
     updateTimeUI();
     renderCurrentFrame();
+    pausePlayback();
     return;
   }
   updateTimeUI();
@@ -1990,7 +1717,7 @@ function playbackLoop(now) {
 }
 
 function loadBuiltInDemo() {
-  pausePlayback(); isDemoSynthMode = true; speechActivityMap = null; totalDuration = 15.0; currentTime = 0.0;
+  pausePlayback(); isDemoSynthMode = true; totalDuration = 15.0; currentTime = 0.0;
   document.getElementById("seekSlider").max = totalDuration;
   document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas viven de él.";
   updateScriptStatus();
@@ -2019,7 +1746,6 @@ function createProceduralSceneImage(title, topColor, bottomColor, accentColor, i
 async function exportVideoYouTubeMaster() {
   if (scenes.length === 0) { alert("Sincroniza el guion antes de exportar."); return; }
   pausePlayback();
-  isExportingVideo = true;
   const statusEl = document.getElementById("exportStatus");
   const progOuter = document.getElementById("exportProgressOuter");
   const progInner = document.getElementById("exportProgressInner");
@@ -2093,7 +1819,6 @@ async function exportVideoYouTubeMaster() {
       const a = document.createElement("a"); a.href = url; a.download = "video_faceless_youtube_master.webm";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       btn.disabled = false; progInner.style.width = "100%";
-      isExportingVideo = false;
       statusEl.innerHTML = "✅ <b>¡Vídeo Master Pro descargado con éxito!</b>";
     };
 
@@ -2130,7 +1855,6 @@ async function exportVideoYouTubeMaster() {
     }
     requestAnimationFrame(step);
   } catch (err) {
-    isExportingVideo = false;
     alert("Error: " + err.message); btn.disabled = false; statusEl.textContent = "❌ Error en exportación.";
   }
 }
