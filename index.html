@@ -70,12 +70,12 @@
 
   .workspace { display: grid; grid-template-columns: 240px 1fr 440px; flex: 1; overflow: hidden; }
   .format-gate { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,16,.96); overflow:auto; }
-  .format-gate.hidden { display:none !important; pointer-events:none; }
+  .format-gate.hidden { display:none !important; pointer-events:none; visibility:hidden; }
   .format-panel { width:min(760px,100%); background:var(--bg-card,#111827); border:1px solid var(--border); border-radius:18px; padding:clamp(20px,4vw,36px); box-shadow:0 25px 80px #0009; }
   .format-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:22px 0; }
   .format-option { display:block; border:1px solid var(--border); background:var(--bg-input); border-radius:14px; padding:18px; cursor:pointer; }
   .format-option:has(input:checked) { border:2px solid #8b5cf6; background:rgba(139,92,246,.12); }
-  .format-option input { margin-right:8px; }
+  .format-option input { margin-right:8px; cursor:pointer; }
   @media(max-width:600px){.format-options{grid-template-columns:1fr}.format-panel{padding:20px}}
   .sidebar { background: var(--bg-panel); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
   .step-btn {
@@ -152,10 +152,10 @@
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
     <p class="sub">Elige el formato. AutoVideo generará imágenes limpias, subtítulos sincronizados y automatización por IA de tus efectos SFX.</p>
     <div class="format-options">
-      <label class="format-option"><input type="radio" name="videoFormat" value="short" checked> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
-      <label class="format-option"><input type="radio" name="videoFormat" value="long"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
+      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="short" checked style="cursor:pointer;"> <strong>📱 Short</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">40 segundos – 2 minutos</div><div class="sub">Ritmo rápido y subtítulos legibles de 2-3 palabras.</div></label>
+      <label class="format-option" style="cursor:pointer;"><input type="radio" name="videoFormat" value="long" style="cursor:pointer;"> <strong>🎬 Vídeo largo</strong><div style="margin:10px 0 4px;font-size:1.35rem;font-weight:800;">6 – 18 minutos</div><div class="sub">Desarrollo pausado y transiciones limpias.</div></label>
     </div>
-    <button class="btn btn-primary" style="width:100%;padding:13px;cursor:pointer;position:relative;z-index:10;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
+    <button class="btn btn-primary" style="width:100%;padding:14px;cursor:pointer;position:relative;z-index:9999;" onclick="startProjectWithFormat()">Continuar y escribir el guion →</button>
   </div>
 </div>
 
@@ -308,7 +308,7 @@
 
       <div class="card">
         <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, Avispas...)</h2>
-        <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) y la IA los detectará automáticamente.</p>
+        <p class="sub">Sube tu archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) y la IA los detectará automáticamente.</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
           <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX</button>
           <input type="file" id="sfxFileInput" accept="audio/*" multiple style="display:none" onchange="handleSfxUpload(this.files)">
@@ -2350,12 +2350,12 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       imageModelSelect.value = "cloudflare";
       const workerUrl = localStorage.getItem("autovideo_cloudflare_worker_url") || IMAGE_WORKER_DEFAULT_URL;
-      const accessKey = localStorage.getItem("autovized_cloudflare_access_key") || localStorage.getItem("autovideo_cloudflare_access_key") || "";
+      const accessKey = localStorage.getItem("autovideo_cloudflare_access_key") || "";
       document.getElementById("cloudflareWorkerUrl").value = workerUrl;
       document.getElementById("cloudflareAccessKey").value = accessKey;
     } catch (_) {}
   }
-  Object.values(SUB_FONTS).forEach(def => { loadSubFontAsset(def).then(() => renderCurrentFrame()); });
+  Object.values(SUB_FONTS).def => { loadSubFontAsset(def).then(() => renderCurrentFrame()); });
   renderCurrentFrame();
   updateScriptStatus();
 });
