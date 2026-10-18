@@ -170,7 +170,7 @@
   <div class="header-actions">
     <span class="badge-local">⚡ SIN CLAVES</span>
     <button class="btn btn-amber" onclick="loadBuiltInDemo()">✨ Cargar Demo</button>
-    <button class="btn btn-primary" onclick="autoSyncProject()">🔄 Sincronizar Todo</button>
+    <button class="btn btn-primary" id="syncAllBtn" onclick="autoSyncProject()">🔄 Sincronizar Todo</button>
   </div>
 </header>
 
@@ -322,7 +322,7 @@
     <div class="tab-View" id="tab2">
       <div class="card">
         <h2>📝 2. Tu guion</h2>
-        <p class="sub">Pega aquí tu guion completo. AutoVideo lo dividirá en escenas proporcionales.</p>
+        <p class="sub">Pega aquí tu guion completo. Con audio cargado, AutoVideo reconoce las palabras y sincroniza cada escena y subtítulo con la voz. La primera sincronización descarga el modelo de voz; después se procesa en tu navegador.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <span id="lineCountInfo">0 escenas estimadas</span>
@@ -350,6 +350,7 @@
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ai" onclick="generateImagesFromPromptsAI()">🎨 Generar imágenes</button>
+            <button class="btn btn-amber" id="retryFailedImagesBtn" onclick="retryFailedImages()" disabled>🔁 Reintentar fallidas (0)</button>
             <button class="btn" onclick="clearAllImages()">🗑️ Vaciar</button>
           </div>
         </div>
@@ -494,6 +495,12 @@
 let audioCtx = null;
 let voiceBuffer = null;
 let voiceAudioNode = null;
+let speechActivityMap = null;
+let isExportingVideo = false;
+let exportScheduledStartAt = null;
+let activeExportRecorder = null;
+let activeExportNodes = [];
+let exportAbortReason = "";
 let bgmBuffer = null;
 let activeBgmSource = null;
 
@@ -510,6 +517,28 @@ let playbackStartPerfTime = 0;
 let loadedImages = [];
 let scenes = [];
 let userSfxList = [];
+let imageGenerationInProgress = false;
+let currentImagePrompts = [];
+let imageRunController = null;
+let imageRunVersion = 0;
+let imageRequestSpacing = 1800;
+let lastImageRequestAt = 0;
+let generationCacheKey = "";
+let generationJobKey = "";
+let autoVideoDbPromise = null;
+let speechWorker = null;
+let speechWorkerUrl = null;
+let speechWorkerSequence = 0;
+const speechWorkerJobs = new Map();
+let speechTranscript = null;
+let speechTranscriptBuffer = null;
+let speechRecognitionTask = null;
+let speechRecognitionBuffer = null;
+let syncRequestVersion = 0;
+let syncInProgress = false;
+let verifiedSyncScript = null;
+let verifiedSyncBuffer = null;
+let voiceUploadVersion = 0;
 let lastPlayedSceneIndex = -1;
 let lastPlayedChunkIndex = -1;
 let triggeredSfxInCurrentScene = {};
@@ -888,95 +917,322 @@ async function testCloudflareWorker() {
   }
 }
 
-async function fetchCloudflareImage(prompt, aspectRatio, useReference = true) {
-  const workerUrl = getCloudflareWorkerUrl();
-  const accessKey = getCloudflareAccessKey();
-  if (!workerUrl || !accessKey) throw new Error("Configura la URL y la clave de tu Worker.");
-  
-  let cleanRefImage = null;
-  let refMime = null;
-  if (useReference && autoVideoReferenceImageData) {
-    cleanRefImage = autoVideoReferenceImageData;
-    if (cleanRefImage.includes("base64,")) {
-      cleanRefImage = cleanRefImage.split("base64,")[1];
-    }
-    refMime = autoVideoReferenceImageMime || "image/jpeg";
-  }
 
-  const payload = { prompt, aspectRatio, steps: 4 };
-  if (cleanRefImage) {
-    payload.referenceImage = cleanRefImage;
-    payload.referenceImageMimeType = refMime;
-  }
 
-  const response = await fetch(workerUrl + "/generate", {
-    method: "POST",
-    mode: "cors",
-    headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
-    body: JSON.stringify(payload)
+
+
+// Un único acceso a IndexedDB para conservar imágenes terminadas entre reintentos.
+function openAutoVideoDb() {
+  if (!autoVideoDbPromise) autoVideoDbPromise = new Promise(resolve => {
+    try {
+      const request = indexedDB.open("autovideo-recovery-v1", 1);
+      request.onupgradeneeded = () => request.result.createObjectStore("recovery");
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = request.onblocked = () => resolve(null);
+    } catch (_) { resolve(null); }
   });
-  
-  const rawText = await response.text();
-  let data = {};
-  try {
-    data = JSON.parse(rawText);
-  } catch (e) {
-    throw new Error("Respuesta inválida del Worker (no es JSON): " + rawText.substring(0, 100));
-  }
-
-  if (!response.ok) {
-    const msg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : ("HTTP " + response.status));
-    throw new Error(msg);
-  }
-
-  const dataUrl = data.dataURI || data.dataUrl || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
-  if (!dataUrl) throw new Error("El Worker respondió OK pero no devolvió ninguna imagen.");
-  return await loadImageCrossOrigin(dataUrl, 180000);
+  return autoVideoDbPromise;
 }
 
-function loadImageCrossOrigin(url, timeoutMs = 45000) {
+async function recoveryStore(mode, key, value) {
+  const db = await openAutoVideoDb();
+  if (!db) return null;
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction("recovery", mode === "get" ? "readonly" : "readwrite");
+      const store = tx.objectStore("recovery");
+      const request = mode === "get" ? store.get(key) : store.put(value, key);
+      tx.oncomplete = () => resolve(mode === "get" ? request.result : true);
+      tx.onerror = tx.onabort = () => resolve(null);
+    } catch (_) { resolve(null); }
+  });
+}
+
+function abortImageError() {
+  return new DOMException("Generación pausada. Las imágenes completadas se conservan.", "AbortError");
+}
+
+function waitForImageRetry(ms, signal) {
+  if (signal?.aborted) return Promise.reject(abortImageError());
+  return new Promise((resolve, reject) => {
+    const done = () => { signal?.removeEventListener("abort", abort); resolve(); };
+    const timer = setTimeout(done, Math.max(0, ms));
+    const abort = () => { clearTimeout(timer); signal?.removeEventListener("abort", abort); reject(abortImageError()); };
+    signal?.addEventListener("abort", abort, { once: true });
+  });
+}
+
+function parseImageRetryAfter(value) {
+  if (!value) return 0;
+  const seconds = Number(value);
+  return Number.isFinite(seconds) ? Math.max(0, seconds * 1000) : Math.max(0, Date.parse(value) - Date.now()) || 0;
+}
+
+function cloudflareImageError(message, status = 0, data = {}, retryAfterMs = 0) {
+  const error = new Error(message);
+  error.status = status;
+  error.details = data;
+  error.retryAfterMs = retryAfterMs;
+  error.permanent = [400, 401, 402, 403, 404, 405, 413, 415, 422].includes(status);
+  return error;
+}
+
+async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, signal) {
+  const workerUrl = getCloudflareWorkerUrl();
+  const accessKey = getCloudflareAccessKey();
+  if (!workerUrl || !accessKey) throw cloudflareImageError("Configura la URL y la clave de tu Worker.", 401);
+  const payload = { prompt, aspectRatio, steps: 4 };
+  if (useReference && autoVideoReferenceImageData) {
+    payload.referenceImage = autoVideoReferenceImageData.split("base64,").pop();
+    payload.referenceImageMimeType = autoVideoReferenceImageMime || "image/jpeg";
+  }
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  if (signal?.aborted) throw abortImageError();
+  signal?.addEventListener("abort", cancel, { once: true });
+  // El timeout cubre también la descarga del cuerpo, no sólo las cabeceras.
+  const timeout = setTimeout(() => controller.abort(), 180000);
+  let response, rawText;
+  try {
+    response = await fetch(workerUrl + "/generate", {
+      method: "POST", mode: "cors",
+      headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
+      body: JSON.stringify(payload), signal: controller.signal
+    });
+    rawText = await response.text();
+  } catch (error) {
+    if (signal?.aborted) throw abortImageError();
+    if (error.name === "AbortError") throw cloudflareImageError("El servidor ha tardado más de 3 minutos. Se volverá a intentar.", 408);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", cancel);
+  }
+  let data;
+  try { data = JSON.parse(rawText); } catch (_) { data = {}; }
+  const retryAfter = parseImageRetryAfter(response.headers.get("Retry-After"));
+  if (!response.ok || data.success === false || data.ok === false || data.error) {
+    const detail = data.error || data.errors || rawText.slice(0, 350) || ("HTTP " + response.status);
+    throw cloudflareImageError(typeof detail === "string" ? detail : JSON.stringify(detail), response.status, data, retryAfter);
+  }
+  const url = data.dataURI || data.dataUrl || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
+  if (!url) throw cloudflareImageError("Respuesta incompleta: falta la imagen. Se volverá a intentar.", response.status, data, retryAfter);
+  // Si sólo falla la descarga de una URL ya generada, no volvemos a pagar otra generación.
+  for (let attempt = 0;; attempt++) {
+    if (signal?.aborted) throw abortImageError();
+    try { return await loadImageCrossOrigin(url, 120000, signal); }
+    catch (error) {
+      if (signal?.aborted) throw abortImageError();
+      if (/^data:/i.test(url) || attempt >= 3) throw error;
+      await waitForImageRetry(Math.min(15000, 2000 * 2 ** attempt), signal);
+    }
+  }
+}
+
+function loadImageCrossOrigin(url, timeoutMs = 45000, signal) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     let settled = false;
-    const timeoutId = setTimeout(() => {
+    const finish = (error, result) => {
       if (settled) return;
       settled = true;
-      reject(new Error("Tiempo agotado esperando la imagen remota."));
-    }, timeoutMs);
-
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
+      img.onload = img.onerror = null;
+      if (error) { img.src = ""; reject(error); } else resolve(result);
+    };
+    const abort = () => finish(abortImageError());
+    const timer = setTimeout(() => finish(new Error("Tiempo agotado descargando la imagen.")), timeoutMs);
+    if (signal?.aborted) { abort(); return; }
+    signal?.addEventListener("abort", abort, { once: true });
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      if (settled) return;
       try {
+        if (!img.naturalWidth || !img.naturalHeight) throw new Error("Imagen vacía.");
+        // El propio bitmap validado sirve para el vídeo; evitamos una segunda decodificación.
         const c = document.createElement("canvas");
-        c.width = img.naturalWidth || img.width || 1280;
-        c.height = img.naturalHeight || img.height || 720;
-        const ctx = c.getContext("2d");
-        ctx.drawImage(img, 0, 0, c.width, c.height);
-        const safeDataUrl = c.toDataURL("image/jpeg", 0.92);
-        const localImg = new Image();
-        localImg.onload = () => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timeoutId);
-          resolve({ dataUrl: safeDataUrl, imgObj: localImg });
-        };
-        localImg.src = safeDataUrl;
-      } catch (e) {
-        settled = true;
-        clearTimeout(timeoutId);
-        reject(new Error("Error al preparar imagen."));
-      }
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext("2d").drawImage(img, 0, 0);
+        const dataUrl = /^data:image\/(jpeg|png|webp);base64,/i.test(url) ? url : c.toDataURL("image/jpeg", 0.92);
+        c.width = c.height = 0;
+        finish(null, { dataUrl, imgObj: img });
+      } catch (error) { finish(new Error("No se pudo validar la imagen: " + error.message)); }
     };
-    img.onerror = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeoutId);
-      reject(new Error("Error al cargar imagen."));
-    };
+    img.onerror = () => finish(new Error("No se pudo descargar o decodificar la imagen."));
     img.src = url;
   });
 }
+
+function isCloudflareImageQuotaError(error) {
+  const message = normalizeText((error?.message || "") + " " + JSON.stringify(error?.details || {}));
+  return /\b(3036|4006)\b/.test(message) || /daily free allocation|used up your daily|daily limit|quota exceeded|insufficient credits|credit allocation exhausted|low on credits|cuota diaria/.test(message)
+    || (/neurons/.test(message) && /used up|exhausted/.test(message));
+}
+
+function updateRetryFailedButton() {
+  const btn = document.getElementById("retryFailedImagesBtn");
+  if (!btn) return;
+  const count = loadedImages.filter(item => item?.isPending).length;
+  btn.textContent = imageGenerationInProgress ? "⏸ Pausar generación" : `🔁 Reintentar fallidas (${count})`;
+  btn.disabled = !imageGenerationInProgress && count === 0;
+}
+
+async function generateImageWithRetries(prompt, aspect, sceneNumber, totalCount, signal) {
+  let useReference = Boolean(autoVideoReferenceImageData);
+  let referenceFallback = false;
+  for (let attempt = 1;; attempt++) {
+    if (signal?.aborted) throw abortImageError();
+    if (navigator.onLine === false) {
+      showAILog(`⏳ Sin conexión. La imagen ${sceneNumber}/${totalCount} se reanudará al recuperar Internet.`);
+      await waitForImageRetry(5000, signal);
+      continue;
+    }
+    await waitForImageRetry(Math.max(0, lastImageRequestAt + imageRequestSpacing - Date.now()), signal);
+    lastImageRequestAt = Date.now();
+    try {
+      const result = await fetchCloudflareImage(prompt, aspect, useReference, signal);
+      imageRequestSpacing = Math.max(1800, imageRequestSpacing * 0.90);
+      return { result, usedReferenceFallback: referenceFallback };
+    } catch (error) {
+      if (signal?.aborted || error.name === "AbortError") throw abortImageError();
+      if (isCloudflareImageQuotaError(error)) throw error;
+      // Sólo quitar la referencia si el servicio rechaza ese formato expresamente.
+      if (useReference && [400, 413, 415, 422].includes(error.status) && /reference|referencia|base64|image input|image.*size/i.test(error.message)) {
+        useReference = false; referenceFallback = true;
+      } else if (error.permanent || /unauthorized|invalid.*(key|token)|authentication|forbidden|invalid url/i.test(error.message)) {
+        throw error;
+      }
+      if (error.status === 429) imageRequestSpacing = Math.min(30000, imageRequestSpacing * 1.7);
+      const delay = Math.max(error.retryAfterMs || 0, Math.min(90000, 2500 * 2 ** Math.min(6, attempt - 1)) + Math.random() * 1000);
+      showAILog(`⏳ Imagen ${sceneNumber}/${totalCount}: el servicio está ocupado o ha fallado temporalmente. Nuevo intento en ${Math.ceil(delay / 1000)} s (intento ${attempt + 1}). Las imágenes terminadas se conservan.`);
+      await waitForImageRetry(delay, signal);
+    }
+  }
+}
+
+async function retryPendingImageItems(items) {
+  if (imageGenerationInProgress) return;
+  const pendingItems = items.filter(item => item?.isPending && item.prompt && loadedImages.includes(item));
+  if (!pendingItems.length) return;
+  imageGenerationInProgress = true;
+  const runVersion = imageRunVersion;
+  imageRunController = new AbortController();
+  const signal = imageRunController.signal;
+  updateRetryFailedButton();
+  const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
+  let failure = null;
+  try {
+    for (const item of pendingItems) {
+      if (!loadedImages.includes(item)) continue;
+      const sceneNumber = (item.sceneIndex ?? loadedImages.indexOf(item)) + 1;
+      showAILog(`🎨 Generando imagen ${sceneNumber} de ${loadedImages.length} · ${loadedImages.filter(x => !x.isPending).length} completadas.`);
+      const generated = await generateImageWithRetries(item.prompt, aspect, sceneNumber, loadedImages.length, signal);
+      const replaced = replacePendingImage(item, generated.result, generated.usedReferenceFallback);
+      if (replaced && generationCacheKey) {
+        const slot = loadedImages.find(x => x.sceneIndex === item.sceneIndex && !x.isPending);
+        if (slot) await recoveryStore("put", "image:" + generationCacheKey + ":" + item.sceneIndex, {
+          url: slot.url, prompt: slot.prompt, usedReferenceFallback: slot.usedReferenceFallback
+        });
+      }
+      renderMediaGrid(); renderSceneListUI(); renderCurrentFrame();
+    }
+  } catch (error) {
+    failure = error;
+    pendingItems.filter(item => loadedImages.includes(item)).forEach(item => { item.lastError = error.message; });
+  } finally {
+    imageGenerationInProgress = false;
+    imageRunController = null;
+    renderMediaGrid(); renderSceneListUI(); renderCurrentFrame(); updateRetryFailedButton();
+  }
+  const remaining = loadedImages.filter(item => item?.isPending).length;
+  if (runVersion !== imageRunVersion) return;
+  if (!remaining) {
+    if (generationJobKey) {
+      const checkpoint = await recoveryStore("get", generationJobKey);
+      if (checkpoint) await recoveryStore("put", generationJobKey, { ...checkpoint, complete: true });
+    }
+    const fallback = loadedImages.filter(item => item.usedReferenceFallback).map(item => item.sceneIndex + 1);
+    showAILog(`✅ <b>Las ${loadedImages.length} imágenes están generadas.</b>${fallback.length ? ` El servicio rechazó la referencia en las escenas ${fallback.join(", ")}; se generaron sin ella.` : ""}`);
+  } else if (failure?.name === "AbortError") {
+    showAILog(`⏸ Generación pausada. Quedan ${remaining} imágenes. Pulsa «Reintentar fallidas» para continuar.`);
+  } else {
+    const cause = isCloudflareImageQuotaError(failure)
+      ? "El proveedor ha agotado la cuota de imágenes. Amplía o espera a que se restablezca tu cuota y pulsa «Reintentar fallidas»."
+      : `El proveedor ha rechazado la solicitud: ${escapeHtml(failure?.message || "Revisa URL, clave y configuración.")} Corrige la causa y pulsa «Reintentar fallidas».`;
+    showAILog(`⚠️ ${cause} Se conservan todas las imágenes terminadas; quedan ${remaining} pendientes.`, true);
+  }
+}
+
+async function retryFailedImages() {
+  if (imageGenerationInProgress) { imageRunController?.abort(); return; }
+  await retryPendingImageItems(loadedImages.filter(item => item?.isPending));
+}
+
+async function retryImageAtSlot(index) {
+  if (loadedImages[index]?.isPending) await retryPendingImageItems([loadedImages[index]]);
+}
+
+async function startImageGenerationQueue(imagePrompts) {
+  if (!getCloudflareAccessKey()) { showAILog("Introduce la clave del Worker en Estudio IA antes de generar.", true); switchTab(0); return; }
+  if (imageGenerationInProgress) return;
+  imageGenerationInProgress = true;
+  const runVersion = ++imageRunVersion;
+  const prepareController = new AbortController();
+  imageRunController = prepareController;
+  updateRetryFailedButton();
+  const aspect = document.getElementById("aspectSelect").value;
+  const identity = JSON.stringify([getCloudflareWorkerUrl(), aspect, imagePrompts, autoVideoReferenceImageData || ""]);
+  // SHA-256 evita reutilizar resultados de otro prompt, formato o referencia.
+  generationCacheKey = "";
+  generationJobKey = "";
+  try {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity));
+    generationJobKey = "image-job:" + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+  } catch (_) { /* Sin almacenamiento disponible, la cola sigue funcionando en memoria. */ }
+  const previousImages = loadedImages.slice();
+  const sameProject = previousImages.length === imagePrompts.length && previousImages.some(item => item.isPending) && previousImages.every((item, i) => item.prompt === imagePrompts[i] && item.generationIdentity === identity);
+  imageGenerationInProgress = true;
+  updateRetryFailedButton();
+  try {
+    const checkpoint = generationJobKey ? await recoveryStore("get", generationJobKey) : null;
+    const restoreCheckpoint = checkpoint && !checkpoint.complete;
+    const runId = restoreCheckpoint ? checkpoint.runId : (crypto.randomUUID?.() || String(Date.now()) + Math.random());
+    generationCacheKey = generationJobKey ? generationJobKey + ":" + runId : "";
+    if (generationJobKey) await recoveryStore("put", generationJobKey, { runId, complete: false });
+    const restored = [];
+    for (let i = 0; i < imagePrompts.length; i++) {
+      let item = sameProject ? previousImages[i] : null;
+      if (!item && generationCacheKey && restoreCheckpoint && !prepareController.signal.aborted) {
+        const saved = await recoveryStore("get", "image:" + generationCacheKey + ":" + i);
+        if (saved?.url && saved.prompt === imagePrompts[i]) {
+          try {
+            const image = await loadImageCrossOrigin(saved.url, 45000, prepareController.signal);
+            item = { name: String(i + 1).padStart(3, "0") + "_IA.jpg", url: image.dataUrl, imgObj: image.imgObj, sceneIndex: i, prompt: imagePrompts[i], isPending: false, usedReferenceFallback: saved.usedReferenceFallback };
+          } catch (_) { /* Sólo este resultado se vuelve a generar si la copia está dañada. */ }
+        }
+      }
+      if (!item) item = { name: String(i + 1).padStart(3, "0") + "_PENDIENTE", url: "", imgObj: null, sceneIndex: i, prompt: imagePrompts[i], isPending: true };
+      item.generationIdentity = identity;
+      restored.push(item);
+    }
+    if (runVersion !== imageRunVersion) return;
+    loadedImages = restored;
+    renderMediaGrid();
+    switchTab(3);
+  } finally { imageGenerationInProgress = false; updateRetryFailedButton(); }
+  if (runVersion !== imageRunVersion) { imageRunController = null; return; }
+  if (prepareController.signal.aborted) {
+    imageRunController = null;
+    showAILog("⏸ Generación pausada. Pulsa «Reintentar fallidas» para continuar.");
+    return;
+  }
+  await retryPendingImageItems(loadedImages.filter(item => item.isPending));
+  if (!loadedImages.some(item => item.isPending)) {
+    await autoSyncProject(false);
+    switchTab(3);
+  }
+}
+
 
 function parseManualList(rawText) {
   if (!rawText || !rawText.trim()) return [];
@@ -1018,12 +1274,82 @@ function parseManualList(rawText) {
     .filter(Boolean);
 }
 
+
+
+function createPendingSceneImage(sceneNumber, prompt, reason) {
+  // Local status artwork, not a fake generated image. Export is blocked until it is replaced.
+  const c = document.createElement("canvas");
+  c.width = 1280; c.height = 720;
+  const ctx = c.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 1280, 720);
+  g.addColorStop(0, "#111827"); g.addColorStop(0.55, "#172554"); g.addColorStop(1, "#312e81");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.strokeStyle = "rgba(167,139,250,.45)"; ctx.lineWidth = 3;
+  for (let x = -720; x < 1500; x += 90) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 720, 720); ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(15,23,42,.88)";
+  ctx.beginPath(); ctx.roundRect(115, 155, 1050, 405, 28); ctx.fill();
+  ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 4; ctx.stroke();
+  ctx.fillStyle = "#fbbf24"; ctx.font = "800 34px 'Segoe UI', sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("ESCENA " + sceneNumber + " · IMAGEN PENDIENTE", 640, 245);
+  ctx.fillStyle = "#f8fafc"; ctx.font = "700 54px 'Segoe UI', sans-serif";
+  ctx.fillText("REINTENTAR GENERACIÓN", 640, 330);
+  ctx.fillStyle = "#cbd5e1"; ctx.font = "28px 'Segoe UI', sans-serif";
+  const shortPrompt = String(prompt || "").replace(/\s+/g, " ").trim();
+  const label = shortPrompt.length > 72 ? shortPrompt.slice(0, 69) + "…" : shortPrompt;
+  if (label) ctx.fillText(label, 640, 405, 930);
+  ctx.fillStyle = "#94a3b8"; ctx.font = "24px 'Segoe UI', sans-serif";
+  ctx.fillText("No se exportará mientras esta escena siga pendiente", 640, 485);
+  const url = c.toDataURL("image/png");
+  return {
+    name: String(sceneNumber).padStart(3, "0") + "_PENDIENTE_REINTENTAR.png",
+    url, imgObj: c, sceneIndex: sceneNumber - 1,
+    prompt: String(prompt || ""), isPending: true,
+    lastError: String(reason || "La generación no terminó correctamente.")
+  };
+}
+
+
+
+function waitMs(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+
+function replacePendingImage(pendingItem, generated, usedReferenceFallback) {
+  const position = loadedImages.indexOf(pendingItem);
+  if (position < 0) return false;
+  loadedImages[position] = {
+    name: String((pendingItem.sceneIndex ?? position) + 1).padStart(3, "0") + "_IA.jpg",
+    url: generated.dataUrl,
+    imgObj: generated.imgObj,
+    sceneIndex: pendingItem.sceneIndex ?? position,
+    prompt: pendingItem.prompt || "",
+    generationIdentity: pendingItem.generationIdentity,
+    isPending: false,
+    usedReferenceFallback: Boolean(usedReferenceFallback)
+  };
+  return true;
+}
+
+
+
+
+
+
+
 async function generateImagesFromPromptsAI() {
+  if (imageGenerationInProgress) {
+    showAILog("La generación actual sigue en marcha. Espera a que termine antes de iniciar otra.", true);
+    return;
+  }
+
   const promptMode = document.getElementById("promptGenMode").value;
   const rawScript = document.getElementById("scriptArea").value.trim();
   const manualText = document.getElementById("aiManualPrompts19").value.trim();
   const styleInput = document.getElementById("aiVisualStyle").value.trim();
-
   const styleSuffix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
   let imagePrompts = [];
 
@@ -1035,19 +1361,12 @@ async function generateImagesFromPromptsAI() {
       return;
     }
     const extraStyle = styleInput ? `, ${styleInput}` : "";
-    imagePrompts = manualLines.map((lineContent) => {
-      const cleanLine = lineContent.replace(/\.+$/, "").trim();
-      return `${cleanLine}${extraStyle}, ${styleSuffix}`;
-    });
+    imagePrompts = manualLines.map(lineContent => `${lineContent.replace(/\.+$/, "").trim()}${extraStyle}, ${styleSuffix}`);
   } else {
     const styleAsList = parseManualList(styleInput);
     const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|\n)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
-
     if (hasNumberedStyleList) {
-      imagePrompts = styleAsList.map((lineContent) => {
-        const cleanLine = lineContent.replace(/\.+$/, "").trim();
-        return `${cleanLine}, ${styleSuffix}`;
-      });
+      imagePrompts = styleAsList.map(lineContent => `${lineContent.replace(/\.+$/, "").trim()}, ${styleSuffix}`);
     } else {
       if (!rawScript) {
         showAILog("Pega primero tu guion en la pestaña 2.", true);
@@ -1056,7 +1375,7 @@ async function generateImagesFromPromptsAI() {
       }
       const scriptLines = getScriptLines();
       const styleDesc = styleInput ? `${styleInput}, ${styleSuffix}` : `2D minimalist vector animation style, ${styleSuffix}`;
-      imagePrompts = scriptLines.map((sceneText) => {
+      imagePrompts = scriptLines.map(sceneText => {
         const cleanText = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").replace(/\.+$/, "").trim();
         return `${styleDesc}. Visual scene: ${cleanText}`;
       });
@@ -1064,97 +1383,47 @@ async function generateImagesFromPromptsAI() {
   }
 
   const targetCount = imagePrompts.length;
+  if (!targetCount) {
+    showAILog("No se han encontrado escenas o prompts para generar.", true);
+    return;
+  }
+  currentImagePrompts = imagePrompts.slice();
   const promptsAreaEl = document.getElementById("promptsArea");
-  if (promptsAreaEl) {
-    promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("\n\n");
-  }
+  if (promptsAreaEl) promptsAreaEl.value = imagePrompts.map((p, idx) => `${idx + 1}. ${p}`).join("\n\n");
 
-  loadedImages = [];
-  renderMediaGrid();
-  showAILog("🎨 <b>Generando " + targetCount + " imágenes limpias en orden (1 a " + targetCount + ")...</b>");
-
-  const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  let failedIndices = [];
-  let refFallbackIndices = [];
-
-  for (let i = 0; i < targetCount; i++) {
-    showAILog(`🎨 Generando imagen ${i + 1} de ${targetCount} en orden...`);
-    let res = null;
-    let success = false;
-    
-    // Pausa de cortesía anti-saturación para vídeos largos y cortos
-    if (i > 0) {
-      await new Promise(r => setTimeout(r, 600));
-    }
-
-    try {
-      res = await fetchCloudflareImage(imagePrompts[i], aspect, true);
-      success = true;
-    } catch (err) {
-      console.error(`Error en escena ${i + 1}:`, err);
-      showAILog(`⚠️ Error en imagen ${i + 1}: ${escapeHtml(err.message)}. Reintentando sin referencia...`, true);
-      if (autoVideoReferenceImageData) {
-        try {
-          await new Promise(r => setTimeout(r, 800));
-          res = await fetchCloudflareImage(imagePrompts[i], aspect, false);
-          success = true;
-          refFallbackIndices.push(i + 1);
-        } catch (err2) {
-          console.error(`Error (sin referencia) en escena ${i + 1}:`, err2);
-          showAILog(`❌ Falló definitivamente la imagen ${i + 1}: ${escapeHtml(err2.message)}`, true);
-        }
-      }
-    }
-
-    if (success && res) {
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA.jpg",
-        url: res.dataUrl,
-        imgObj: res.imgObj,
-        sceneIndex: i
-      });
-    } else {
-      const fallbackPlaceholder = createProceduralSceneImage(
-        String(i + 1).padStart(3, "0") + "_Reintentar",
-        "#1e1b4b", "#0f172a", "#ef4444", "⚠️"
-      );
-      loadedImages.push({
-        name: String(i + 1).padStart(3, "0") + "_IA_Pendiente.png",
-        url: fallbackPlaceholder.url,
-        imgObj: fallbackPlaceholder.imgObj,
-        sceneIndex: i
-      });
-      failedIndices.push(i + 1);
-    }
-    renderMediaGrid();
-  }
-
-  autoSyncProject(false);
-
-  if (failedIndices.length > 0) {
-    const failedStr = failedIndices.join(", ");
-    showAILog(`❌ <b>Error de generación:</b> No se pudieron generar las imágenes de la(s) escena(s) número <b>#${failedStr}</b>. Revisa la consola (F12) para ver el error exacto del Worker.`, true);
-  } else if (refFallbackIndices.length > 0) {
-    showAILog(`⚠️ Imágenes generadas en orden, pero la(s) número(s) #${refFallbackIndices.join(", ")} se hicieron SIN la imagen de referencia.`, true);
-  } else {
-    showAILog("✅ <b>¡Todas las " + targetCount + " imágenes se generaron en orden con éxito!</b>");
-  }
-  switchTab(3);
+  await startImageGenerationQueue(imagePrompts);
 }
 
 async function handleVoiceUpload(file) {
-  if (!file) return;
-  document.getElementById("voiceLabel").textContent = "✅ " + file.name;
-  document.getElementById("st1").textContent = "Audio listo";
-  document.getElementById("st1").classList.add("ok");
-
-  const arrayBuf = await file.arrayBuffer();
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
-  totalDuration = voiceBuffer.duration;
-  document.getElementById("seekSlider").max = totalDuration.toFixed(2);
-  autoSyncProject(false);
-  updateTimeUI();
+  if (!file || isExportingVideo) return;
+  const uploadVersion = ++voiceUploadVersion;
+  ++syncRequestVersion;
+  syncInProgress = false;
+  document.getElementById("syncAllBtn").disabled = false;
+  document.getElementById("syncAllBtn").textContent = "🔄 Sincronizar Todo";
+  verifiedSyncBuffer = verifiedSyncScript = null;
+  if (speechRecognitionTask) destroySpeechWorker("El audio ha cambiado. Se analizará el nuevo archivo.");
+  speechRecognitionTask = speechRecognitionBuffer = speechTranscript = speechTranscriptBuffer = null;
+  if (isPlaying) pausePlayback();
+  isDemoSynthMode = false;
+  try {
+    const arrayBuf = await file.arrayBuffer();
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await audioCtx.decodeAudioData(arrayBuf);
+    if (uploadVersion !== voiceUploadVersion) return;
+    voiceBuffer = decoded;
+    speechActivityMap = buildSpeechActivityMap(voiceBuffer);
+    totalDuration = voiceBuffer.duration;
+    currentTime = 0;
+    document.getElementById("voiceLabel").textContent = "✅ " + file.name;
+    document.getElementById("st1").textContent = "Audio listo";
+    document.getElementById("st1").classList.add("ok");
+    document.getElementById("seekSlider").max = totalDuration;
+    updateTimeUI();
+    await autoSyncProject(false);
+  } catch (error) {
+    if (uploadVersion === voiceUploadVersion) alert("No se pudo cargar el audio: " + error.message);
+  }
 }
 
 async function handleBgmUpload(file) {
@@ -1222,6 +1491,203 @@ function getSpeechTimingWeight(text) {
   return getSpeechTimingWeights(text).reduce((sum, weight) => sum + weight, 0);
 }
 
+
+// Construye un mapa de actividad acústica del audio real (ventanas de 20 ms).
+// Los silencios no consumen progreso de subtítulos: así las pausas de la voz
+// no hacen que las imágenes ni las palabras sigan avanzando por delante.
+function buildSpeechActivityMap(buffer) {
+  if (!buffer || !buffer.length || !buffer.sampleRate || !buffer.duration) return null;
+  try {
+    const duration = buffer.duration;
+    const hop = 0.02;
+    const frameCount = Math.ceil(duration / hop);
+    const rms = new Float32Array(frameCount);
+    const channels = [];
+    for (let c = 0; c < buffer.numberOfChannels; c++) channels.push(buffer.getChannelData(c));
+
+    for (let i = 0; i < frameCount; i++) {
+      const startSample = Math.floor(i * hop * buffer.sampleRate);
+      const endSample = Math.min(buffer.length, Math.floor(Math.min(duration, (i + 1) * hop) * buffer.sampleRate));
+      let sumSquares = 0;
+      let count = 0;
+      // Saltar alguna muestra reduce el coste en audios largos sin afectar la detección de pausas.
+      const stride = 2;
+      for (const channel of channels) {
+        for (let s = startSample; s < endSample; s += stride) {
+          const v = channel[s] || 0;
+          sumSquares += v * v;
+          count++;
+        }
+      }
+      rms[i] = count ? Math.sqrt(sumSquares / count) : 0;
+    }
+
+    const sorted = Array.from(rms).sort((a, b) => a - b);
+    const percentile = p => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p))] || 0;
+    const noiseFloor = percentile(0.15);
+    const speechLevel = percentile(0.90);
+    if (speechLevel < 0.0012) return null;
+    let threshold = Math.max(0.0008, speechLevel * 0.085, noiseFloor * 2.2);
+    threshold = Math.min(threshold, speechLevel * 0.55);
+
+    const voiced = Array.from(rms, value => value >= threshold);
+
+    // Cierra huecos muy cortos y elimina chasquidos aislados para que no se interpreten como voz.
+    for (let i = 1; i < voiced.length - 1;) {
+      if (!voiced[i]) {
+        let j = i;
+        while (j < voiced.length && !voiced[j]) j++;
+        if (i > 0 && j < voiced.length && voiced[i - 1] && voiced[j] && j - i <= 2) {
+          for (let k = i; k < j; k++) voiced[k] = true;
+        }
+        i = Math.max(j, i + 1);
+      } else i++;
+    }
+    for (let i = 0; i < voiced.length;) {
+      if (voiced[i]) {
+        let j = i;
+        while (j < voiced.length && voiced[j]) j++;
+        if (j - i < 3) for (let k = i; k < j; k++) voiced[k] = false;
+        i = j;
+      } else i++;
+    }
+
+    const prefix = new Float64Array(frameCount + 1);
+    const silenceIntervals = [];
+    let activeFrames = 0;
+    for (let i = 0; i < frameCount; i++) {
+      const frameDuration = Math.max(0, Math.min(hop, duration - i * hop));
+      prefix[i + 1] = prefix[i] + (voiced[i] ? frameDuration : 0);
+      if (voiced[i]) activeFrames++;
+    }
+    const activeDuration = prefix[frameCount];
+    if (activeDuration < Math.min(0.35, duration * 0.08) || activeFrames < 4) return null;
+
+    let firstVoiceFrame = voiced.findIndex(Boolean);
+    let lastVoiceFrame = voiced.length - 1;
+    while (lastVoiceFrame >= 0 && !voiced[lastVoiceFrame]) lastVoiceFrame--;
+    const firstVoiceStart = firstVoiceFrame >= 0 ? firstVoiceFrame * hop : 0;
+    const lastVoiceEnd = lastVoiceFrame >= 0
+      ? Math.min(duration, (lastVoiceFrame + 1) * hop)
+      : duration;
+
+    for (let i = 0; i < frameCount;) {
+      if (!voiced[i]) {
+        let j = i;
+        while (j < frameCount && !voiced[j]) j++;
+        const start = i * hop;
+        const end = Math.min(duration, j * hop);
+        if (end - start >= 0.10 && start > 0.04 && end < duration - 0.04) {
+          silenceIntervals.push({ start, end, center: (start + end) / 2, duration: end - start });
+        }
+        i = j;
+      } else i++;
+    }
+
+    return { duration, hop, frameCount, voiced, prefix, activeDuration, silenceIntervals, firstVoiceStart, lastVoiceEnd };
+  } catch (err) {
+    console.warn('No se pudo analizar la actividad de voz; se usará la sincronización proporcional.', err);
+    return null;
+  }
+}
+
+function speechSecondsAt(map, time) {
+  if (!map) return Math.max(0, time || 0);
+  const t = Math.max(0, Math.min(map.duration, Number(time) || 0));
+  if (t >= map.duration) return map.activeDuration;
+  const index = Math.max(0, Math.min(map.frameCount - 1, Math.floor(t / map.hop)));
+  const frameStart = index * map.hop;
+  const frameDuration = Math.max(0, Math.min(map.hop, map.duration - frameStart));
+  return map.prefix[index] + (map.voiced[index] ? Math.max(0, Math.min(frameDuration, t - frameStart)) : 0);
+}
+
+// Convierte segundos de voz activa a tiempo real. En una pausa, desplaza el
+// límite hasta el inicio de la siguiente zona hablada para mantener la palabra visible.
+function wallTimeAtSpeechSeconds(map, target) {
+  if (!map) return Math.max(0, Number(target) || 0);
+  const wanted = Math.max(0, Math.min(map.activeDuration, Number(target) || 0));
+  if (wanted <= 0) return Number.isFinite(map.firstVoiceStart) ? map.firstVoiceStart : 0;
+  // Return the end of the final voiced region rather than the end of the file;
+  // otherwise captions linger through a long trailing silence.
+  if (wanted >= map.activeDuration) return Number.isFinite(map.lastVoiceEnd) ? map.lastVoiceEnd : map.duration;
+
+  let lo = 0, hi = map.frameCount - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (map.prefix[mid + 1] < wanted - 1e-7) lo = mid + 1;
+    else hi = mid;
+  }
+  const i = lo;
+  const before = map.prefix[i];
+  const after = map.prefix[i + 1];
+  if (map.voiced[i] && wanted > before + 1e-7 && wanted < after - 1e-7) {
+    return i * map.hop + (wanted - before);
+  }
+  if (Math.abs(wanted - after) <= 0.025) {
+    let j = i + 1;
+    while (j < map.frameCount && !map.voiced[j] && Math.abs(map.prefix[j] - wanted) < 1e-6) j++;
+    return Math.min(map.duration, j * map.hop);
+  }
+  if (map.voiced[i] && after > before) return i * map.hop + Math.max(0, Math.min(after - before, wanted - before));
+  return Math.min(map.duration, i * map.hop);
+}
+
+function snapSceneBoundaryToPause(target, map, minAllowed, maxAllowed, tolerance) {
+  if (!map || !map.silenceIntervals.length) return target;
+  let best = null;
+  let bestScore = Infinity;
+  for (const pause of map.silenceIntervals) {
+    // Mantén la imagen actual durante la pausa y cambia justo antes de que
+    // empiece la siguiente frase. Elegir el centro de la pausa anticipaba
+    // sistemáticamente la imagen siguiente.
+    const candidate = Math.max(pause.start + 0.015, pause.end - 0.025);
+    if (candidate < minAllowed || candidate > maxAllowed) continue;
+    const distance = Math.abs(candidate - target);
+    if (distance > tolerance) continue;
+    const score = distance - Math.min(0.10, Math.max(0, pause.duration - 0.10) * 0.12);
+    if (score < bestScore) { bestScore = score; best = candidate; }
+  }
+  return best === null ? target : best;
+}
+
+function createWordTimings(text, start, end, activityMap) {
+  const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const weights = getSpeechTimingWeights(words);
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0) || words.length;
+  const safeStart = Math.max(0, Number(start) || 0);
+  const safeEnd = Math.max(safeStart + 0.02, Number(end) || safeStart + 0.02);
+  const activeStart = activityMap ? speechSecondsAt(activityMap, safeStart) : 0;
+  const activeEnd = activityMap ? speechSecondsAt(activityMap, safeEnd) : 0;
+  const useActivity = !!activityMap && activeEnd - activeStart > 0.025;
+  let cumulative = 0;
+  return words.map((word, index) => {
+    const next = cumulative + (weights[index] || 1);
+    let wordStart, wordEnd;
+    if (useActivity) {
+      wordStart = wallTimeAtSpeechSeconds(activityMap, activeStart + (activeEnd - activeStart) * cumulative / totalWeight);
+      wordEnd = wallTimeAtSpeechSeconds(activityMap, activeStart + (activeEnd - activeStart) * next / totalWeight);
+    } else {
+      wordStart = safeStart + (safeEnd - safeStart) * cumulative / totalWeight;
+      wordEnd = safeStart + (safeEnd - safeStart) * next / totalWeight;
+    }
+    wordStart = Math.max(safeStart, Math.min(Math.max(safeStart, safeEnd - 0.015), wordStart));
+    wordEnd = Math.max(wordStart + 0.015, Math.min(safeEnd, wordEnd));
+    if (wordEnd > safeEnd) wordEnd = safeEnd;
+    cumulative = next;
+    return { word, start: wordStart, end: wordEnd };
+  });
+}
+
+function refreshSceneWordTimings() {
+  const map = (voiceBuffer && !isDemoSynthMode) ? speechActivityMap : null;
+  scenes.forEach(scene => {
+    if (scene.timingSource === "recognized" && scene.timingText === scene.text && scene.timingStart === scene.start && scene.timingEnd === scene.end) return;
+    scene.wordTimings = createWordTimings(scene.text, scene.start, scene.end, map);
+    scene.timingSource = "manual";
+  });
+}
+
 function updateScriptStatus() {
   const lines = getScriptLines();
   document.getElementById("lineCountInfo").textContent = lines.length + " escenas estimadas";
@@ -1257,6 +1723,8 @@ function handleImagesUpload(fileList) {
 }
 
 function clearAllImages() {
+  ++imageRunVersion;
+  imageRunController?.abort();
   loadedImages = [];
   renderMediaGrid();
   renderSceneListUI();
@@ -1323,11 +1791,12 @@ function renderMediaGrid() {
     const div = document.createElement("div");
     div.className = "media-item";
     div.innerHTML = `
-      <span class="m-badge">#${String(idx + 1).padStart(3, "0")}</span>
-      <button class="m-delete" onclick="removeImage(${idx})">×</button>
-      <img src="${item.url}" alt="">
-      <div class="m-label">${escapeHtml(item.name)}</div>
+      <span class="m-badge" style="${item.isPending ? 'background:rgba(245,158,11,.96);color:#111827;' : ''}">${item.isPending ? 'PENDIENTE' : '#' + String(idx + 1).padStart(3, "0")}</span>
+      <button class="m-delete" onclick="removeImage(${idx})" title="Eliminar imagen">×</button>
+      <img src="${item.url}" alt="${item.isPending ? 'Imagen pendiente de generación' : 'Imagen generada'}">
+      <div class="m-label" style="${item.isPending ? 'color:#fbbf24;' : ''}">${escapeHtml(item.name)}</div>
       <div class="m-controls">
+        ${item.isPending ? `<button onclick="retryImageAtSlot(${idx})" ${imageGenerationInProgress ? 'disabled' : ''} style="border-color:#f59e0b;color:#fbbf24;">↻ Reintentar esta imagen</button>` : ''}
         <div class="m-row-btns">
           <button onclick="moveImageLeft(${idx})" ${idx === 0 ? "disabled" : ""}>◀ Izq</button>
           <span style="font-size:0.68rem; color:var(--text-muted);">Pos ${idx+1}</span>
@@ -1342,6 +1811,7 @@ function renderMediaGrid() {
     grid.appendChild(div);
   });
   document.getElementById("st3").textContent = total + " imgs";
+  updateRetryFailedButton();
 }
 
 function distributeTextIntoTargetCount(lines, targetCount) {
@@ -1377,7 +1847,470 @@ function distributeTextIntoTargetCount(lines, targetCount) {
   }
 }
 
-function autoSyncProject(goToTimeline = true) {
+// El reconocimiento se ejecuta fuera del hilo de la interfaz. No se envía el audio.
+function speechRecognitionWorkerMain() {
+  let library = null;
+  let transcriber = null;
+  let modelInUse = "";
+  let queue = Promise.resolve();
+  self.onmessage = ({ data }) => {
+    queue = queue.catch(() => {}).then(async () => {
+      const { id, audio, ranges, model, language, activity } = data;
+      const send = value => self.postMessage({ id, ...value });
+      try {
+        if (!library) {
+          for (const base of ["https://cdn.jsdelivr.net/npm", "https://unpkg.com"]) {
+            try {
+              library = await import(base + "/@xenova/transformers@2.17.2/dist/transformers.min.js");
+              library.env.allowLocalModels = false;
+              library.env.useBrowserCache = false;
+              if (typeof caches !== "undefined") {
+                try { await caches.open("transformers-cache"); library.env.useBrowserCache = true; } catch (_) {}
+              }
+              library.env.backends.onnx.wasm.numThreads = 1;
+              library.env.backends.onnx.wasm.proxy = false;
+              library.env.backends.onnx.wasm.wasmPaths = base + "/@xenova/transformers@2.17.2/dist/";
+              break;
+            } catch (_) { library = null; }
+          }
+          if (!library) throw new Error("No se pudo descargar el motor de voz. Comprueba Internet y vuelve a sincronizar.");
+        }
+        if (!transcriber || modelInUse !== model) {
+          if (transcriber) await transcriber.dispose();
+          transcriber = null;
+          send({ type: "progress", phase: "model", message: "Descargando el modelo de voz (sólo la primera vez)…" });
+          transcriber = await library.pipeline("automatic-speech-recognition", model, {
+            quantized: true,
+            progress_callback: progress => {
+              if (progress.status === "progress") send({ type: "progress", phase: "model", message: `Descargando modelo de voz: ${Math.round(progress.progress || 0)}%` });
+            }
+          });
+          modelInUse = model;
+        }
+        const words = [];
+        for (let i = 0; i < ranges.length; i++) {
+          const range = ranges[i];
+          send({ type: "progress", phase: "audio", progress: i / ranges.length, message: `Escuchando audio: fragmento ${i + 1} de ${ranges.length}…` });
+          const left = Math.max(0, range.start - 1.2);
+          const right = Math.min(audio.length / 16000, range.end + 1.2);
+          const fragment = audio.slice(Math.floor(left * 16000), Math.ceil(right * 16000));
+          // Fragmentos inferiores a 30 s: las marcas nunca se acumulan ni se desplazan
+          // por el relleno interno de Whisper en audios largos.
+          const options = { task: "transcribe", return_timestamps: "word", chunk_length_s: 0, do_sample: false, num_beams: 1,
+            repetition_penalty: 1.05, max_new_tokens: Math.min(448, Math.max(64, Math.ceil(fragment.length / 16000 * 12 + 24))) };
+          if (language) options.language = language;
+          let output;
+          for (let attempt = 0;; attempt++) {
+            try { output = await transcriber(fragment, options); break; }
+            catch (error) { if (attempt >= 1) throw error; }
+          }
+          for (const chunk of output.chunks || []) {
+            const times = chunk.timestamp || [];
+            if (!Number.isFinite(times[0])) continue;
+            let start = Math.max(left, left + times[0]);
+            let end = Math.min(right, Number.isFinite(times[1]) ? left + times[1] : start + 0.12);
+            if (end <= start) continue;
+            // Corregir el silencio ANTES de decidir a qué fragmento pertenece
+            // la palabra evita perder la primera palabra tras un solapamiento.
+            if (activity) {
+              const limit = Math.min(activity.voiced.length, Math.ceil(end / activity.hop));
+              let first = Math.max(0, Math.floor(start / activity.hop));
+              while (first < limit && !activity.voiced[first]) first++;
+              let last = limit - 1;
+              while (last > first && !activity.voiced[last]) last--;
+              if (first < limit) {
+                start = Math.max(start, Math.min(end - 0.015, first * activity.hop));
+                end = Math.min(end, Math.max(start + 0.015, (last + 1) * activity.hop));
+              }
+            }
+            const center = (start + Math.max(start, end)) / 2;
+            if (center < range.start || (i < ranges.length - 1 && center >= range.end)) continue;
+            const textWords = String(chunk.text || "").trim().split(/\s+/).filter(Boolean);
+            textWords.forEach((word, j) => words.push({ word,
+              start: start + Math.max(0.02, end - start) * j / textWords.length,
+              end: start + Math.max(0.02, end - start) * (j + 1) / textWords.length
+            }));
+          }
+        }
+        send({ type: "result", words });
+      } catch (error) { send({ type: "error", message: error.message || String(error) }); }
+    });
+  };
+}
+
+function destroySpeechWorker(message) {
+  if (speechWorker) speechWorker.terminate();
+  speechWorker = null;
+  if (speechWorkerUrl) URL.revokeObjectURL(speechWorkerUrl);
+  speechWorkerUrl = null;
+  for (const job of speechWorkerJobs.values()) { clearTimeout(job.timer); job.reject(new Error(message)); }
+  speechWorkerJobs.clear();
+}
+
+function recognizeAudioInWorker(audio, ranges, model, language, onProgress) {
+  return new Promise((resolve, reject) => {
+    if (!speechWorker) {
+      try {
+        speechWorkerUrl = URL.createObjectURL(new Blob(["(" + speechRecognitionWorkerMain.toString() + ")()"], { type: "text/javascript" }));
+        speechWorker = new Worker(speechWorkerUrl, { type: "module" });
+        speechWorker.onerror = () => destroySpeechWorker("No se pudo iniciar el reconocimiento de voz. Abre el HTML en Chrome o Edge actualizado y comprueba Internet.");
+        speechWorker.onmessage = ({ data }) => {
+          const job = speechWorkerJobs.get(data.id);
+          if (!job) return;
+          clearTimeout(job.timer);
+          if (data.type === "progress") {
+            job.timer = setTimeout(() => destroySpeechWorker("El reconocimiento se ha detenido. Vuelve a pulsar Sincronizar Todo."), 900000);
+            job.onProgress(data);
+          } else {
+            speechWorkerJobs.delete(data.id);
+            if (data.type === "error") job.reject(new Error(data.message));
+            else job.resolve(data.words);
+          }
+        };
+      } catch (error) { reject(error); return; }
+    }
+    const id = ++speechWorkerSequence;
+    const timer = setTimeout(() => destroySpeechWorker("No se ha podido cargar el modelo de voz. Comprueba Internet y vuelve a sincronizar."), 240000);
+    speechWorkerJobs.set(id, { resolve, reject, onProgress, timer });
+    const activity = speechActivityMap ? { hop: speechActivityMap.hop, voiced: speechActivityMap.voiced } : null;
+    speechWorker.postMessage({ id, audio, ranges, model, language, activity }, [audio.buffer]);
+  });
+}
+
+function getRecognitionRanges(duration, activityMap) {
+  const ranges = [];
+  let start = 0;
+  while (start < duration - 0.001) {
+    let end = Math.min(duration, start + 23);
+    if (end < duration && activityMap) {
+      const pauses = activityMap.silenceIntervals.filter(p => p.center >= end - 4 && p.center <= end);
+      if (pauses.length) end = pauses[pauses.length - 1].center;
+    }
+    ranges.push({ start, end }); start = end;
+  }
+  return ranges;
+}
+
+async function audioForSpeechRecognition(buffer) {
+  const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (!OfflineContext) throw new Error("Este navegador no permite preparar el audio para reconocer las palabras.");
+  const context = new OfflineContext(1, Math.ceil(buffer.duration * 16000), 16000);
+  const source = context.createBufferSource(); source.buffer = buffer;
+  source.connect(context.destination); source.start(0);
+  const result = await context.startRendering();
+  return result.getChannelData(0).slice();
+}
+
+function normalizeAlignmentToken(word) {
+  return normalizeText(word).replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+function spanishIntegerWords(value) {
+  const units = ["cero","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve","diez","once","doce","trece","catorce","quince","dieciseis","diecisiete","dieciocho","diecinueve","veinte","veintiuno","veintidos","veintitres","veinticuatro","veinticinco","veintiseis","veintisiete","veintiocho","veintinueve"];
+  if (value < 30) return units[value];
+  if (value < 100) return ["","","","treinta","cuarenta","cincuenta","sesenta","setenta","ochenta","noventa"][Math.floor(value / 10)] + (value % 10 ? " y " + units[value % 10] : "");
+  if (value === 100) return "cien";
+  if (value < 1000) return ["","ciento","doscientos","trescientos","cuatrocientos","quinientos","seiscientos","setecientos","ochocientos","novecientos"][Math.floor(value / 100)] + (value % 100 ? " " + spanishIntegerWords(value % 100) : "");
+  if (value < 1000000) return (value < 2000 ? "mil" : spanishIntegerWords(Math.floor(value / 1000)).replace(/uno$/, "un") + " mil") + (value % 1000 ? " " + spanishIntegerWords(value % 1000) : "");
+  return (value < 2000000 ? "un millon" : spanishIntegerWords(Math.floor(value / 1000000)).replace(/uno$/, "un") + " millones") + (value % 1000000 ? " " + spanishIntegerWords(value % 1000000) : "");
+}
+
+function expandAlignmentWord(word) {
+  const clean = String(word).replace(/^[¿¡("'“‘]+|[.!?,;:)"'”’]+$/g, "");
+  if (!/^-?\d[\d.,]*%?$/.test(clean)) return [word];
+  const percent = clean.endsWith("%");
+  let number = clean.replace(/%$/, "");
+  // En español 1.500 es mil quinientos; 1,5 es uno coma cinco.
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(number)) number = number.replace(/\./g, "");
+  const parts = number.replace(",", ".").split(".");
+  const integer = Number(parts[0]);
+  if (!Number.isSafeInteger(integer) || Math.abs(integer) >= 1000000000000 || parts.length > 2) return [word];
+  let spoken = (integer < 0 ? "menos " : "") + spanishIntegerWords(Math.abs(integer));
+  if (parts[1]) spoken += " coma " + parts[1].split("").map(digit => spanishIntegerWords(Number(digit))).join(" ");
+  if (percent) spoken += " por ciento";
+  return spoken.split(" ");
+}
+
+function expandedAlignmentWords(items) {
+  return items.flatMap((item, sourceIndex) => {
+    const expanded = expandAlignmentWord(item.word);
+    return expanded.map((word, i) => ({ word, sourceIndex,
+      start: Number.isFinite(item.start) ? item.start + (item.end - item.start) * i / expanded.length : 0,
+      end: Number.isFinite(item.end) ? item.start + (item.end - item.start) * (i + 1) / expanded.length : 0
+    }));
+  });
+}
+
+function sanitizeRecognizedWords(words, duration) {
+  const result = [];
+  for (const item of words || []) {
+    if (!normalizeAlignmentToken(item.word) || !Number.isFinite(item.start) || !Number.isFinite(item.end)) continue;
+    const start = Math.max(0, Math.min(duration, item.start));
+    const end = Math.min(duration, Math.max(start + 0.02, item.end));
+    if (end <= start) continue;
+    const previous = result[result.length - 1];
+    // Un mismo término que aparece en el solapamiento de dos fragmentos se conserva una vez.
+    if (previous && normalizeAlignmentToken(previous.word) === normalizeAlignmentToken(item.word)
+      && Math.abs(previous.start - start) < 0.35 && start < previous.end - 0.04) continue;
+    if (previous && start < previous.start - 0.1) continue;
+    result.push({ word: item.word, start: Math.max(previous?.start || 0, start), end });
+  }
+  return result;
+}
+
+async function getRecognizedSpeech(buffer, progress, model = "Xenova/whisper-base") {
+  if (speechTranscriptBuffer === buffer && speechTranscript?.model === model) return speechTranscript.words;
+  if (speechRecognitionTask && speechRecognitionBuffer === buffer) return speechRecognitionTask;
+  speechRecognitionBuffer = buffer;
+  const task = (async () => {
+    progress({ message: "Preparando el audio para reconocer cada palabra…" });
+    const mono = await audioForSpeechRecognition(buffer);
+    const text = document.getElementById("scriptArea").value;
+    const plainText = normalizeText(text);
+    const spanishScore = (plainText.match(/\b(el|la|los|las|una|un|que|del|pero|para|como|por|con)\b/g) || []).length;
+    const englishScore = (plainText.match(/\b(the|and|you|your|with|from|for|this|that|what|was|were|have|has)\b/g) || []).length;
+    const language = spanishScore >= 3 && spanishScore >= englishScore ? "spanish" : englishScore >= 3 ? "english" : null;
+    let cacheKey = "";
+    try {
+      const hash = await crypto.subtle.digest("SHA-256", mono.buffer);
+      cacheKey = "speech-v3:" + model + ":" + language + ":" + Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("");
+      const cached = await recoveryStore("get", cacheKey);
+      if (cached?.length) return sanitizeRecognizedWords(cached, buffer.duration);
+    } catch (_) {}
+    const words = sanitizeRecognizedWords(await recognizeAudioInWorker(mono, getRecognitionRanges(buffer.duration, speechActivityMap), model, language, progress), buffer.duration);
+    if (!words.length) throw new Error("No se han reconocido palabras. Comprueba que el archivo contiene la voz del guion.");
+    if (cacheKey) await recoveryStore("put", cacheKey, words);
+    return words;
+  })();
+  speechRecognitionTask = task;
+  try {
+    const words = await task;
+    if (speechRecognitionBuffer === buffer) { speechTranscript = { model, words }; speechTranscriptBuffer = buffer; }
+    return words;
+  } finally {
+    if (speechRecognitionTask === task) { speechRecognitionTask = null; speechRecognitionBuffer = null; }
+  }
+}
+
+function alignmentWordsSimilar(a, b) {
+  if (a === b) return true;
+  if (a.length < 5 || b.length < 5 || Math.abs(a.length - b.length) > 1 || a.slice(0, 2) !== b.slice(0, 2)) return false;
+  let i = 0, j = 0, edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++edits > 1) return false;
+    if (a.length >= b.length) i++;
+    if (b.length >= a.length) j++;
+  }
+  return edits + (a.length - i) + (b.length - j) <= 1;
+}
+
+async function matchScriptToRecognizedWords(reference, recognized) {
+  const a = reference.map(item => normalizeAlignmentToken(item.word));
+  const b = recognized.map(item => normalizeAlignmentToken(item.word));
+  const n = a.length, m = b.length, cols = m + 1;
+  if (!n || !m) throw new Error("Faltan el guion o las palabras reconocidas.");
+  if ((n + 1) * cols > 64000000) throw new Error("El guion y el audio son demasiado largos para alinearlos de una vez en este navegador.");
+  const trace = new Uint8Array((n + 1) * cols);
+  let prev = new Float32Array(cols), row = new Float32Array(cols);
+  for (let j = 1; j <= m; j++) { prev[j] = j; trace[j] = 3; }
+  for (let i = 1; i <= n; i++) {
+    row[0] = i; trace[i * cols] = 2;
+    for (let j = 1; j <= m; j++) {
+      const similar = a[i - 1] && alignmentWordsSimilar(a[i - 1], b[j - 1]);
+      const diagonal = prev[j - 1] + (a[i - 1] === b[j - 1] && a[i - 1] ? 0 : similar ? 0.45 : 2.1);
+      const up = prev[j] + 1, left = row[j - 1] + 1;
+      if (diagonal <= up && diagonal <= left) { row[j] = diagonal; trace[i * cols + j] = 1; }
+      else if (up <= left) { row[j] = up; trace[i * cols + j] = 2; }
+      else { row[j] = left; trace[i * cols + j] = 3; }
+    }
+    [prev, row] = [row, prev];
+    if (i % 64 === 0) await waitMs(0);
+  }
+  const matches = new Int32Array(n).fill(-1);
+  let i = n, j = m;
+  while (i || j) {
+    const direction = trace[i * cols + j];
+    if (i && j && direction === 1) {
+      if (a[i - 1] && alignmentWordsSimilar(a[i - 1], b[j - 1])) matches[i - 1] = j - 1;
+      i--; j--;
+    } else if (i && (!j || direction === 2)) i--;
+    else j--;
+  }
+  return matches;
+}
+
+function refineWordAgainstVoice(timing, map) {
+  if (!map) return timing;
+  const first = Math.max(0, Math.floor(timing.start / map.hop));
+  const limit = Math.min(map.frameCount, Math.ceil(timing.end / map.hop));
+  let i = first;
+  while (i < limit && !map.voiced[i]) i++;
+  let j = limit - 1;
+  while (j > i && !map.voiced[j]) j--;
+  if (i < limit) return { ...timing,
+    start: Math.max(timing.start, Math.min(timing.end - 0.015, i * map.hop)),
+    end: Math.min(timing.end, Math.max(timing.start + 0.015, (j + 1) * map.hop))
+  };
+  return timing;
+}
+
+async function alignScenesToVoice(lines, recognized, duration, map) {
+  const reference = [];
+  lines.forEach((text, sceneIndex) => String(text).trim().split(/\s+/).filter(Boolean).forEach(word => reference.push({ word, sceneIndex })));
+  const expandedReference = expandedAlignmentWords(reference);
+  const expandedRecognized = expandedAlignmentWords(recognized);
+  const expandedMatches = await matchScriptToRecognizedWords(expandedReference, expandedRecognized);
+  const matchedParts = reference.map(() => []);
+  const partCounts = reference.map(() => 0);
+  expandedReference.forEach((part, i) => {
+    partCounts[part.sourceIndex]++;
+    if (expandedMatches[i] >= 0) matchedParts[part.sourceIndex].push(expandedRecognized[expandedMatches[i]]);
+  });
+  const anchors = matchedParts.map((parts, i) => parts.length / partCounts[i] >= 0.6
+    ? { start: parts[0].start, end: parts[parts.length - 1].end } : null);
+  const matchedCount = anchors.filter(Boolean).length;
+  if (matchedCount / reference.length < 0.78 || Array.from(expandedMatches).filter(i => i >= 0).length / expandedRecognized.length < 0.65) {
+    throw new Error("El audio reconocido no coincide suficientemente con el guion. Comprueba que has cargado la narración completa y el mismo texto.");
+  }
+  for (let sceneIndex = 0; sceneIndex < lines.length; sceneIndex++) {
+    const ids = reference.map((item, i) => item.sceneIndex === sceneIndex ? i : -1).filter(i => i >= 0);
+    if (!ids.length || ids.filter(i => anchors[i]).length / ids.length < 0.45) throw new Error(`No se ha localizado con fiabilidad la escena ${sceneIndex + 1} en el audio.`);
+  }
+  const timings = reference.map((item, i) => {
+    if (!anchors[i]) return null;
+    return refineWordAgainstVoice({ word: item.word, start: anchors[i].start, end: anchors[i].end, source: "recognized" }, map);
+  });
+  // Las palabras que ASR escribe de otra forma (números, nombres…) se acotan
+  // entre palabras vecinas verificadas. Nunca se redistribuye el audio completo.
+  for (let i = 0; i < timings.length;) {
+    if (timings[i]) { i++; continue; }
+    let j = i + 1;
+    while (j < timings.length && !timings[j]) j++;
+    const start = i > 0 ? timings[i - 1].end : (map?.firstVoiceStart || 0);
+    const end = j < timings.length ? timings[j].start : (map?.lastVoiceEnd || duration);
+    if (j - i > 7 || end - start > 6 || end - start < (j - i) * 0.025) throw new Error(`Hay una parte del guion que no se ha podido localizar en la voz (escena ${reference[i].sceneIndex + 1}).`);
+    const filled = createWordTimings(reference.slice(i, j).map(item => item.word).join(" "), start, Math.max(start + 0.02, end), map);
+    filled.forEach((word, k) => { timings[i + k] = { ...word, source: "interpolated" }; });
+    i = j;
+  }
+  for (let i = 0; i < timings.length - 1; i++) {
+    timings[i].end = Math.min(timings[i].end, timings[i + 1].start);
+    if (timings[i].end <= timings[i].start) throw new Error("El reconocimiento devolvió palabras superpuestas. Vuelve a sincronizar para comprobar la voz.");
+  }
+  const grouped = lines.map((_, sceneIndex) => timings.filter((word, i) => reference[i].sceneIndex === sceneIndex));
+  const cuts = [0, ...grouped.slice(1).map(words => words[0].start), duration];
+  for (let i = 1; i < cuts.length; i++) if (cuts[i] <= cuts[i - 1]) throw new Error("No se han podido distinguir todos los límites de escena en la voz.");
+  return { grouped, cuts, matchedCount, reconstructed: reference.length - matchedCount };
+}
+
+function getProjectSceneLines() {
+  const raw = document.getElementById("scriptArea").value.trim();
+  let lines = raw ? getScriptLines() : [];
+  const mode = document.getElementById("promptGenMode")?.value || "auto";
+  if (loadedImages.length && (mode === "manual19" || !lines.length)) lines = distributeTextIntoTargetCount(lines, loadedImages.length);
+  return lines;
+}
+
+function updateSyncProgress(message, isError = false) {
+  const status = document.getElementById("exportStatus");
+  status.textContent = (isError ? "⚠️ " : "⏳ ") + message;
+  status.setAttribute("aria-live", "polite");
+}
+
+function hasVerifiedVoiceSync() {
+  return !voiceBuffer || isDemoSynthMode || (verifiedSyncBuffer === voiceBuffer && verifiedSyncScript === document.getElementById("scriptArea").value.trim());
+}
+
+async function autoSyncProject(goToTimeline = true) {
+  if (isExportingVideo) return false;
+  const version = ++syncRequestVersion;
+  if (isPlaying) pausePlayback();
+  const buffer = voiceBuffer;
+  const script = document.getElementById("scriptArea").value.trim();
+  if (!buffer || isDemoSynthMode || !script) {
+    syncInProgress = false;
+    document.getElementById("syncAllBtn").disabled = false;
+    document.getElementById("syncAllBtn").textContent = "🔄 Sincronizar Todo";
+    verifiedSyncScript = verifiedSyncBuffer = null;
+    buildEstimatedProject(goToTimeline);
+    if (buffer && !isDemoSynthMode) updateSyncProgress("Pega el guion y pulsa Sincronizar Todo para ajustar las escenas a la voz.");
+    return true;
+  }
+  const lines = getProjectSceneLines();
+  const button = document.getElementById("syncAllBtn");
+  syncInProgress = true;
+  button.disabled = true; button.textContent = "⏳ Sincronizando voz…";
+  verifiedSyncScript = verifiedSyncBuffer = null;
+  const report = data => {
+    if (version !== syncRequestVersion) return;
+    updateSyncProgress(data.message);
+    if (data.phase === "audio") button.textContent = `⏳ Sincronizando ${Math.round(data.progress * 100)}%`;
+  };
+  try {
+    let recognized = await getRecognizedSpeech(buffer, report);
+    if (version !== syncRequestVersion) return false;
+    report({ message: "Ajustando las palabras del guion a sus marcas de tiempo…" });
+    let alignment;
+    try { alignment = await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap); }
+    catch (firstError) {
+      report({ message: "Comprobando las palabras con un modelo de voz más preciso (puede tardar)…" });
+      recognized = await getRecognizedSpeech(buffer, report, "Xenova/whisper-small");
+      alignment = await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap);
+    }
+    if (version !== syncRequestVersion || voiceBuffer !== buffer || document.getElementById("scriptArea").value.trim() !== script) {
+      if (version === syncRequestVersion) updateSyncProgress("El guion o el audio han cambiado durante el análisis. Pulsa Sincronizar Todo para aplicar la versión actual.", true);
+      return false;
+    }
+    totalDuration = buffer.duration;
+    scenes = lines.map((text, i) => ({
+      start: alignment.cuts[i], end: alignment.cuts[i + 1], text,
+      imgIndex: loadedImages.length ? i % loadedImages.length : -1,
+      effect: EFFECTS[i % EFFECTS.length], sfxId: "", sfxStart: 2, sfxEnd: 3,
+      wordTimings: alignment.grouped[i], timingSource: "recognized", timingText: text,
+      timingStart: alignment.cuts[i], timingEnd: alignment.cuts[i + 1]
+    }));
+    verifiedSyncBuffer = buffer; verifiedSyncScript = script;
+    currentTime = 0;
+    document.getElementById("seekSlider").max = totalDuration;
+    document.getElementById("st4").textContent = scenes.length + " escenas";
+    document.getElementById("st4").classList.add("ok");
+    renderSceneListUI(); updateTimeUI(); renderCurrentFrame();
+    document.getElementById("exportStatus").textContent = `✅ Voz, imágenes y subtítulos sincronizados: ${scenes.length} escenas.${alignment.reconstructed ? ` ${alignment.reconstructed} palabras ajustadas entre palabras reconocidas.` : ""}`;
+    if (goToTimeline) switchTab(4);
+    return true;
+  } catch (error) {
+    if (version === syncRequestVersion) {
+      updateSyncProgress(error.message + " No se ha aplicado un reparto estimado de tiempos.", true);
+      document.getElementById("st4").textContent = "Sincronización pendiente";
+    }
+    console.error("Sincronización de voz:", error);
+    return false;
+  } finally {
+    if (version === syncRequestVersion) { syncInProgress = false; button.disabled = false; button.textContent = "🔄 Sincronizar Todo"; }
+  }
+}
+
+// Una misma lista de cues se usa en pantalla y al descargar los subtítulos.
+function getSubtitleCues(scene) {
+  const words = String(scene.text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const timings = scene.wordTimings?.length === words.length ? scene.wordTimings
+    : createWordTimings(scene.text, scene.start, scene.end, voiceBuffer && !isDemoSynthMode ? speechActivityMap : null);
+  const cues = [];
+  for (let i = 0; i < words.length;) {
+    let j = i;
+    while (j + 1 < words.length && j - i < 2 && timings[j + 1].start - timings[j].end < 0.45) j++;
+    const start = Math.max(scene.start, timings[i].start);
+    const end = Math.min(scene.end, timings[j].end + 0.18, j + 1 < words.length ? timings[j + 1].start : scene.end);
+    if (end > start) cues.push({ start, end, startIndex: i, endIndex: j, words: words.slice(i, j + 1), text: words.slice(i, j + 1).join(" "), timings: timings.slice(i, j + 1) });
+    i = j + 1;
+  }
+  return cues;
+}
+
+
+function buildEstimatedProject(goToTimeline = true) {
   const rawScript = document.getElementById("scriptArea").value.trim();
   let lines = rawScript ? getScriptLines() : [];
 
@@ -1387,7 +2320,7 @@ function autoSyncProject(goToTimeline = true) {
   } else if (lines.length === 0) {
     lines = loadedImages.length > 0 ? loadedImages.map((_, i) => "Escena " + (i + 1)) : ["Escena inicial"];
   }
-  
+
   if (voiceBuffer && !isDemoSynthMode) {
     totalDuration = voiceBuffer.duration;
   } else if (!voiceBuffer && !isDemoSynthMode) {
@@ -1395,21 +2328,46 @@ function autoSyncProject(goToTimeline = true) {
   }
   document.getElementById("seekSlider").max = totalDuration.toFixed(2);
 
-  const weights = lines.map(l => Math.max(getSpeechTimingWeight(l), 1));
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-  let acc = 0; const cuts = [0.0];
-  for (let w of weights) {
-    acc += w;
-    cuts.push(Number(((acc / totalWeight) * totalDuration).toFixed(2)));
+  const weights = lines.map(line => Math.max(getSpeechTimingWeight(line), 1));
+  const totalWeight = weights.reduce((a, b) => a + b, 0) || lines.length || 1;
+  const useActivity = !!(voiceBuffer && !isDemoSynthMode && speechActivityMap && speechActivityMap.activeDuration > 0);
+  const predictedCuts = [0];
+  let accumulatedWeight = 0;
+  for (let i = 0; i < lines.length - 1; i++) {
+    accumulatedWeight += weights[i];
+    const ratio = accumulatedWeight / totalWeight;
+    predictedCuts.push(useActivity
+      ? wallTimeAtSpeechSeconds(speechActivityMap, ratio * speechActivityMap.activeDuration)
+      : ratio * totalDuration);
   }
+  predictedCuts.push(totalDuration);
+
+  const cuts = [0];
+  const minGap = Math.min(0.12, totalDuration / Math.max(4, lines.length * 3));
+  for (let i = 1; i < lines.length; i++) {
+    const predicted = predictedCuts[i];
+    const previous = cuts[i - 1];
+    const maxAllowed = Math.max(previous + minGap, totalDuration - (lines.length - i) * minGap);
+    const predictedSpan = Math.max(0.2, predictedCuts[i + 1] - predictedCuts[i - 1]);
+    const tolerance = Math.min(0.70, Math.max(0.22, predictedSpan * 0.20));
+    let cut = useActivity
+      ? snapSceneBoundaryToPause(predicted, speechActivityMap, previous + minGap, maxAllowed, tolerance)
+      : predicted;
+    cut = Math.max(previous + minGap, Math.min(maxAllowed, cut));
+    cuts.push(Number(cut.toFixed(3)));
+  }
+  cuts.push(totalDuration);
+
   scenes = lines.map((text, idx) => ({
     start: cuts[idx], end: cuts[idx + 1], text,
     imgIndex: loadedImages.length > 0 ? (idx % loadedImages.length) : -1,
     effect: EFFECTS[idx % EFFECTS.length],
     sfxId: "",
     sfxStart: 2.0,
-    sfxEnd: 3.0
+    sfxEnd: 3.0,
+    wordTimings: []
   }));
+  refreshSceneWordTimings();
   document.getElementById("st4").textContent = scenes.length + " escenas";
   document.getElementById("st4").classList.add("ok");
   renderSceneListUI();
@@ -1434,14 +2392,14 @@ function renderSceneListUI() {
     row.innerHTML = `
       <img class="scene-thumb" src="${thumbUrl}" onclick="seekTo(${sc.start})" style="cursor:pointer;">
       <div class="time-pair">
-        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
-        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); refreshSceneWordTimings(); renderSceneListUI(); renderCurrentFrame()" style="width:48px">s</div>
+        <div>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); refreshSceneWordTimings(); renderSceneListUI(); renderCurrentFrame()" style="width:48px">s</div>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <select onchange="scenes[${idx}].imgIndex=Number(this.value); renderSceneListUI(); renderCurrentFrame()">${imgOptions}</select>
         <select onchange="scenes[${idx}].effect=this.value; renderCurrentFrame()">${effectOptions}</select>
       </div>
-      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value"></div>
+      <div><input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value; scenes[${idx}].wordTimings=[]" onchange="refreshSceneWordTimings(); renderCurrentFrame()"></div>
       <div style="display:flex; flex-direction:column; gap:3px;">
         <select onchange="scenes[${idx}].sfxId=this.value" style="font-size:0.75rem;">${sfxOptions}</select>
         <div style="font-size:0.68rem; color:var(--text-muted); display:flex; gap:2px;">
@@ -1509,7 +2467,7 @@ function drawSceneLayer(ctx, w, h, scene, progress) {
     ctx.drawImage(img, (w - baseW * zoom) / 2 + offsetX, (h - baseH * zoom) / 2 + offsetY, baseW * zoom, baseH * zoom);
   } else {
     const scale = Math.max(w / img.width, h / img.height) * zoom;
-    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - baseH * scale) / 2 + offsetY, img.width * scale, img.height * scale);
+    ctx.drawImage(img, (w - img.width * scale) / 2 + offsetX, (h - img.height * scale) / 2 + offsetY, img.width * scale, img.height * scale);
   }
 }
 
@@ -1517,37 +2475,14 @@ function drawSubtitlesOnCanvas(ctx, w, h, scene, currentTime) {
   const subsMode = document.getElementById("subsSelect").value;
   if (subsMode === "none" || !scene || !scene.text) return;
 
-  const words = scene.text.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return;
-
-  const wordWeights = getSpeechTimingWeights(words);
-  const totalSpeechWeight = wordWeights.reduce((sum, weight) => sum + weight, 0);
-  const sceneDuration = Math.max(0.1, scene.end - scene.start);
-  const timeInScene = Math.max(0, Math.min(sceneDuration, currentTime - scene.start));
-  const weightedTime = Math.min(
-    Math.max(0, totalSpeechWeight - 0.000001),
-    (timeInScene / sceneDuration) * totalSpeechWeight
-  );
-
-  let activeWordIndex = 0;
-  let accumulatedWeight = 0;
-  for (let i = 0; i < wordWeights.length; i++) {
-    if (weightedTime < accumulatedWeight + wordWeights[i]) {
-      activeWordIndex = i;
-      break;
-    }
-    accumulatedWeight += wordWeights[i];
-    activeWordIndex = Math.min(i + 1, words.length - 1);
-  }
-
-  const activeChunkIndex = Math.floor(activeWordIndex / 3);
-  const chunkStart = activeChunkIndex * 3;
-  const currentChunkWords = words.slice(chunkStart, chunkStart + 3);
-  const activeWordInChunk = activeWordIndex - chunkStart;
-
-  if (isPlaying && activeChunkIndex !== lastPlayedChunkIndex) {
-    lastPlayedChunkIndex = activeChunkIndex;
-  }
+  const cues = getSubtitleCues(scene);
+  const cueIndex = cues.findIndex(cue => currentTime >= cue.start && currentTime < cue.end);
+  if (cueIndex < 0) return;
+  const cue = cues[cueIndex];
+  const currentChunkWords = cue.words;
+  let activeWordInChunk = 0;
+  cue.timings.forEach((word, index) => { if (currentTime >= word.start) activeWordInChunk = index; });
+  if (isPlaying) lastPlayedChunkIndex = cueIndex;
 
   ctx.save();
   const fontSize = Math.round(h * 0.052);
@@ -1600,7 +2535,7 @@ function renderCurrentFrame() {
   ctx.clearRect(0, 0, w, h);
   const idx = findSceneIndexAtTime(currentTime);
   
-  if (isPlaying && idx >= 0 && scenes[idx]) {
+  if (isPlaying && !isExportingVideo && idx >= 0 && scenes[idx]) {
     const sc = scenes[idx];
     if (sc.sfxId) {
       const targetStart = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
@@ -1628,7 +2563,8 @@ function renderCurrentFrame() {
   const sc = scenes[idx];
   const progress = (currentTime - sc.start) / Math.max(0.1, sc.end - sc.start);
   drawSceneLayer(ctx, w, h, sc, progress);
-  drawSubtitlesOnCanvas(ctx, w, h, sc, currentTime);
+  const exportPreRoll = isExportingVideo && exportScheduledStartAt !== null && audioCtx && audioCtx.currentTime < exportScheduledStartAt;
+  if (!exportPreRoll) drawSubtitlesOnCanvas(ctx, w, h, sc, currentTime);
   document.getElementById("currentSceneBadge").textContent = `Escena ${idx + 1} / ${scenes.length}`;
 }
 
@@ -1644,13 +2580,42 @@ function seekTo(val) {
 }
 function togglePlay() { if (scenes.length === 0) { alert("Sincroniza primero."); return; } if (isPlaying) pausePlayback(); else startPlayback(); }
 
+
+function getAudibleAudioContextTime() {
+  if (!audioCtx) return 0;
+  try {
+    if (typeof audioCtx.getOutputTimestamp === "function") {
+      const stamp = audioCtx.getOutputTimestamp();
+      if (stamp && Number.isFinite(stamp.contextTime) && Number.isFinite(stamp.performanceTime) && stamp.performanceTime > 0) {
+        const extrapolated = stamp.contextTime + Math.max(0, (performance.now() - stamp.performanceTime) / 1000);
+        return Math.max(0, Math.min(audioCtx.currentTime, extrapolated));
+      }
+    }
+  } catch (_) {}
+  const latency = Number(audioCtx.outputLatency) || Number(audioCtx.baseLatency) || 0;
+  return Math.max(0, audioCtx.currentTime - Math.min(0.35, Math.max(0, latency)));
+}
+
+function getPlaybackElapsedSeconds(now) {
+  if (audioCtx && playbackStartContextTime !== null) {
+    const usesRealVoiceClock = !!(voiceBuffer && !isDemoSynthMode && !isExportingVideo);
+    const clockTime = usesRealVoiceClock ? getAudibleAudioContextTime() : audioCtx.currentTime;
+    return Math.max(0, clockTime - playbackStartContextTime);
+  }
+  return Math.max(0, ((now || performance.now()) - playbackStartPerfTime) / 1000);
+}
+
 async function startPlayback() {
+  if (isExportingVideo || syncInProgress) return;
+  if (!hasVerifiedVoiceSync()) {
+    if (!await autoSyncProject(false) || !hasVerifiedVoiceSync()) return;
+  }
   if (currentTime >= totalDuration - 0.1) currentTime = 0;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") await audioCtx.resume();
 
   playbackStartOffset = currentTime;
-  playbackStartContextTime = audioCtx.currentTime;
+  playbackStartContextTime = audioCtx.currentTime + 0.025;
   playbackStartPerfTime = performance.now();
   isPlaying = true;
   document.getElementById("playBtn").textContent = "⏸ Pausa";
@@ -1677,12 +2642,13 @@ async function startPlayback() {
   }
 
   lastFrameTimestamp = performance.now();
+  lastPlayedChunkIndex = -1;
   animFrameId = requestAnimationFrame(playbackLoop);
 }
 
 function pausePlayback() {
-  if (isPlaying && audioCtx && playbackStartContextTime !== null) {
-    const elapsed = Math.max(0, audioCtx.currentTime - playbackStartContextTime);
+  if (isPlaying && playbackStartContextTime !== null) {
+    const elapsed = getPlaybackElapsedSeconds(performance.now());
     currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + elapsed));
   }
   isPlaying = false;
@@ -1697,18 +2663,21 @@ function pausePlayback() {
 
 function playbackLoop(now) {
   if (!isPlaying) return;
-  let elapsed;
-  if (audioCtx && playbackStartContextTime !== null) {
-    elapsed = audioCtx.currentTime - playbackStartContextTime;
-  } else {
-    elapsed = (now - playbackStartPerfTime) / 1000;
-  }
+  const elapsed = getPlaybackElapsedSeconds(now);
   currentTime = Math.max(0, Math.min(totalDuration, playbackStartOffset + Math.max(0, elapsed)));
   if (currentTime >= totalDuration) {
+    // No volver a calcular currentTime con la latencia de salida al finalizar:
+    // la reproducción debe quedarse exactamente al final del archivo.
     currentTime = totalDuration;
+    isPlaying = false;
+    playbackStartContextTime = null;
+    document.getElementById("playBtn").textContent = "▶ Play";
+    if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch (e) {} voiceAudioNode = null; }
+    if (activeBgmSource) { try { activeBgmSource.stop(); } catch (e) {} activeBgmSource = null; }
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    animFrameId = null;
     updateTimeUI();
     renderCurrentFrame();
-    pausePlayback();
     return;
   }
   updateTimeUI();
@@ -1717,7 +2686,12 @@ function playbackLoop(now) {
 }
 
 function loadBuiltInDemo() {
-  pausePlayback(); isDemoSynthMode = true; totalDuration = 15.0; currentTime = 0.0;
+  ++syncRequestVersion;
+  syncInProgress = false;
+  document.getElementById("syncAllBtn").disabled = false;
+  document.getElementById("syncAllBtn").textContent = "🔄 Sincronizar Todo";
+  verifiedSyncScript = verifiedSyncBuffer = null;
+  pausePlayback(); isDemoSynthMode = true; speechActivityMap = null; totalDuration = 15.0; currentTime = 0.0;
   document.getElementById("seekSlider").max = totalDuration;
   document.getElementById("scriptArea").value = "En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas viven de él.";
   updateScriptStatus();
@@ -1744,133 +2718,229 @@ function createProceduralSceneImage(title, topColor, bottomColor, accentColor, i
 }
 
 async function exportVideoYouTubeMaster() {
+  if (isExportingVideo) return;
+  if (imageGenerationInProgress || syncInProgress) { alert("Espera a que termine la generación o la sincronización antes de exportar."); return; }
+  if (!hasVerifiedVoiceSync()) {
+    if (!await autoSyncProject(false) || !hasVerifiedVoiceSync()) return;
+  }
   if (scenes.length === 0) { alert("Sincroniza el guion antes de exportar."); return; }
+  const pendingImages = loadedImages.filter(item => item && item.isPending);
+  if (pendingImages.length > 0) {
+    alert(`No se puede exportar todavía: hay ${pendingImages.length} imagen(es) que no se han generado. Ve a Recursos Visuales y pulsa «Reintentar fallidas». No se exportarán imágenes provisionales ni marcadores de error.`);
+    switchTab(3);
+    return;
+  }
+  if (document.hidden) {
+    alert("Para evitar desfases, mantén AutoVideo visible en primer plano durante toda la exportación.");
+    return;
+  }
   pausePlayback();
+  isExportingVideo = true;
+  exportAbortReason = "";
   const statusEl = document.getElementById("exportStatus");
   const progOuter = document.getElementById("exportProgressOuter");
   const progInner = document.getElementById("exportProgressInner");
   const btn = document.getElementById("exportVideoBtn");
   btn.disabled = true; progOuter.style.display = "block"; progInner.style.width = "0%";
-  statusEl.textContent = "⏳ Codificando vídeo y mezclando audio Master Pro con SFX (inicio/fin exactos)...";
+  statusEl.textContent = "⏳ Preparando la exportación sincronizada... No cambies de pestaña ni minimices el navegador.";
 
+  let canvasStream = null;
+  let combinedStream = null;
+  let recorder = null;
+  const localNodes = [];
   try {
     await loadSubFontAsset(getSubtitleFont());
-    const canvas = document.getElementById("previewCanvas");
-    const canvasStream = canvas.captureStream(30);
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === "suspended") await audioCtx.resume();
+    const canvas = document.getElementById("previewCanvas");
+    currentTime = 0;
+    renderCurrentFrame();
+    canvasStream = canvas.captureStream(30);
 
     const dest = audioCtx.createMediaStreamDestination();
-    let exportVoiceNode = null; 
+    let exportVoiceNode = null;
     let exportBgmNode = null;
 
     if (voiceBuffer && !isDemoSynthMode) {
       exportVoiceNode = audioCtx.createBufferSource();
       exportVoiceNode.buffer = voiceBuffer;
-      exportVoiceNode.connect(dest); 
+      exportVoiceNode.connect(dest);
       exportVoiceNode.connect(audioCtx.destination);
+      localNodes.push(exportVoiceNode);
     }
-    
+
     if (bgmBuffer) {
       exportBgmNode = audioCtx.createBufferSource();
-      exportBgmNode.buffer = bgmBuffer; 
+      exportBgmNode.buffer = bgmBuffer;
       exportBgmNode.loop = true;
       const gainNode = audioCtx.createGain();
       gainNode.gain.value = Number(document.getElementById("bgmVolSlider").value) / 100;
-      exportBgmNode.connect(gainNode); 
-      gainNode.connect(dest); 
+      exportBgmNode.connect(gainNode);
+      gainNode.connect(dest);
       gainNode.connect(audioCtx.destination);
+      localNodes.push(exportBgmNode);
     }
 
     const exportSfxNodes = [];
     scenes.forEach(sc => {
-      if (sc.sfxId) {
-        const item = userSfxList.find(x => x.id === sc.sfxId);
-        if (item && item.buffer) {
-          try {
-            const sfxNode = audioCtx.createBufferSource();
-            sfxNode.buffer = item.buffer;
-            sfxNode.connect(dest);
-            sfxNode.connect(audioCtx.destination);
-            
-            const startSec = sc.sfxStart !== undefined ? sc.sfxStart : 2.0;
-            const endSec = sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0;
-            const triggerTime = sc.start + startSec;
-            const duration = Math.max(0.1, endSec - startSec);
-            
-            exportSfxNodes.push({ node: sfxNode, time: triggerTime, duration: duration });
-          } catch(e) {}
-        }
-      }
+      if (!sc.sfxId) return;
+      const item = userSfxList.find(x => x.id === sc.sfxId);
+      if (!item || !item.buffer) return;
+      try {
+        const sfxNode = audioCtx.createBufferSource();
+        sfxNode.buffer = item.buffer;
+        sfxNode.connect(dest);
+        sfxNode.connect(audioCtx.destination);
+        const startSec = Math.max(0, Number(sc.sfxStart !== undefined ? sc.sfxStart : 2.0) || 0);
+        const endSec = Math.max(startSec + 0.1, Number(sc.sfxEnd !== undefined ? sc.sfxEnd : 3.0) || (startSec + 1));
+        const triggerTime = Math.max(0, sc.start + startSec);
+        const duration = Math.min(item.buffer.duration, Math.max(0.1, endSec - startSec));
+        exportSfxNodes.push({ node: sfxNode, time: triggerTime, duration });
+        localNodes.push(sfxNode);
+      } catch (e) { console.warn("No se pudo preparar un SFX", e); }
     });
 
     const combinedTracks = [...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()];
-    const combinedStream = new MediaStream(combinedTracks);
-
+    combinedStream = new MediaStream(combinedTracks);
     let mimeType = "video/webm;codecs=vp9,opus";
     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "video/webm";
-    const recorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 12000000 });
+    recorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 12000000 });
+    activeExportRecorder = recorder;
+    activeExportNodes = localNodes.slice();
     const chunks = [];
 
-    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+    recorder.onerror = e => {
+      console.error("Error de MediaRecorder:", e.error || e);
+      exportAbortReason = "El navegador ha interrumpido la grabación. No se ha generado un archivo para evitar entregar un vídeo incompleto.";
+      try { if (recorder.state === "recording") recorder.stop(); } catch (_) {}
+    };
     recorder.onstop = () => {
+      const wasAborted = Boolean(exportAbortReason);
+      if (canvasStream) canvasStream.getTracks().forEach(track => { try { track.stop(); } catch (_) {} });
+      if (combinedStream) combinedStream.getTracks().forEach(track => { try { track.stop(); } catch (_) {} });
+      activeExportRecorder = null;
+      activeExportNodes = [];
+      exportScheduledStartAt = null;
+      isExportingVideo = false;
+      btn.disabled = false;
+      if (wasAborted) {
+        statusEl.textContent = "❌ " + exportAbortReason;
+        return;
+      }
       const blob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+      if (!blob.size) {
+        statusEl.textContent = "❌ La grabación quedó vacía. Vuelve a exportar con la página visible.";
+        return;
+      }
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = "video_faceless_youtube_master.webm";
+      const a = document.createElement("a");
+      a.href = url; a.download = "video_faceless_youtube_master.webm";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      btn.disabled = false; progInner.style.width = "100%";
-      statusEl.innerHTML = "✅ <b>¡Vídeo Master Pro descargado con éxito!</b>";
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      progInner.style.width = "100%";
+      statusEl.innerHTML = "✅ <b>Vídeo exportado.</b> El audio y la línea de tiempo comparten un mismo instante de inicio.";
     };
 
     currentTime = 0;
+    renderCurrentFrame();
     recorder.start(100);
-    const exportStartAt = audioCtx.currentTime;
-
+    // Deja que MediaRecorder arranque y registra un breve preroll silencioso;
+    // todas las pistas de audio arrancan en exactamente el mismo tiempo futuro.
+    const exportStartAt = audioCtx.currentTime + 0.12;
+    exportScheduledStartAt = exportStartAt;
     if (exportVoiceNode) exportVoiceNode.start(exportStartAt, 0);
-
     if (exportBgmNode) {
-      const offsetVal = parseFloat(document.getElementById("bgmOffsetInput").value) || 0;
-      exportBgmNode.start(exportStartAt, Math.max(0, offsetVal));
+      const offsetVal = Math.max(0, parseFloat(document.getElementById("bgmOffsetInput").value) || 0);
+      const safeOffset = bgmBuffer && bgmBuffer.duration > 0 ? offsetVal % bgmBuffer.duration : 0;
+      exportBgmNode.start(exportStartAt, safeOffset);
     }
-
     exportSfxNodes.forEach(sfx => {
-      try {
-        sfx.node.start(exportStartAt + sfx.time, 0, sfx.duration);
-      } catch(e) {}
+      try { sfx.node.start(exportStartAt + sfx.time, 0, sfx.duration); }
+      catch (e) { console.warn("No se pudo programar un SFX", e); }
     });
 
-    function step() {
-      let elapsed = Math.max(0, audioCtx.currentTime - exportStartAt);
-      currentTime = Math.min(elapsed, totalDuration);
-      updateTimeUI(); renderCurrentFrame();
-      let pct = Math.min(100, Math.round((currentTime / totalDuration) * 100));
+    const step = () => {
+      if (!isExportingVideo || exportAbortReason) return;
+      const elapsed = audioCtx.currentTime - exportStartAt;
+      currentTime = Math.max(0, Math.min(elapsed, totalDuration));
+      updateTimeUI();
+      renderCurrentFrame();
+      const pct = Math.min(100, Math.round((currentTime / Math.max(0.1, totalDuration)) * 100));
       progInner.style.width = pct + "%";
-      statusEl.textContent = `⏳ Renderizando: ${pct}%...`;
-      if (elapsed < totalDuration) { requestAnimationFrame(step); } else {
-        if (exportVoiceNode) { try{exportVoiceNode.stop();}catch(e){} }
-        if (exportBgmNode) { try{exportBgmNode.stop();}catch(e){} }
-        exportSfxNodes.forEach(s => { try{s.node.stop();}catch(e){} });
-        recorder.stop();
+      statusEl.textContent = elapsed < 0
+        ? "⏳ Sincronizando inicio de audio y vídeo..."
+        : `⏳ Renderizando: ${pct}%... Mantén la pestaña visible.`;
+      if (elapsed < totalDuration) {
+        requestAnimationFrame(step);
+      } else {
+        currentTime = totalDuration;
+        updateTimeUI(); renderCurrentFrame();
+        localNodes.forEach(node => { try { node.stop(); } catch (_) {} });
+        if (recorder && recorder.state === "recording") recorder.stop();
       }
-    }
+    };
     requestAnimationFrame(step);
   } catch (err) {
-    alert("Error: " + err.message); btn.disabled = false; statusEl.textContent = "❌ Error en exportación.";
+    console.error("Error al exportar:", err);
+    const detail = err && err.message ? err.message : String(err);
+    localNodes.forEach(node => { try { node.stop(); } catch (_) {} });
+    if (canvasStream) canvasStream.getTracks().forEach(track => { try { track.stop(); } catch (_) {} });
+    if (combinedStream) combinedStream.getTracks().forEach(track => { try { track.stop(); } catch (_) {} });
+    if (recorder && recorder.state === "recording") {
+      // No descargues un archivo parcial como si fuera correcto.
+      exportAbortReason = "La exportación se ha interrumpido por un error: " + detail + ". Vuelve a intentarlo con la página visible.";
+      isExportingVideo = false;
+      try { recorder.stop(); } catch (_) {}
+    } else {
+      exportAbortReason = "";
+      isExportingVideo = false;
+      exportScheduledStartAt = null;
+      activeExportRecorder = null;
+      activeExportNodes = [];
+      btn.disabled = false;
+      statusEl.textContent = "❌ Error en exportación: " + detail;
+    }
+    alert("Error al exportar: " + detail);
   }
 }
 
+// Si el navegador pasa a segundo plano durante la exportación, detenemos el trabajo.
+// La mayoría de navegadores limita requestAnimationFrame en segundo plano; continuar
+// produciría un vídeo con fotogramas congelados y desincronización acumulada.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden || !isExportingVideo) return;
+  exportAbortReason = "La exportación se ha cancelado porque la pestaña dejó de estar visible. Repite la exportación sin cambiar de pestaña ni minimizar el navegador.";
+  isExportingVideo = false;
+  activeExportNodes.forEach(node => { try { node.stop(); } catch (_) {} });
+  if (activeExportRecorder && activeExportRecorder.state === "recording") {
+    try { activeExportRecorder.stop(); } catch (_) {}
+  }
+});
+
 function toSrtTime(sec) {
-  const hrs = Math.floor(sec / 3600); const mins = Math.floor((sec % 3600) / 60);
-  const secs = Math.floor(sec % 60); const ms = Math.round((sec - Math.floor(sec)) * 1000);
+  const totalMs = Math.max(0, Math.round((Number(sec) || 0) * 1000));
+  const hrs = Math.floor(totalMs / 3600000);
+  const mins = Math.floor((totalMs % 3600000) / 60000);
+  const secs = Math.floor((totalMs % 60000) / 1000);
+  const ms = totalMs % 1000;
   return `${String(hrs).padStart(2,"0")}:${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")},${String(ms).padStart(3,"0")}`;
 }
 
-function downloadSRT() {
+async function downloadSRT() {
+  if (syncInProgress) return;
+  if (!hasVerifiedVoiceSync()) {
+    if (!await autoSyncProject(false) || !hasVerifiedVoiceSync()) return;
+  }
   if (scenes.length === 0) return;
-  const srt = scenes.map((sc, i) => `${i+1}\n${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}\n${sc.text}\n`).join("\n");
+  const cues = scenes.flatMap(getSubtitleCues);
+  cues.sort((a, b) => a.start - b.start);
+  const srt = cues.map((cue, index) => `${index + 1}\n${toSrtTime(cue.start)} --> ${toSrtTime(cue.end)}\n${cue.text}\n`).join("\n");
   const blob = new Blob([srt], { type: "text/plain;charset=utf-8" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "subtitulos.srt";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = "subtitulos_sincronizados.srt";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function downloadProjectJSON() {
