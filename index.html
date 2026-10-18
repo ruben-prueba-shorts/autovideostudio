@@ -1847,15 +1847,38 @@ function distributeTextIntoTargetCount(lines, targetCount) {
   }
 }
 
-// El reconocimiento se ejecuta fuera del hilo de la interfaz. No se envía el audio.
+// Reconocimiento secuencial con recuperación por fragmento, sin enviar el audio.
 function speechRecognitionWorkerMain() {
   let library = null;
   let transcriber = null;
   let modelInUse = "";
   let queue = Promise.resolve();
+
+  async function loadTranscriber(model, send) {
+    if (transcriber && modelInUse === model) return;
+    if (transcriber) await transcriber.dispose();
+    transcriber = null;
+    send({ type: "progress", phase: "model", message: "Preparando el modelo de voz…" });
+    transcriber = await library.pipeline("automatic-speech-recognition", model, {
+      quantized: true,
+      progress_callback: progress => {
+        if (progress.status === "progress") send({ type: "progress", phase: "model", message: `Descargando modelo de voz: ${Math.round(progress.progress || 0)}%` });
+      }
+    });
+    // Whisper puede emitir dos marcas temporales sin texto entre ellas. Ese
+    // intervalo vacío es válido: no debe pasarse a decode([]), que en 2.17.2 lanza
+    // una excepción y aborta también las palabras válidas del mismo fragmento.
+    const tokenizer = transcriber.tokenizer;
+    if (tokenizer && typeof tokenizer.decode === "function") {
+      const decode = tokenizer.decode.bind(tokenizer);
+      tokenizer.decode = (ids, args) => Array.isArray(ids) && ids.length === 0 ? "" : decode(ids, args);
+    }
+    modelInUse = model;
+  }
+
   self.onmessage = ({ data }) => {
     queue = queue.catch(() => {}).then(async () => {
-      const { id, audio, ranges, model, language, activity } = data;
+      const { id, audio, ranges, model, language, activity, completed } = data;
       const send = value => self.postMessage({ id, ...value });
       try {
         if (!library) {
@@ -1875,74 +1898,176 @@ function speechRecognitionWorkerMain() {
           }
           if (!library) throw new Error("No se pudo descargar el motor de voz. Comprueba Internet y vuelve a sincronizar.");
         }
-        if (!transcriber || modelInUse !== model) {
-          if (transcriber) await transcriber.dispose();
-          transcriber = null;
-          send({ type: "progress", phase: "model", message: "Descargando el modelo de voz (sólo la primera vez)…" });
-          transcriber = await library.pipeline("automatic-speech-recognition", model, {
-            quantized: true,
-            progress_callback: progress => {
-              if (progress.status === "progress") send({ type: "progress", phase: "model", message: `Descargando modelo de voz: ${Math.round(progress.progress || 0)}%` });
+        await loadTranscriber(model, send);
+        const duration = audio.length / 16000;
+
+        function isQuiet(range) {
+          if (activity) {
+            let count = 0;
+            const end = Math.min(activity.voiced.length, Math.ceil(range.end / activity.hop));
+            for (let i = Math.max(0, Math.floor(range.start / activity.hop)); i < end; i++) {
+              if (activity.voiced[i] && ++count >= 3) return false;
             }
-          });
-          modelInUse = model;
-        }
-        const words = [];
-        for (let i = 0; i < ranges.length; i++) {
-          const range = ranges[i];
-          send({ type: "progress", phase: "audio", progress: i / ranges.length, message: `Escuchando audio: fragmento ${i + 1} de ${ranges.length}…` });
-          const left = Math.max(0, range.start - 1.2);
-          const right = Math.min(audio.length / 16000, range.end + 1.2);
-          const fragment = audio.slice(Math.floor(left * 16000), Math.ceil(right * 16000));
-          // Fragmentos inferiores a 30 s: las marcas nunca se acumulan ni se desplazan
-          // por el relleno interno de Whisper en audios largos.
-          const options = { task: "transcribe", return_timestamps: "word", chunk_length_s: 0, do_sample: false, num_beams: 1,
-            repetition_penalty: 1.05, max_new_tokens: Math.min(448, Math.max(64, Math.ceil(fragment.length / 16000 * 12 + 24))) };
-          if (language) options.language = language;
-          let output;
-          for (let attempt = 0;; attempt++) {
-            // Transformers.js modifica las opciones y añade forced_decoder_ids.
-            // Cada llamada, incluido un reintento, debe recibir un objeto nuevo.
-            try { output = await transcriber(fragment, { ...options }); break; }
-            catch (error) {
-              if (attempt >= 1) throw new Error(`No se pudo analizar el fragmento ${i + 1} de ${ranges.length}: ${error.message || String(error)}`);
-              send({ type: "progress", phase: "audio", progress: i / ranges.length, message: `Reintentando el fragmento ${i + 1} de ${ranges.length}…` });
-            }
+            return true;
           }
+          // Sin un mapa fiable, sólo omitir silencio digital, nunca voz débil.
+          for (let i = Math.floor(range.start * 16000); i < Math.min(audio.length, Math.ceil(range.end * 16000)); i += 32) {
+            if (Math.abs(audio[i]) > 0.000001) return false;
+          }
+          return true;
+        }
+
+        function wordsInRange(output, left, right, range) {
+          const words = [];
           for (const chunk of output.chunks || []) {
             const times = chunk.timestamp || [];
             if (!Number.isFinite(times[0])) continue;
             let start = Math.max(left, left + times[0]);
             let end = Math.min(right, Number.isFinite(times[1]) ? left + times[1] : start + 0.12);
             if (end <= start) continue;
-            // Corregir el silencio ANTES de decidir a qué fragmento pertenece
-            // la palabra evita perder la primera palabra tras un solapamiento.
             if (activity) {
               const limit = Math.min(activity.voiced.length, Math.ceil(end / activity.hop));
               let first = Math.max(0, Math.floor(start / activity.hop));
               while (first < limit && !activity.voiced[first]) first++;
               let last = limit - 1;
               while (last > first && !activity.voiced[last]) last--;
+              // En la recuperación sin delimitadores, la primera atención puede
+              // arrancar en cero aunque antes de la palabra haya voz de contexto
+              // y una pausa larga. Usar el ataque posterior a esa pausa.
+              if (chunk === output.chunks[0] && times[0] <= 0.04) {
+                for (let i = first; i <= last;) {
+                  if (activity.voiced[i]) { i++; continue; }
+                  let next = i + 1;
+                  while (next <= last && !activity.voiced[next]) next++;
+                  if ((next - i) * activity.hop >= 0.35 && (last - next + 1) * activity.hop >= 0.04) first = next;
+                  i = next;
+                }
+              }
               if (first < limit) {
                 start = Math.max(start, Math.min(end - 0.015, first * activity.hop));
                 end = Math.min(end, Math.max(start + 0.015, (last + 1) * activity.hop));
               }
             }
-            const center = (start + Math.max(start, end)) / 2;
-            if (center < range.start || (i < ranges.length - 1 && center >= range.end)) continue;
-            const textWords = String(chunk.text || "").trim().split(/\s+/).filter(Boolean);
-            textWords.forEach((word, j) => words.push({ word,
-              start: start + Math.max(0.02, end - start) * j / textWords.length,
-              end: start + Math.max(0.02, end - start) * (j + 1) / textWords.length
+            const center = (start + end) / 2;
+            if (center < range.start || (range.end < duration - 0.001 && center >= range.end)) continue;
+            const text = String(chunk.text || "").trim().split(/\s+/).filter(Boolean);
+            text.forEach((word, i) => words.push({ word,
+              start: start + (end - start) * i / text.length,
+              end: start + (end - start) * (i + 1) / text.length
             }));
           }
-          send({ type: "progress", phase: "audio", progress: (i + 1) / ranges.length, message: `Audio analizado: fragmento ${i + 1} de ${ranges.length}.` });
+          return words;
+        }
+
+        function hasUnrecognizedSpeech(words, range) {
+          if (!words.length) return !isQuiet(range);
+          if (!activity) return false;
+          // Una respuesta con texto no garantiza que se haya escuchado todo:
+          // comprobar también los huecos con voz que el modelo haya omitido.
+          let cursor = range.start;
+          for (const word of [...words, { start: range.end, end: range.end }]) {
+            const start = Math.max(range.start, cursor + 0.12);
+            const end = Math.min(range.end, word.start - 0.12);
+            if (end - start > 1) {
+              let voicedSeconds = 0;
+              for (let i = Math.max(0, Math.floor(start / activity.hop)); i < Math.min(activity.voiced.length, Math.ceil(end / activity.hop)); i++) {
+                if (activity.voiced[i]) voicedSeconds += activity.hop;
+              }
+              if (voicedSeconds >= 0.8) return true;
+            }
+            cursor = Math.max(cursor, word.end);
+          }
+          return false;
+        }
+
+        async function infer(fragment, wordOnly = false) {
+          const options = { task: "transcribe", return_timestamps: "word", chunk_length_s: 0,
+            do_sample: false, num_beams: 1, repetition_penalty: 1.05,
+            max_new_tokens: Math.min(440, Math.max(64, Math.ceil(fragment.length / 16000 * 12 + 24))) };
+          if (language) options.language = language;
+          // La librería modifica las opciones. No reutilizar un objeto de llamada.
+          if (!wordOnly) return await transcriber(fragment, { ...options });
+          if (typeof transcriber.processor !== "function" || !transcriber.model?.generate || !transcriber.tokenizer?._decode_asr) {
+            throw new Error("No está disponible la recuperación de marcas de palabra.");
+          }
+          // Alternativa con las mismas atenciones acústicas y marcas por palabra,
+          // sin pedir al modelo delimitadores de segmento que puedan quedar vacíos.
+          const inputs = await transcriber.processor(fragment);
+          const config = { ...options, return_timestamps: false, return_token_timestamps: true,
+            forced_decoder_ids: transcriber.tokenizer.get_decoder_prompt_ids({ language, task: "transcribe", no_timestamps: true }),
+            num_frames: Math.floor(fragment.length / transcriber.processor.feature_extractor.config.hop_length) };
+          delete config.language; delete config.task; delete config.chunk_length_s;
+          const generated = await transcriber.model.generate(inputs.input_features, config);
+          const tokens = generated.sequences?.[0];
+          const times = generated.token_timestamps?.tolist?.()[0];
+          if (!Array.isArray(tokens) || !tokens.length || !Array.isArray(times)) throw new Error("El modelo no devolvió marcas de palabra válidas.");
+          const [text, extra] = transcriber.tokenizer._decode_asr([
+            { tokens, token_timestamps: times, stride: [fragment.length / 16000, 0, 0] }
+          ], { return_timestamps: "word", time_precision: 0.02, force_full_sequences: false });
+          return { text, chunks: extra.chunks || [] };
+        }
+
+        async function recognizeRange(range, rootIndex, depth = 0) {
+          if (isQuiet(range)) return [];
+          const left = Math.max(0, range.start - 1.2);
+          const right = Math.min(duration, range.end + 1.2);
+          const fragment = audio.slice(Math.floor(left * 16000), Math.ceil(right * 16000));
+          let failure = null;
+          for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+              const words = wordsInRange(await infer(fragment), left, right, range);
+              if (words.length && !hasUnrecognizedSpeech(words, range)) return words;
+              throw new Error("Se ha detectado voz pero faltan las palabras de este tramo.");
+            } catch (error) {
+              failure = error;
+              if (attempt === 0) send({ type: "progress", phase: "audio", progress: rootIndex / ranges.length,
+                message: `Reintentando el fragmento ${rootIndex + 1} de ${ranges.length}…` });
+            }
+          }
+          if (typeof transcriber.processor === "function" && transcriber.model?.generate && transcriber.tokenizer?._decode_asr) {
+            try {
+              const words = wordsInRange(await infer(fragment, true), left, right, range);
+              if (words.length && !hasUnrecognizedSpeech(words, range)) return words;
+            } catch (error) { failure = error; }
+          }
+          if (range.end - range.start > 5.5 && depth < 3) {
+            send({ type: "progress", phase: "audio", progress: rootIndex / ranges.length,
+              message: `Analizando en partes más pequeñas el fragmento ${rootIndex + 1} de ${ranges.length}…` });
+            let middle = (range.start + range.end) / 2;
+            if (activity) {
+              const center = Math.floor(middle / activity.hop);
+              for (let distance = 0; distance * activity.hop <= 0.8; distance++) {
+                const candidates = [center - distance, center + distance];
+                const pause = candidates.find(i => i > 0 && i < activity.voiced.length - 1 && !activity.voiced[i - 1] && !activity.voiced[i] && !activity.voiced[i + 1]);
+                if (pause !== undefined) { middle = pause * activity.hop; break; }
+              }
+            }
+            const first = await recognizeRange({ start: range.start, end: middle }, rootIndex, depth + 1);
+            const second = await recognizeRange({ start: middle, end: range.end }, rootIndex, depth + 1);
+            return first.concat(second);
+          }
+          throw failure || new Error("No se han podido reconocer las palabras de este tramo.");
+        }
+
+        const words = [];
+        for (let i = 0; i < ranges.length; i++) {
+          const restored = Array.isArray(completed?.[i]);
+          send({ type: "progress", phase: "audio", progress: i / ranges.length,
+            message: `${restored ? "Recuperando" : "Escuchando audio:"} fragmento ${i + 1} de ${ranges.length}…` });
+          let part;
+          try { part = restored ? completed[i] : await recognizeRange(ranges[i], i); }
+          catch (error) { throw new Error(`No se pudo analizar el fragmento ${i + 1} de ${ranges.length}: ${error.message || String(error)}`); }
+          words.push(...part);
+          if (!restored) send({ type: "checkpoint", index: i, words: part });
+          send({ type: "progress", phase: "audio", progress: (i + 1) / ranges.length,
+            message: `Audio analizado: fragmento ${i + 1} de ${ranges.length}.` });
         }
         send({ type: "result", words });
       } catch (error) { send({ type: "error", message: error.message || String(error) }); }
     });
   };
 }
+
 
 function destroySpeechWorker(message) {
   if (speechWorker) speechWorker.terminate();
@@ -1953,7 +2078,7 @@ function destroySpeechWorker(message) {
   speechWorkerJobs.clear();
 }
 
-function recognizeAudioInWorker(audio, ranges, model, language, onProgress) {
+function recognizeAudioInWorker(audio, ranges, model, language, onProgress, checkpoint = {}) {
   return new Promise((resolve, reject) => {
     if (!speechWorker) {
       try {
@@ -1964,30 +2089,41 @@ function recognizeAudioInWorker(audio, ranges, model, language, onProgress) {
           const job = speechWorkerJobs.get(data.id);
           if (!job) return;
           clearTimeout(job.timer);
-          if (data.type === "progress") {
+          if (data.type === "progress" || data.type === "checkpoint") {
             job.timer = setTimeout(() => destroySpeechWorker("El reconocimiento se ha detenido. Vuelve a pulsar Sincronizar Todo."), 900000);
-            job.onProgress(data);
+            if (data.type === "progress") job.onProgress(data);
+            else if (Number.isInteger(data.index) && data.index >= 0 && data.index < job.ranges.length && Array.isArray(data.words)) {
+              job.checkpoint.chunks[data.index] = data.words;
+              if (job.checkpoint.key) {
+                const snapshot = { bounds: job.checkpoint.bounds, chunks: job.checkpoint.chunks.slice() };
+                job.writes = job.writes.then(() => recoveryStore("put", job.checkpoint.key, snapshot)).catch(() => {});
+              }
+            }
           } else {
             speechWorkerJobs.delete(data.id);
-            if (data.type === "error") job.reject(new Error(data.message));
-            else job.resolve(data.words);
+            job.writes.finally(() => {
+              if (data.type === "error") job.reject(new Error(data.message));
+              else job.resolve(data.words);
+            });
           }
         };
       } catch (error) { reject(error); return; }
     }
     const id = ++speechWorkerSequence;
     const timer = setTimeout(() => destroySpeechWorker("No se ha podido cargar el modelo de voz. Comprueba Internet y vuelve a sincronizar."), 240000);
-    speechWorkerJobs.set(id, { resolve, reject, onProgress, timer });
+    if (!Array.isArray(checkpoint.chunks)) checkpoint.chunks = ranges.map(() => null);
+    speechWorkerJobs.set(id, { resolve, reject, onProgress, timer, checkpoint, ranges, writes: Promise.resolve() });
     const activity = speechActivityMap ? { hop: speechActivityMap.hop, voiced: speechActivityMap.voiced } : null;
-    speechWorker.postMessage({ id, audio, ranges, model, language, activity }, [audio.buffer]);
+    speechWorker.postMessage({ id, audio, ranges, model, language, activity, completed: checkpoint.chunks }, [audio.buffer]);
   });
 }
 
 function getRecognitionRanges(duration, activityMap) {
   const ranges = [];
+  const maxSpan = duration > 180 ? 18 : 23;
   let start = 0;
   while (start < duration - 0.001) {
-    let end = Math.min(duration, start + 23);
+    let end = Math.min(duration, start + maxSpan);
     if (end < duration && activityMap) {
       const pauses = activityMap.silenceIntervals.filter(p => p.center >= end - 4 && p.center <= end);
       if (pauses.length) end = pauses[pauses.length - 1].center;
@@ -2079,11 +2215,32 @@ async function getRecognizedSpeech(buffer, progress, model = "Xenova/whisper-bas
     let cacheKey = "";
     try {
       const hash = await crypto.subtle.digest("SHA-256", mono.buffer);
-      cacheKey = "speech-v3:" + model + ":" + language + ":" + Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("");
+      cacheKey = "speech-v4:" + model + ":" + language + ":" + Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("");
       const cached = await recoveryStore("get", cacheKey);
       if (cached?.length) return sanitizeRecognizedWords(cached, buffer.duration);
     } catch (_) {}
-    const words = sanitizeRecognizedWords(await recognizeAudioInWorker(mono, getRecognitionRanges(buffer.duration, speechActivityMap), model, language, progress), buffer.duration);
+    const ranges = getRecognitionRanges(buffer.duration, speechActivityMap);
+    const bounds = JSON.stringify(ranges);
+    const checkpoint = { key: cacheKey ? cacheKey + ":parts" : "", bounds, chunks: ranges.map(() => null) };
+    if (checkpoint.key) {
+      const saved = await recoveryStore("get", checkpoint.key);
+      if (saved?.bounds === bounds && Array.isArray(saved.chunks) && saved.chunks.length === ranges.length) {
+        checkpoint.chunks = saved.chunks.map(part => Array.isArray(part) && part.every(item => typeof item.word === "string" && Number.isFinite(item.start) && Number.isFinite(item.end) && item.end > item.start) ? part : null);
+      }
+    }
+    let recognized = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const samples = attempt === 0 ? mono : await audioForSpeechRecognition(buffer);
+        recognized = await recognizeAudioInWorker(samples, ranges, model, language, progress, checkpoint);
+        break;
+      } catch (error) {
+        if (attempt >= 1 || !checkpoint.chunks.some(Array.isArray) || voiceBuffer !== buffer || isDemoSynthMode) throw error;
+        destroySpeechWorker("Restableciendo el análisis de voz.");
+        progress({ message: "Recuperando el reconocimiento desde el último fragmento terminado…" });
+      }
+    }
+    const words = sanitizeRecognizedWords(recognized, buffer.duration);
     if (!words.length) throw new Error("No se han reconocido palabras. Comprueba que el archivo contiene la voz del guion.");
     if (cacheKey) await recoveryStore("put", cacheKey, words);
     return words;
@@ -2094,7 +2251,11 @@ async function getRecognizedSpeech(buffer, progress, model = "Xenova/whisper-bas
     if (speechRecognitionBuffer === buffer) { speechTranscript = { model, words }; speechTranscriptBuffer = buffer; }
     return words;
   } finally {
-    if (speechRecognitionTask === task) { speechRecognitionTask = null; speechRecognitionBuffer = null; }
+    if (speechRecognitionTask === task) {
+      speechRecognitionTask = null; speechRecognitionBuffer = null;
+      // Libera pesos, tensores y memoria WASM antes de grabar un vídeo largo.
+      if (speechWorker && speechWorkerJobs.size === 0) destroySpeechWorker("El análisis de voz ha terminado.");
+    }
   }
 }
 
@@ -2146,7 +2307,7 @@ async function matchScriptToRecognizedWords(reference, recognized) {
   return matches;
 }
 
-function refineWordAgainstVoice(timing, map) {
+function refineWordAgainstVoice(timing, map, preferLastRegion = false) {
   if (!map) return timing;
   const first = Math.max(0, Math.floor(timing.start / map.hop));
   const limit = Math.min(map.frameCount, Math.ceil(timing.end / map.hop));
@@ -2154,6 +2315,22 @@ function refineWordAgainstVoice(timing, map) {
   while (i < limit && !map.voiced[i]) i++;
   let j = limit - 1;
   while (j > i && !map.voiced[j]) j--;
+  // Las atenciones pueden dejar una cola de la palabra anterior, una pausa
+  // larga y después la palabra actual dentro de una misma marca. Conservar
+  // la región con más voz evita anticipar el siguiente subtítulo y su imagen.
+  let regionStart = i, regionVoice = 0, bestVoice = -1, bestStart = i, bestEnd = j;
+  for (let k = i; k <= j;) {
+    if (map.voiced[k]) { regionVoice++; k++; continue; }
+    let next = k + 1;
+    while (next <= j && !map.voiced[next]) next++;
+    if ((next - k) * map.hop >= 0.30) {
+      if (regionVoice > bestVoice || (preferLastRegion && regionVoice > 0)) { bestVoice = regionVoice; bestStart = regionStart; bestEnd = k - 1; }
+      regionStart = next; regionVoice = 0;
+    }
+    k = next;
+  }
+  if (regionVoice > bestVoice || (preferLastRegion && regionVoice > 0)) { bestVoice = regionVoice; bestStart = regionStart; bestEnd = j; }
+  if (bestVoice > 0) { i = bestStart; j = bestEnd; }
   if (i < limit) return { ...timing,
     start: Math.max(timing.start, Math.min(timing.end - 0.015, i * map.hop)),
     end: Math.min(timing.end, Math.max(timing.start + 0.015, (j + 1) * map.hop))
@@ -2185,7 +2362,8 @@ async function alignScenesToVoice(lines, recognized, duration, map) {
   }
   const timings = reference.map((item, i) => {
     if (!anchors[i]) return null;
-    return refineWordAgainstVoice({ word: item.word, start: anchors[i].start, end: anchors[i].end, source: "recognized" }, map);
+    return refineWordAgainstVoice({ word: item.word, start: anchors[i].start, end: anchors[i].end, source: "recognized" }, map,
+      i === 0 || reference[i - 1].sceneIndex !== item.sceneIndex);
   });
   // Las palabras que ASR escribe de otra forma (números, nombres…) se acotan
   // entre palabras vecinas verificadas. Nunca se redistribuye el audio completo.
@@ -2193,11 +2371,20 @@ async function alignScenesToVoice(lines, recognized, duration, map) {
     if (timings[i]) { i++; continue; }
     let j = i + 1;
     while (j < timings.length && !timings[j]) j++;
-    const start = i > 0 ? timings[i - 1].end : (map?.firstVoiceStart || 0);
-    const end = j < timings.length ? timings[j].start : (map?.lastVoiceEnd || duration);
+    let start = i > 0 ? timings[i - 1].end : (map?.firstVoiceStart || 0);
+    let end = j < timings.length ? timings[j].start : (map?.lastVoiceEnd || duration);
+    if (map && reference[i].sceneIndex === reference[j - 1].sceneIndex) {
+      const pauses = map.silenceIntervals.filter(p => p.duration >= 0.25 && p.start >= start - 0.025 && p.end <= end + 0.025);
+      if (pauses.length && i > 0 && reference[i - 1].sceneIndex !== reference[i].sceneIndex) start = Math.max(start, pauses[0].end);
+      if (pauses.length && j < reference.length && reference[j].sceneIndex !== reference[i].sceneIndex) end = Math.min(end, pauses[pauses.length - 1].start);
+    }
     if (j - i > 7 || end - start > 6 || end - start < (j - i) * 0.025) throw new Error(`Hay una parte del guion que no se ha podido localizar en la voz (escena ${reference[i].sceneIndex + 1}).`);
     const filled = createWordTimings(reference.slice(i, j).map(item => item.word).join(" "), start, Math.max(start + 0.02, end), map);
-    filled.forEach((word, k) => { timings[i + k] = { ...word, source: "interpolated" }; });
+    filled.forEach((word, k) => {
+      const index = i + k;
+      timings[index] = refineWordAgainstVoice({ ...word, source: "interpolated" }, map,
+        index === 0 || reference[index - 1].sceneIndex !== reference[index].sceneIndex);
+    });
     i = j;
   }
   for (let i = 0; i < timings.length - 1; i++) {
@@ -2255,14 +2442,18 @@ async function autoSyncProject(goToTimeline = true) {
   };
   try {
     renderCurrentFrame();
-    let recognized = await getRecognizedSpeech(buffer, report);
-    if (version !== syncRequestVersion) return false;
-    report({ message: "Ajustando las palabras del guion a sus marcas de tiempo…" });
-    let alignment;
-    try { alignment = await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap); }
+    let recognized, alignment;
+    try {
+      recognized = await getRecognizedSpeech(buffer, report);
+      if (version !== syncRequestVersion) return false;
+      report({ message: "Ajustando las palabras del guion a sus marcas de tiempo…" });
+      alignment = await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap);
+    }
     catch (firstError) {
+      if (version !== syncRequestVersion || voiceBuffer !== buffer) return false;
       report({ message: "Comprobando las palabras con un modelo de voz más preciso (puede tardar)…" });
       recognized = await getRecognizedSpeech(buffer, report, "Xenova/whisper-small");
+      if (version !== syncRequestVersion || voiceBuffer !== buffer) return false;
       alignment = await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap);
     }
     if (version !== syncRequestVersion || voiceBuffer !== buffer || document.getElementById("scriptArea").value.trim() !== script) {
