@@ -992,7 +992,7 @@ async function generateImagesFromPromptsAI() {
   }
 
   const promptMode = document.getElementById("promptGenMode").value;
-  const negativeConstraint = ", strictly no text, no words, no letters, no numbers, no typography, pure visual graphics";
+  const stylePrefix = "clean professional visual graphic illustration, pure graphics, absolutely zero text, no letters, no words, no numbers, no typography";
   const targetCount = scriptLines.length;
   let imagePrompts = [];
 
@@ -1005,14 +1005,14 @@ async function generateImagesFromPromptsAI() {
     }
     imagePrompts = scriptLines.map((_, i) => {
       const lineContent = manualLines[i] || manualLines[manualLines.length - 1] || "A cinematic scene";
-      return `Scene ${i + 1}: ${lineContent}${negativeConstraint}`;
+      return `Scene ${i + 1}: ${lineContent}. Style: ${stylePrefix}`;
     });
   } else {
     const styleInput = document.getElementById("aiVisualStyle").value.trim();
-    const styleDesc = styleInput || "2D minimalist vector animation style";
+    const styleDesc = styleInput ? `${styleInput}, ${stylePrefix}` : `2D minimalist vector animation style, ${stylePrefix}`;
     imagePrompts = scriptLines.map((sceneText, i) => {
       const cleanText = String(sceneText || "").replace(/^\d+[\.\)\-:]\s*/, "").trim();
-      return `Scene ${i + 1}: ${cleanText}. Style: ${styleDesc}${negativeConstraint}`;
+      return `Scene ${i + 1}: ${cleanText}. Artistic direction: ${styleDesc}`;
     });
   }
 
