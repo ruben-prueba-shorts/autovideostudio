@@ -279,7 +279,7 @@
                 </div>
               </div>
               <label for="googleFlowEndpointUrl" style="margin-top:2px;">🌐 Endpoint / Proxy Opcional (Dejar por defecto para conexión directa)</label>
-              <input type="text" id="googleFlowEndpointUrl" value="https://generativelanguage.googleapis.com/v1beta/models" placeholder="https://generativelanguage.googleapis.com/v1beta/models" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
+              <input type="text" id="googleFlowEndpointUrl" value="https://generativelanguage.googleapis.com/v1/models" placeholder="https://generativelanguage.googleapis.com/v1beta/models" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
               <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
                 <button type="button" class="btn btn-ai" onclick="testGoogleFlowConnection()">⚡ Comprobar Google Flow API</button>
               </div>
@@ -1027,7 +1027,7 @@ function showAILog(msg, isError = false) {
 }
 
 const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
-const GOOGLE_FLOW_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
+const GOOGLE_FLOW_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1/models";
 let selectedVideoFormat = "short";
 
 function getSelectedImageEngine() {
