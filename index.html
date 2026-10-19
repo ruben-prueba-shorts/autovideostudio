@@ -262,7 +262,7 @@
               <input type="password" id="googleFlowApiKey" placeholder="AIzaSy..." autocomplete="new-password" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:2px;">
                 <div>
-                  <label for="aiConcurrencySelect">🚀 Velocidad Paralela (Hilos)</label>
+                  <label for="aiConcurrencySelect">🚀 Hilos (Gemini usa 1 para evitar límites)</label>
                   <select id="aiConcurrencySelect" onchange="saveGoogleFlowSettings()">
                     <option value="1">1x Secuencial (1 a 1)</option>
                     <option value="2">2x Rápido (2 a la vez)</option>
@@ -280,7 +280,7 @@
               </div>
               <label for="googleFlowEndpointUrl" style="margin-top:2px;">🌐 Endpoint Gemini API / proxy privado (deja el oficial por defecto)</label>
               <input type="text" id="googleFlowEndpointUrl" value="https://generativelanguage.googleapis.com/v1beta/interactions" placeholder="https://generativelanguage.googleapis.com/v1beta/interactions" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
-              <div style="font-size:.74rem;color:var(--text-muted);line-height:1.4;">No uses proxies CORS públicos: pueden rechazar la petición y exponer tu clave API.</div>
+              <div style="font-size:.74rem;color:var(--text-muted);line-height:1.4;">Gemini se ejecuta con una solicitud cada vez para reducir errores 429. No uses proxies CORS públicos: pueden rechazar la petición y exponer tu clave API.</div>
               <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
                 <button type="button" class="btn btn-ai" onclick="testGoogleFlowConnection()">⚡ Comprobar clave y conexión Gemini</button>
               </div>
@@ -1267,7 +1267,7 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
   const cancel = () => controller.abort();
   if (signal?.aborted) throw abortImageError();
   signal?.addEventListener("abort", cancel, { once: true });
-  const timeout = setTimeout(() => controller.abort(), 120000);
+  const timeout = setTimeout(() => controller.abort(), 90000);
 
   let response, rawText;
   try {
@@ -1307,14 +1307,17 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
     throw error;
   }
 
-  // Gemini Interactions API devuelve la imagen generada en output_image.data (base64).
-  let image = data.output_image || data.outputImage || null;
-  if (!image?.data && Array.isArray(data.steps)) {
-    for (let i = data.steps.length - 1; i >= 0 && !image?.data; i--) {
-      const step = data.steps[i];
+  // En la Interactions API REST, la imagen puede aparecer en output_image o
+  // dentro de steps[].content[] (type: "model_output", content type: "image").
+  const interaction = data.interaction || data;
+  let image = interaction.output_image || interaction.outputImage || null;
+  const steps = Array.isArray(interaction.steps) ? interaction.steps : (Array.isArray(data.steps) ? data.steps : []);
+  if (!image?.data) {
+    for (let i = steps.length - 1; i >= 0 && !image?.data; i--) {
+      const step = steps[i];
       if (step?.type === "image" && step?.data) image = step;
       if (Array.isArray(step?.content)) {
-        const block = [...step.content].reverse().find(item => item?.type === "image" && item?.data);
+        const block = [...step.content].reverse().find(item => item?.type === "image" && (item?.data || item?.bytesBase64Encoded));
         if (block) image = block;
       }
     }
@@ -1324,8 +1327,15 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
   const dataUrl = imageBase64 ? `data:${mimeType};base64,${imageBase64}` : (image?.dataURI || image?.dataUrl || image?.url || "");
 
   if (!dataUrl) {
-    const explanation = data.output_text ? ` La API devolvió texto en lugar de imagen: ${String(data.output_text).slice(0, 180)}` : "";
-    throw cloudflareImageError("Gemini API respondió, pero no devolvió una imagen." + explanation, 502, data, retryAfter);
+    const outputText = interaction.output_text || interaction.outputText || steps
+      .flatMap(step => Array.isArray(step?.content) ? step.content : [])
+      .filter(item => item?.type === "text")
+      .map(item => item.text || "")
+      .join(" ");
+    const state = interaction.status ? ` Estado: ${interaction.status}.` : "";
+    const explanation = outputText ? ` Respuesta de Google: ${String(outputText).slice(0, 220)}` : "";
+    const shape = steps.length ? ` Pasos devueltos: ${steps.map(step => step?.type || "sin tipo").join(", ")}.` : " La respuesta no contiene pasos de imagen.";
+    throw cloudflareImageError("Gemini API respondió, pero no devolvió una imagen." + state + explanation + shape, 502, data, retryAfter);
   }
 
   return await loadImageCrossOrigin(dataUrl, 60000, signal);
@@ -1458,37 +1468,59 @@ async function acquireParallelSlot(signal) {
 async function generateImageWithRetries(prompt, aspect, sceneNumber, totalCount, signal) {
   let useReference = Boolean(autoVideoReferenceImageData);
   let referenceFallback = false;
-  const maxQuickAttempts = 4;
-  for (let attempt = 1;; attempt++) {
+  const maxAttempts = 2; // una petición inicial y un único reintento
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     if (signal?.aborted) throw abortImageError();
     if (navigator.onLine === false) {
-      showAILog(`⏳ Sin conexión. La imagen ${sceneNumber}/${totalCount} se reanudará al recuperar Internet.`);
-      await waitForImageRetry(4000, signal);
-      continue;
+      throw cloudflareImageError("El navegador indica que no hay conexión. Comprueba Internet y pulsa «Reintentar fallidas».", 0);
     }
     await acquireParallelSlot(signal);
     lastImageRequestAt = Date.now();
+
     try {
       const result = await fetchSelectedEngineImage(prompt, aspect, useReference, signal);
       imageRequestSpacing = Math.max(300, imageRequestSpacing * 0.88);
       return { result, usedReferenceFallback: referenceFallback };
     } catch (error) {
       if (signal?.aborted || error.name === "AbortError") throw abortImageError();
-      if (isCloudflareImageQuotaError(error) && error.status !== 429) throw error;
-      if (useReference && [400, 413, 415, 422].includes(error.status) && /reference|referencia|base64|image input|image.*size|inlineData/i.test(error.providerMessage || error.message)) {
-        useReference = false; referenceFallback = true;
-      } else if (error.permanent || /unauthorized|invalid.*(key|token)|api_key_invalid|authentication|forbidden|invalid url/i.test(error.message)) {
+
+      const originalMessage = String(error?.providerMessage || error?.message || "Error desconocido");
+      const normalizedMessage = normalizeText(originalMessage);
+      const quotaOrBilling = /quota|resource_exhausted|daily limit|billing|insufficient|used up|allocation|cuota|credits exhausted/.test(normalizedMessage);
+
+      // Cuota agotada: no repetir peticiones que no pueden funcionar ahora.
+      if ((error.status === 429 && quotaOrBilling) || (isCloudflareImageQuotaError(error) && error.status !== 429)) {
+        error.message = `Google ha indicado un límite de cuota o créditos. No seguiré reintentando automáticamente. Detalle: ${originalMessage}`;
+        error.permanent = true;
         throw error;
       }
+
+      // Si el rechazo se debe a la imagen de referencia, vuelve a probar sin ella
+      // una sola vez; evita cambiar el prompt ni perder el resto de escenas.
+      if (useReference && [400, 413, 415, 422].includes(error.status) && /reference|referencia|base64|image input|image.*size|inlineData/i.test(originalMessage)) {
+        useReference = false;
+        referenceFallback = true;
+      } else if (error.permanent || [400, 401, 403, 404, 405, 413, 415, 422].includes(error.status)
+          || /unauthorized|invalid.*(key|token)|api_key_invalid|authentication|forbidden|invalid url|api key not valid|permission denied/i.test(originalMessage)) {
+        throw error;
+      }
+
       if (error.status === 429) imageRequestSpacing = Math.min(12000, Math.max(1200, imageRequestSpacing * 1.6));
-      if (attempt >= maxQuickAttempts && error.status >= 400 && error.status < 500 && error.status !== 429) {
+
+      if (attempt >= maxAttempts) {
+        const statusText = error.status ? `HTTP ${error.status}` : "error de red";
+        error.message = `La escena ${sceneNumber}/${totalCount} ha fallado tras ${maxAttempts} intentos (${statusText}). ${originalMessage.slice(0, 260)}. Se ha detenido el lote para no dejarlo reintentando indefinidamente.`;
+        error.permanent = true;
         throw error;
       }
-      const delay = Math.max(error.retryAfterMs || 0, Math.min(30000, 1500 * 2 ** Math.min(4, attempt - 1)) + Math.random() * 600);
-      showAILog(`⏳ Escena ${sceneNumber}/${totalCount}: reintentando en ${Math.ceil(delay / 1000)} s (intento ${attempt + 1})...`);
+
+      const delay = Math.max(error.retryAfterMs || 0, (error.status === 429 ? 5000 : 1800) + Math.random() * 700);
+      showAILog(`⚠️ Escena ${sceneNumber}/${totalCount}: ${escapeHtml(originalMessage.slice(0, 190))}. Reintentando una última vez en ${Math.ceil(delay / 1000)} s (${attempt + 1}/${maxAttempts})...`, true);
       await waitForImageRetry(delay, signal);
     }
   }
+  throw new Error(`No se pudo generar la escena ${sceneNumber}/${totalCount}.`);
 }
 
 async function retryPendingImageItems(items) {
@@ -1501,7 +1533,7 @@ async function retryPendingImageItems(items) {
   const signal = imageRunController.signal;
   updateRetryFailedButton();
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  const concurrency = Math.min(getSelectedConcurrency(), pendingItems.length);
+  const concurrency = isGoogleFlowModel() ? 1 : Math.min(getSelectedConcurrency(), pendingItems.length);
   imageRequestSpacing = concurrency > 1 ? 300 : 750;
   nextSlotAvailableAt = 0;
 
@@ -1536,7 +1568,10 @@ async function retryPendingImageItems(items) {
       } catch (error) {
         item.lastError = error.message;
         failure = error;
-        if (error.name === "AbortError" || isCloudflareImageQuotaError(error) || /api_key_invalid|unauthorized|forbidden/i.test(error.message || "")) {
+        // Un fallo de Gemini suele afectar al lote completo (clave, modelo, cuota o endpoint).
+        // Parar en la primera escena fallida evita enviar muchas peticiones idénticas.
+        if (error.name === "AbortError" || isCloudflareImageQuotaError(error) || error.status === 429
+            || /api_key_invalid|unauthorized|forbidden/i.test(error.message || "") || isGoogleFlowModel()) {
           fatalAbort = true;
           break;
         }
