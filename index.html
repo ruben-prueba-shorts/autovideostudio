@@ -143,6 +143,41 @@
   .progress-outer { width: 100%; height: 10px; background: var(--bg-input); border-radius: 99px; overflow: hidden; display: none; }
   .progress-inner { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.1s; }
 </style>
+<style id="clipEditorStyles">
+  #clipEditor { margin:auto; padding:0; width:min(1080px,96vw); max-height:94vh; max-height:94dvh; color:var(--text-main); background:var(--bg-panel); border:1px solid #435b91; border-radius:16px; box-shadow:0 24px 100px #000b; overflow:auto; }
+  #clipEditor::backdrop { background:rgba(3,7,18,.86); }
+  #clipEditor .clip-header { padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--border); }
+  #clipEditor h2 { font-size:1.1rem; margin-bottom:5px; }
+  #clipEditor .clip-hint { color:var(--text-muted); font-size:.8rem; line-height:1.5; }
+  #clipEditor .clip-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(320px,410px); gap:20px; padding:20px; }
+  #clipEditor .clip-stage { height:min(53vh,560px); height:min(53dvh,560px); min-height:200px; display:flex; align-items:center; justify-content:center; background:#05070b; border-radius:10px; border:1px solid var(--border); overflow:hidden; }
+  #clipPreviewCanvas { max-width:100%; max-height:100%; width:auto; height:auto; display:block; touch-action:none; cursor:default; }
+  #clipPreviewCanvas:focus-visible { outline:2px solid #60a5fa; outline-offset:-3px; }
+  #clipEditor .clip-preview-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0 8px; }
+  #clipEditor .clip-preview-controls input { min-width:90px; }
+  #clipEditor .clip-time { color:#93c5fd; font:12px monospace; font-variant-numeric:tabular-nums; }
+  #clipEditor .clip-list { display:flex; flex-direction:column; gap:6px; max-height:146px; overflow-y:auto; margin-bottom:10px; }
+  #clipEditor .clip-item { display:flex; flex-direction:column; gap:3px; text-align:left; width:100%; }
+  #clipEditor .clip-item[aria-pressed="true"] { border-color:#a78bfa; background:rgba(139,92,246,.18); }
+  #clipEditor .clip-item small { color:var(--text-muted); font-weight:400; }
+  #clipEditor .clip-toolbar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  #clipEditor .clip-toolbar .btn { padding:6px 10px; font-size:.77rem; }
+  #clipEditor .clip-toolbar input { width:76px; padding:6px 8px; }
+  #clipEditor fieldset { border:0; padding:0; min-width:0; }
+  #clipEditor .clip-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  #clipEditor label { display:block; color:#cbd5e1; font-size:.78rem; margin-bottom:5px; }
+  #clipEditor .clip-full { grid-column:1/-1; }
+  #clipEditor .clip-inline { display:flex; gap:8px; align-items:center; }
+  #clipEditor input[type="color"] { width:48px; height:35px; padding:2px; border:1px solid var(--border); border-radius:6px; background:var(--bg-input); cursor:pointer; }
+  #clipEditor textarea { resize:vertical; min-height:68px; }
+  #clipEditor .clip-error { color:#fca5a5; font-size:.8rem; line-height:1.4; min-height:18px; margin-top:8px; }
+  #clipEditor .clip-download { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  #clipEditor .clip-status { margin-top:10px; font-size:.8rem; line-height:1.45; color:#93c5fd; }
+  #clipEditor .clip-progress { width:100%; height:9px; margin-top:10px; accent-color:#10b981; }
+  #clipEditor [hidden] { display:none !important; }
+  #clipEditor button:focus-visible, #clipEditor input:focus-visible, #clipEditor select:focus-visible, #clipEditor textarea:focus-visible { outline:2px solid #a78bfa; outline-offset:2px; }
+  @media(max-width:740px) { #clipEditor .clip-body { grid-template-columns:1fr; padding:14px; gap:14px; } #clipEditor .clip-stage { height:42vh; height:42dvh; } #clipEditor .clip-header { padding:14px; } }
+</style>
 </head>
 <body>
 
@@ -401,6 +436,8 @@
       </div>
     </div>
 
+    <button class="btn btn-ai" id="openClipEditorBtn" onclick="openClipEditor()" style="justify-content:center; padding:11px;">✂ Crear clips / Shorts con texto</button>
+
     <div class="card" style="padding:14px;">
       <h3 style="font-size:0.88rem; margin-bottom:10px;">⚙️ Estilo de Edición y Subtítulos</h3>
       <div class="settings-grid">
@@ -490,6 +527,64 @@
     </div>
   </aside>
 </div>
+
+<!-- El editor de clips tiene su propio lienzo y no modifica el montaje largo. -->
+<dialog id="clipEditor" aria-labelledby="clipEditorTitle" aria-describedby="clipEditorIntro">
+  <div class="clip-header">
+    <div>
+      <h2 id="clipEditorTitle">✂ Tus clips, a tu medida</h2>
+      <p id="clipEditorIntro" class="clip-hint">Elige los segundos del vídeo original, añade tu texto y descarga cada clip en MP4.</p>
+    </div>
+    <button class="btn" id="clipCloseBtn" type="button" aria-label="Cerrar editor de clips">Cerrar ✕</button>
+  </div>
+  <div class="clip-body">
+    <section aria-label="Previsualización del clip">
+      <div class="clip-stage"><canvas id="clipPreviewCanvas" width="720" height="1280" tabindex="0" aria-label="Previsualización. Arrastra el texto para moverlo; también puedes usar las flechas del teclado."></canvas></div>
+      <div class="clip-preview-controls">
+        <button class="btn btn-primary" id="clipPlayBtn" type="button">▶ Ver clip</button>
+        <input type="range" id="clipSeek" min="0" max="60" step="0.01" value="0" aria-label="Posición dentro del clip">
+      </div>
+      <p id="clipTimeDisplay" class="clip-time"></p>
+      <p class="clip-hint" style="margin-top:8px;">Arrastra el texto dentro de la imagen. Los subtítulos conservan los tiempos de la voz. Tu texto aparece durante todo este clip y se ajusta para caber dentro del vídeo.</p>
+      <p id="clipProjectInfo" class="clip-hint" style="margin-top:8px;"></p>
+    </section>
+    <section aria-label="Edición de clips">
+      <div id="clipList" class="clip-list" aria-label="Tus clips"></div>
+      <div class="clip-toolbar">
+        <button class="btn btn-ai" id="clipAddBtn" type="button">＋ Otro clip</button>
+        <button class="btn" id="clipDuplicateBtn" type="button">Duplicar</button>
+        <button class="btn" id="clipDeleteBtn" type="button">Eliminar</button>
+      </div>
+      <div class="clip-toolbar">
+        <label for="clipSplitSeconds" style="margin:0;">O divide todo cada</label>
+        <input id="clipSplitSeconds" type="number" min="1" step="1" value="60" aria-label="Duración de los cortes automáticos en segundos">
+        <span class="clip-hint">s</span>
+        <button class="btn" id="clipSplitBtn" type="button">Crear cortes</button>
+      </div>
+      <fieldset id="clipFields">
+        <legend class="clip-hint" style="margin-bottom:8px;" id="clipSelectedLabel">Editar clip 1</legend>
+        <div class="clip-fields">
+          <div><label for="clipStart">Desde el segundo</label><input id="clipStart" type="number" min="0" step="0.01" value="0"></div>
+          <div><label for="clipEnd">Hasta el segundo</label><input id="clipEnd" type="number" min="0" step="0.01" value="60"></div>
+          <div><label for="clipAspect">Formato de este clip</label><select id="clipAspect"><option value="9:16">9:16 · Shorts / TikTok</option><option value="16:9">16:9 · Horizontal</option><option value="1:1">1:1 · Cuadrado</option></select></div>
+          <div><label for="clipFit">Encuadre</label><select id="clipFit"><option value="crop">Llenar / recortar</option><option value="blur">Imagen entera + fondo</option></select></div>
+          <div class="clip-full"><label for="clipText">Texto de este clip (opcional)</label><textarea id="clipText" rows="2" maxlength="500" placeholder="Escribe un título o una frase…"></textarea></div>
+          <div class="clip-full"><label for="clipFontSize">Tamaño del texto: <output id="clipFontSizeLabel">56</output></label><div class="clip-inline"><input id="clipFontSize" type="range" min="12" max="160" step="1" value="56"><input id="clipTextColor" type="color" value="#ffffff" aria-label="Color del texto"></div></div>
+          <div><label for="clipTextX">Posición horizontal: <output id="clipTextXLabel">50</output>%</label><input id="clipTextX" type="range" min="0" max="100" step="0.1" value="50" style="width:100%;"></div>
+          <div><label for="clipTextY">Posición vertical: <output id="clipTextYLabel">16</output>%</label><input id="clipTextY" type="range" min="0" max="100" step="0.1" value="16" style="width:100%;"></div>
+          <div class="clip-full clip-inline"><input id="clipSubtitles" type="checkbox" checked><label for="clipSubtitles" style="margin:0;">Incluir los subtítulos del vídeo</label></div>
+        </div>
+      </fieldset>
+      <p id="clipError" class="clip-error" role="alert"></p>
+      <div class="clip-download">
+        <button class="btn btn-success" id="clipDownloadBtn" type="button">⬇ Descargar este clip (.MP4)</button>
+        <button class="btn" id="clipCancelExportBtn" type="button" hidden>Cancelar exportación</button>
+      </div>
+      <progress id="clipProgress" class="clip-progress" max="100" value="0" hidden aria-label="Exportación del clip"></progress>
+      <p id="clipStatus" class="clip-status" role="status" aria-live="polite">Cada clip se descarga por separado. Mantén la pestaña visible durante la exportación.</p>
+    </section>
+  </div>
+</dialog>
 
 <script>
 let audioCtx = null;
@@ -3503,6 +3598,587 @@ function downloadProjectJSON() {
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "proyecto.json";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
+
+// EDITOR DE CLIPS: estado, lienzo y exportación independientes del vídeo largo.
+const clipEditorState = {
+  items: [], selectedId: null, nextId: 1, projectVoice: null, projectStamp: "",
+  cursor: 0, preview: null, playSerial: 0, exportJob: null, drag: null, textBox: null
+};
+
+function clipElement(id) { return document.getElementById(id); }
+function selectedClip() { return clipEditorState.items.find(clip => clip.id === clipEditorState.selectedId) || null; }
+function clipProjectDuration() { return Math.max(0, Math.min(Number(totalDuration) || 0, Number(voiceBuffer?.duration) || 0)); }
+function clipClamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+function clipSeconds(value) { return Number.isFinite(value) ? String(Number(value.toFixed(3))) : "—"; }
+function clipDimensions(aspect) { return aspect === "16:9" ? [1280, 720] : aspect === "1:1" ? [1080, 1080] : [720, 1280]; }
+
+function newClip(start = 0, end = Math.min(60, clipProjectDuration()), template = null) {
+  return {
+    id: clipEditorState.nextId++, start, end, aspect: template?.aspect || "9:16",
+    fit: template?.fit || "crop", text: template?.text || "", fontSize: template?.fontSize || 56,
+    color: template?.color || "#ffffff", x: template?.x ?? 0.5, y: template?.y ?? 0.16,
+    subtitles: template?.subtitles ?? true, downloaded: false
+  };
+}
+
+function clipValidationError(clip) {
+  if (!clip || !Number.isFinite(clip.start) || !Number.isFinite(clip.end)) return "Escribe el segundo inicial y el final.";
+  if (clip.start < 0) return "El inicio no puede ser negativo.";
+  if (clip.end <= clip.start) return "El final debe ser posterior al inicio.";
+  if (clip.end - clip.start < 0.1 - 1e-9) return "El clip debe durar al menos 0,1 segundos.";
+  if (clip.end > clipProjectDuration() + 1e-6) return `El vídeo termina en el segundo ${clipSeconds(clipProjectDuration())}.`;
+  return "";
+}
+
+function clipReadinessError(clip) {
+  const error = clipValidationError(clip);
+  if (error) return error;
+  if (!voiceBuffer || isDemoSynthMode || !hasVerifiedVoiceSync()) return "Carga la narración y sincroniza el vídeo antes de crear clips.";
+  if (!scenes.length) return "Primero sincroniza el vídeo.";
+  for (const scene of scenes) {
+    if (scene.end <= clip.start || scene.start >= clip.end) continue;
+    const image = loadedImages[scene.imgIndex];
+    if (!image || image.isPending || !image.imgObj || !(image.imgObj.naturalWidth || image.imgObj.width)) {
+      return "Hay una imagen pendiente en este intervalo. Termina de generar las imágenes antes de descargarlo.";
+    }
+  }
+  return "";
+}
+
+function openClipEditor() {
+  if (isExportingVideo || syncInProgress || imageGenerationInProgress) {
+    alert("Espera a que termine la generación, sincronización o exportación del vídeo."); return false;
+  }
+  if (!voiceBuffer || isDemoSynthMode || !hasVerifiedVoiceSync() || !scenes.length) {
+    alert("Carga la narración y pulsa «Sincronizar Todo» antes de crear clips."); return false;
+  }
+  const dialog = clipElement("clipEditor");
+  if (typeof dialog.showModal !== "function") { alert("Actualiza el navegador para utilizar el editor de clips."); return false; }
+  if (dialog.open) return true;
+  pausePlayback();
+  const stamp = JSON.stringify(scenes.map(scene => [scene.start, scene.end, scene.text]));
+  if (clipEditorState.projectVoice !== voiceBuffer || clipEditorState.projectStamp !== stamp) {
+    clipEditorState.items = []; clipEditorState.nextId = 1;
+    clipEditorState.projectVoice = voiceBuffer; clipEditorState.projectStamp = stamp;
+  }
+  if (!clipEditorState.items.length) clipEditorState.items.push(newClip());
+  clipElement("clipProjectInfo").textContent = `Vídeo original: ${clipSeconds(clipProjectDuration())} s · ${scenes.length} escenas. Los intervalos pueden solaparse. Los cortes automáticos se añaden a tu lista.`;
+  clipElement("clipStart").max = clipElement("clipEnd").max = String(clipProjectDuration());
+  dialog.showModal();
+  selectClip(clipEditorState.items[0].id);
+  return true;
+}
+
+function closeClipEditor() {
+  pauseClipPreview();
+  cancelClipExport("Exportación cancelada al cerrar el editor. Puedes volver a descargar el clip.");
+  clipEditorState.drag = null;
+  if (clipElement("clipEditor").open) clipElement("clipEditor").close();
+  clipElement("openClipEditorBtn").focus();
+}
+
+function renderClipList() {
+  const list = clipElement("clipList"); list.replaceChildren();
+  clipEditorState.items.forEach((clip, index) => {
+    const button = document.createElement("button");
+    button.type = "button"; button.className = "btn clip-item";
+    button.setAttribute("aria-pressed", String(clip.id === clipEditorState.selectedId));
+    button.disabled = Boolean(clipEditorState.exportJob);
+    const title = document.createElement("span");
+    title.textContent = `Clip ${index + 1} · ${clipSeconds(clip.start)} → ${clipSeconds(clip.end)} s${clip.downloaded ? " · ✓ Exportado" : ""}`;
+    const detail = document.createElement("small");
+    detail.textContent = `${clip.aspect} · ${clipSeconds(clip.end - clip.start)} s${clip.text ? " · " + clip.text.replace(/\s+/g, " ").slice(0, 50) : ""}`;
+    button.append(title, detail); button.addEventListener("click", () => selectClip(clip.id)); list.appendChild(button);
+  });
+}
+
+function selectClip(id) {
+  if (clipEditorState.exportJob) return;
+  pauseClipPreview();
+  const clip = clipEditorState.items.find(item => item.id === id); if (!clip) return;
+  clipEditorState.selectedId = id;
+  clipEditorState.cursor = Number.isFinite(clip.start) ? clip.start : 0;
+  clipElement("clipStart").value = Number.isFinite(clip.start) ? clipSeconds(clip.start) : "";
+  clipElement("clipEnd").value = Number.isFinite(clip.end) ? clipSeconds(clip.end) : "";
+  clipElement("clipAspect").value = clip.aspect; clipElement("clipFit").value = clip.fit;
+  clipElement("clipText").value = clip.text; clipElement("clipFontSize").value = clip.fontSize;
+  clipElement("clipTextColor").value = clip.color; clipElement("clipSubtitles").checked = clip.subtitles;
+  clipElement("clipStatus").textContent = "Ajusta los tiempos y el texto. Cada clip se exporta en tiempo real; mantén esta pestaña visible.";
+  renderClipList(); updateClipEditorControls(); renderClipPreview();
+}
+
+function addClip() {
+  if (clipEditorState.exportJob) return;
+  const previous = selectedClip();
+  const start = previous && Number.isFinite(previous.end) && previous.end <= clipProjectDuration() - 0.1 ? previous.end : 0;
+  const clip = newClip(start, Math.min(clipProjectDuration(), start + 60));
+  clipEditorState.items.push(clip); selectClip(clip.id);
+}
+
+function duplicateClip() {
+  const previous = selectedClip(); if (!previous || clipEditorState.exportJob) return;
+  const clip = newClip(previous.start, previous.end, previous);
+  clipEditorState.items.push(clip); selectClip(clip.id);
+}
+
+function deleteClip() {
+  if (clipEditorState.exportJob || clipEditorState.items.length <= 1) return;
+  const index = clipEditorState.items.findIndex(clip => clip.id === clipEditorState.selectedId);
+  clipEditorState.items.splice(index, 1);
+  selectClip(clipEditorState.items[Math.min(index, clipEditorState.items.length - 1)].id);
+}
+
+function splitProjectIntoClips() {
+  if (clipEditorState.exportJob) return;
+  const seconds = Number(clipElement("clipSplitSeconds").value), duration = clipProjectDuration();
+  if (!Number.isFinite(seconds) || seconds < 1) { clipElement("clipStatus").textContent = "Escribe una duración de al menos 1 segundo para los cortes automáticos."; return; }
+  // El último fragmento conserva también las fracciones de segundo del audio.
+  const count = Math.ceil((duration - 1e-9) / seconds);
+  if (count > 2000) { clipElement("clipStatus").textContent = "Elige intervalos más largos para crear como máximo 2000 clips de una vez."; return; }
+  const added = [];
+  for (let i = 0; i < count; i++) {
+    const start = i * seconds, end = Math.min(duration, (i + 1) * seconds);
+    if (end - start < 0.1 - 1e-9 && added.length) added[added.length - 1].end = end;
+    else added.push(newClip(start, end));
+  }
+  clipEditorState.items.push(...added);
+  if (added.length) selectClip(added[0].id);
+  clipElement("clipStatus").textContent = `Se han añadido ${added.length} clips. Puedes ajustar los tiempos, el texto y descargar cada uno por separado.`;
+}
+
+function readClipFields() {
+  const clip = selectedClip(); if (!clip || clipEditorState.exportJob) return;
+  const number = id => clipElement(id).value.trim() === "" ? NaN : Number(clipElement(id).value);
+  const values = {
+    start: number("clipStart"), end: number("clipEnd"), aspect: clipElement("clipAspect").value,
+    fit: clipElement("clipFit").value, text: clipElement("clipText").value.slice(0, 500),
+    fontSize: clipClamp(number("clipFontSize") || 56, 12, 160), color: clipElement("clipTextColor").value,
+    x: clipClamp(number("clipTextX") / 100, 0, 1), y: clipClamp(number("clipTextY") / 100, 0, 1),
+    subtitles: clipElement("clipSubtitles").checked, downloaded: false
+  };
+  pauseClipPreview();
+  Object.assign(clip, values);
+  if (!clipValidationError(clip)) clipEditorState.cursor = clipClamp(clipEditorState.cursor, clip.start, clip.end);
+  renderClipList(); updateClipEditorControls(); renderClipPreview();
+}
+
+function updateClipEditorControls() {
+  const clip = selectedClip(), busy = Boolean(clipEditorState.exportJob), error = clipValidationError(clip);
+  clipElement("clipEditor").querySelectorAll("button, input, textarea, select").forEach(element => {
+    element.disabled = busy && element.id !== "clipCancelExportBtn" && element.id !== "clipCloseBtn";
+  });
+  clipElement("clipFields").disabled = busy;
+  clipElement("clipDeleteBtn").disabled = busy || clipEditorState.items.length <= 1;
+  clipElement("clipPlayBtn").disabled = busy || Boolean(error);
+  clipElement("clipDownloadBtn").disabled = busy || Boolean(error);
+  clipElement("clipSeek").disabled = busy || Boolean(error);
+  clipElement("clipPlayBtn").textContent = clipEditorState.preview ? "⏸ Pausar" : "▶ Ver clip";
+  clipElement("clipCancelExportBtn").hidden = !busy;
+  clipElement("clipError").textContent = error;
+  if (!clip) return;
+  clipElement("clipSelectedLabel").textContent = `Editar clip ${clipEditorState.items.indexOf(clip) + 1}`;
+  clipElement("clipFontSizeLabel").textContent = String(clip.fontSize);
+  clipElement("clipTextX").value = String(clip.x * 100); clipElement("clipTextY").value = String(clip.y * 100);
+  clipElement("clipTextXLabel").textContent = String(Math.round(clip.x * 100)); clipElement("clipTextYLabel").textContent = String(Math.round(clip.y * 100));
+  clipElement("clipSeek").max = String(!error ? clip.end - clip.start : 0);
+  updateClipTimeDisplay();
+}
+
+function updateClipTimeDisplay() {
+  const clip = selectedClip(); if (!clip) return;
+  const elapsed = Math.max(0, clipEditorState.cursor - (Number.isFinite(clip.start) ? clip.start : 0));
+  clipElement("clipSeek").value = String(elapsed);
+  clipElement("clipTimeDisplay").textContent = `Clip: ${clipSeconds(elapsed)} / ${clipSeconds(clip.end - clip.start)} s · Segundo original: ${clipSeconds(clipEditorState.cursor)}`;
+}
+
+function drawClipImage(ctx, w, h, scene, time, fit) {
+  const img = loadedImages[scene?.imgIndex]?.imgObj;
+  ctx.fillStyle = "#0b0f17"; ctx.fillRect(0, 0, w, h);
+  if (!img || !(img.naturalWidth || img.width)) return;
+  const p = clipClamp((time - scene.start) / Math.max(0.1, scene.end - scene.start), 0, 1);
+  let zoom = 1, dx = 0, dy = 0;
+  if (scene.effect === "Zoom In Suave") zoom = 1 + 0.12 * p;
+  else if (scene.effect === "Zoom Out Suave") zoom = 1.12 - 0.12 * p;
+  else if (scene.effect === "Zoom In Dramático") zoom = 1 + 0.24 * p;
+  else if (scene.effect === "Pan Derecha") { zoom = 1.12; dx = (p - 0.5) * w * 0.12; }
+  else if (scene.effect === "Pan Izquierda") { zoom = 1.12; dx = (0.5 - p) * w * 0.12; }
+  else if (scene.effect === "Pan Arriba") { zoom = 1.12; dy = (0.5 - p) * h * 0.12; }
+  else if (scene.effect === "Pan Abajo") { zoom = 1.12; dy = (p - 0.5) * h * 0.12; }
+  else if (scene.effect === "Zoom + Pan") { zoom = 1 + 0.16 * p; dx = (p - 0.5) * w * 0.06; }
+  else if (scene.effect === "Movimiento Ken Burns") { zoom = 1.04 + 0.08 * p; dx = (p - 0.5) * w * 0.045; dy = (0.5 - p) * h * 0.025; }
+  else if (scene.effect === "Pulso Suave") zoom = 1.04 + 0.035 * Math.sin(p * Math.PI * 2);
+  if (fit === "blur") {
+    ctx.save(); ctx.filter = "blur(22px) brightness(0.6)";
+    const bg = Math.max(w / img.width, h / img.height) * 1.2;
+    ctx.drawImage(img, (w - img.width * bg) / 2, (h - img.height * bg) / 2, img.width * bg, img.height * bg); ctx.restore();
+  }
+  const scale = (fit === "blur" ? Math.min(w / img.width, h / img.height) : Math.max(w / img.width, h / img.height)) * zoom;
+  ctx.drawImage(img, (w - img.width * scale) / 2 + dx, (h - img.height * scale) / 2 + dy, img.width * scale, img.height * scale);
+}
+
+function drawClipSubtitles(ctx, w, h, scene, time) {
+  const mode = clipElement("subsSelect").value;
+  if (mode === "none" || !scene?.text) return;
+  const cue = getSubtitleCues(scene).find(item => time >= item.start && time < item.end); if (!cue) return;
+  const font = getSubtitleFont(); let size = Math.round(h * 0.052);
+  ctx.save(); ctx.font = `${font.weight} ${size}px ${font.family}`;
+  const measured = ctx.measureText(cue.words.join(" ")).width;
+  if (measured > w * 0.86) { size = Math.max(8, Math.floor(size * w * 0.86 / measured)); ctx.font = `${font.weight} ${size}px ${font.family}`; }
+  const widths = cue.words.map((word, i) => ctx.measureText(word + (i < cue.words.length - 1 ? " " : "")).width);
+  const width = widths.reduce((a, b) => a + b, 0), y = h * 0.82;
+  if (mode === "box") {
+    ctx.fillStyle = "rgba(0,0,0,0.82)"; ctx.beginPath();
+    ctx.roundRect((w - width) / 2 - w * 0.025, y - size * 0.8, width + w * 0.05, size * 1.6, 10); ctx.fill();
+  }
+  let active = 0; cue.timings.forEach((word, i) => { if (time >= word.start) active = i; });
+  const requested = clipElement("subColorText").value.trim(), color = isValidHex(requested) ? requested : "#ffffff";
+  ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, size * 0.08); ctx.lineJoin = "round";
+  let x = (w - width) / 2;
+  cue.words.forEach((word, i) => {
+    const text = word + (i < cue.words.length - 1 ? " " : ""); ctx.strokeText(text, x, y);
+    ctx.fillStyle = i === active ? color : "#cbd5e1"; ctx.fillText(text, x, y); x += widths[i];
+  });
+  ctx.restore();
+}
+
+function clipTextLayout(ctx, w, h, clip) {
+  if (!clip.text.trim()) return null;
+  const font = getSubtitleFont(), maxWidth = w * 0.9;
+  let size = clip.fontSize * w / 720, lines = [];
+  for (let attempt = 0; attempt < 60; attempt++) {
+    ctx.font = `${font.weight} ${size}px ${font.family}`; lines = [];
+    for (const paragraph of clip.text.replace(/\r/g, "").split("\n")) {
+      if (!paragraph.trim()) { lines.push(""); continue; }
+      let line = "";
+      for (const word of paragraph.trim().split(/\s+/)) {
+        if (ctx.measureText(word).width <= maxWidth) {
+          const candidate = line ? line + " " + word : word;
+          if (line && ctx.measureText(candidate).width > maxWidth) { lines.push(line); line = word; }
+          else line = candidate;
+        } else {
+          if (line) { lines.push(line); line = ""; }
+          for (const letter of Array.from(word)) {
+            if (line && ctx.measureText(line + letter).width > maxWidth) { lines.push(line); line = letter; }
+            else line += letter;
+          }
+        }
+      }
+      lines.push(line);
+    }
+    if (lines.length * size * 1.18 <= h * 0.9) break;
+    size *= 0.9;
+  }
+  const width = Math.max(...lines.map(line => ctx.measureText(line).width), 1), height = lines.length * size * 1.18;
+  const pad = Math.max(4, size * 0.12), x = clipClamp(clip.x * w, width / 2 + pad, w - width / 2 - pad);
+  const y = clipClamp(clip.y * h, height / 2 + pad, h - height / 2 - pad);
+  return { x, y, width, height, size, lineHeight: size * 1.18, lines, pad };
+}
+
+function drawClipText(ctx, w, h, clip, selection) {
+  ctx.save(); const box = clipTextLayout(ctx, w, h, clip);
+  if (!box) { ctx.restore(); return null; }
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = clip.color;
+  ctx.strokeStyle = "#000000"; ctx.lineWidth = Math.max(2, box.size * 0.075); ctx.lineJoin = "round";
+  box.lines.forEach((line, i) => {
+    const y = box.y - box.height / 2 + box.lineHeight * (i + 0.5);
+    ctx.strokeText(line, box.x, y); ctx.fillText(line, box.x, y);
+  });
+  if (selection) {
+    ctx.strokeStyle = "#a78bfa"; ctx.lineWidth = Math.max(2, w / 360); ctx.setLineDash([8, 6]);
+    ctx.strokeRect(box.x - box.width / 2 - box.pad, box.y - box.height / 2 - box.pad, box.width + 2 * box.pad, box.height + 2 * box.pad);
+  }
+  ctx.restore(); return box;
+}
+
+function renderClipFrame(canvas, clip, time, selection = false) {
+  const [width, height] = clipDimensions(clip.aspect);
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  const ctx = canvas.getContext("2d"), index = findSceneIndexAtTime(time), scene = scenes[index];
+  ctx.save(); ctx.clearRect(0, 0, width, height);
+  drawClipImage(ctx, width, height, scene, time, clip.fit);
+  if (clip.subtitles) drawClipSubtitles(ctx, width, height, scene, time);
+  const textBox = drawClipText(ctx, width, height, clip, selection);
+  ctx.restore(); return { sceneIndex: index, textBox };
+}
+
+function renderClipPreview() {
+  const clip = selectedClip(); if (!clip || !clipElement("clipEditor").open || clipEditorState.exportJob) return;
+  let time = Number.isFinite(clipEditorState.cursor) ? clipEditorState.cursor : 0;
+  // Al llegar al final mostramos el último fotograma DEL clip, no la escena
+  // siguiente cuando el corte coincide exactamente con un cambio de imagen.
+  if (!clipValidationError(clip)) time = Math.min(time, clip.end - 1e-7);
+  try {
+    clipEditorState.textBox = renderClipFrame(clipElement("clipPreviewCanvas"), clip, time, !clipEditorState.preview).textBox;
+  } catch (error) {
+    const playing = clipEditorState.preview; clipEditorState.preview = null; clipEditorState.textBox = null;
+    if (playing) { cancelAnimationFrame(playing.raf); stopClipAudio(playing.nodes); }
+    clipElement("clipStatus").textContent = "No se pudo dibujar la previsualización: " + error.message;
+    updateClipEditorControls();
+  }
+  updateClipTimeDisplay();
+}
+
+// Recorta las tres pistas en el tiempo ORIGINAL, incluidas las colas de SFX
+// que empezaron antes del clip. La imagen y los subtítulos usan ese mismo tiempo.
+function clipAudioPlan(start, end) {
+  const plan = [{ buffer: voiceBuffer, delay: 0, offset: start, duration: end - start, loop: false, gain: 1, kind: "voice" }];
+  if (bgmBuffer?.duration > 0) {
+    const offset = Math.max(0, Number(clipElement("bgmOffsetInput").value) || 0);
+    plan.push({ buffer: bgmBuffer, delay: 0, offset: (offset + start) % bgmBuffer.duration, duration: end - start,
+      loop: true, gain: clipClamp(Number(clipElement("bgmVolSlider").value) / 100, 0, 1), kind: "bgm" });
+  }
+  scenes.forEach(scene => {
+    if (!scene.sfxId) return;
+    const item = userSfxList.find(sfx => sfx.id === scene.sfxId); if (!item?.buffer) return;
+    const from = Math.max(0, Number(scene.sfxStart ?? 2) || 0);
+    const to = Math.max(from + 0.1, Number(scene.sfxEnd ?? 3) || from + 1);
+    const eventStart = Math.max(0, scene.start + from), eventEnd = eventStart + Math.min(item.buffer.duration, to - from);
+    const overlapStart = Math.max(start, eventStart), overlapEnd = Math.min(end, eventEnd);
+    if (overlapEnd <= overlapStart) return;
+    plan.push({ buffer: item.buffer, delay: overlapStart - start, offset: overlapStart - eventStart,
+      duration: overlapEnd - overlapStart, loop: false, gain: 1, kind: "sfx" });
+  });
+  return plan;
+}
+
+function scheduleClipAudio(plan, when, destination, monitor = false) {
+  const nodes = [];
+  try {
+    plan.forEach(part => {
+      if (!part.buffer || part.duration <= 0) return;
+      const source = audioCtx.createBufferSource(); source.buffer = part.buffer; source.loop = part.loop; nodes.push(source);
+      if (part.gain !== 1) {
+        const gain = audioCtx.createGain(); gain.gain.value = part.gain; nodes.push(gain);
+        source.connect(gain); gain.connect(destination);
+        if (monitor && destination !== audioCtx.destination) gain.connect(audioCtx.destination);
+      } else {
+        source.connect(destination);
+        if (monitor && destination !== audioCtx.destination) source.connect(audioCtx.destination);
+      }
+      source.start(when + part.delay, part.offset, part.duration);
+    });
+    return nodes;
+  } catch (error) { stopClipAudio(nodes); throw error; }
+}
+
+function stopClipAudio(nodes) {
+  nodes.forEach(node => { try { if (typeof node.stop === "function") node.stop(); } catch (_) {} try { node.disconnect(); } catch (_) {} });
+}
+
+function pauseClipPreview() {
+  ++clipEditorState.playSerial;
+  const playing = clipEditorState.preview;
+  if (playing) {
+    clipEditorState.cursor = clipClamp(playing.from + Math.max(0, getAudibleAudioContextTime() - playing.when), playing.from, playing.end);
+    clipEditorState.preview = null; cancelAnimationFrame(playing.raf); stopClipAudio(playing.nodes);
+  }
+  updateClipEditorControls(); renderClipPreview();
+}
+
+async function toggleClipPreview() {
+  if (clipEditorState.preview) { pauseClipPreview(); return; }
+  if (clipEditorState.exportJob) return;
+  const clip = selectedClip(), error = clipReadinessError(clip);
+  if (error) { clipElement("clipError").textContent = error; return; }
+  const serial = ++clipEditorState.playSerial;
+  try {
+    await loadSubFontAsset(getSubtitleFont());
+    if (audioCtx.state === "suspended") await audioCtx.resume();
+    if (serial !== clipEditorState.playSerial || !clipElement("clipEditor").open || clipEditorState.exportJob) return;
+    if (clipEditorState.cursor < clip.start || clipEditorState.cursor >= clip.end - 0.001) clipEditorState.cursor = clip.start;
+    const from = clipEditorState.cursor, when = audioCtx.currentTime + 0.025;
+    const playing = { from, end: clip.end, when, nodes: scheduleClipAudio(clipAudioPlan(from, clip.end), when, audioCtx.destination), raf: null };
+    clipEditorState.preview = playing; updateClipEditorControls();
+    const step = () => {
+      if (clipEditorState.preview !== playing) return;
+      if (audioCtx.state !== "running") { pauseClipPreview(); clipElement("clipStatus").textContent = "La reproducción se ha pausado. Pulsa «Ver clip» para continuar."; return; }
+      clipEditorState.cursor = clipClamp(from + Math.max(0, getAudibleAudioContextTime() - when), from, clip.end);
+      renderClipPreview();
+      if (clipEditorState.cursor >= clip.end) { pauseClipPreview(); clipEditorState.cursor = clip.end; renderClipPreview(); return; }
+      playing.raf = requestAnimationFrame(step);
+    };
+    playing.raf = requestAnimationFrame(step);
+  } catch (error) { pauseClipPreview(); clipElement("clipStatus").textContent = "No se pudo reproducir el clip: " + error.message; }
+}
+
+function seekClipPreview(value) {
+  if (clipEditorState.exportJob) return;
+  const clip = selectedClip(); if (!clip || clipValidationError(clip)) return;
+  pauseClipPreview(); clipEditorState.cursor = clipClamp(clip.start + Number(value), clip.start, clip.end); renderClipPreview();
+}
+
+function clipPointerPosition(event) {
+  const canvas = clipElement("clipPreviewCanvas"), rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
+  return { x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height };
+}
+
+function beginClipTextDrag(event) {
+  if (clipEditorState.exportJob || (event.button !== undefined && event.button !== 0)) return;
+  const point = clipPointerPosition(event), box = clipEditorState.textBox; if (!point || !box) return;
+  if (Math.abs(point.x - box.x) > box.width / 2 + box.pad + 12 || Math.abs(point.y - box.y) > box.height / 2 + box.pad + 12) return;
+  pauseClipPreview();
+  clipEditorState.drag = { pointerId: event.pointerId, dx: point.x - box.x, dy: point.y - box.y };
+  const canvas = clipElement("clipPreviewCanvas"); canvas.focus(); canvas.setPointerCapture(event.pointerId); event.preventDefault();
+}
+
+function moveClipTextDrag(event) {
+  const point = clipPointerPosition(event), box = clipEditorState.textBox, drag = clipEditorState.drag;
+  const canvas = clipElement("clipPreviewCanvas");
+  if (!drag || drag.pointerId !== event.pointerId || clipEditorState.exportJob) {
+    canvas.style.cursor = point && box && Math.abs(point.x - box.x) <= box.width / 2 + 12 && Math.abs(point.y - box.y) <= box.height / 2 + 12 ? "grab" : "default"; return;
+  }
+  if (!point) return;
+  const clip = selectedClip(); clip.x = clipClamp((point.x - drag.dx) / canvas.width, 0, 1); clip.y = clipClamp((point.y - drag.dy) / canvas.height, 0, 1); clip.downloaded = false;
+  canvas.style.cursor = "grabbing"; updateClipEditorControls(); renderClipPreview(); event.preventDefault();
+}
+
+function endClipTextDrag(event) {
+  if (clipEditorState.drag?.pointerId !== event.pointerId) return;
+  clipEditorState.drag = null; clipElement("clipPreviewCanvas").style.cursor = "grab"; renderClipList();
+}
+
+function moveClipTextWithKeyboard(event) {
+  const clip = selectedClip(); if (!clip?.text || clipEditorState.exportJob || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+  pauseClipPreview(); const step = event.shiftKey ? 0.05 : 0.01;
+  if (event.key === "ArrowLeft") clip.x = Math.max(0, clip.x - step);
+  if (event.key === "ArrowRight") clip.x = Math.min(1, clip.x + step);
+  if (event.key === "ArrowUp") clip.y = Math.max(0, clip.y - step);
+  if (event.key === "ArrowDown") clip.y = Math.min(1, clip.y + step);
+  clip.downloaded = false; updateClipEditorControls(); renderClipPreview(); renderClipList(); event.preventDefault();
+}
+
+function cancelClipExport(reason = "Exportación cancelada. Puedes volver a descargar el clip.") {
+  const job = clipEditorState.exportJob; if (!job) return;
+  job.reason = reason; stopClipAudio(job.nodes);
+  try {
+    if (job.recorder?.state === "recording") job.recorder.stop();
+    else if (job.reject) job.reject(new Error(reason));
+  } catch (_) { if (job.reject) job.reject(new Error(reason)); }
+}
+
+function cleanupClipExport(job) {
+  if (job.raf !== null) cancelAnimationFrame(job.raf);
+  stopClipAudio(job.nodes);
+  if (job.recorder) {
+    job.recorder.onstop = job.recorder.onerror = job.recorder.ondataavailable = null;
+    try { if (job.recorder.state === "recording") job.recorder.stop(); } catch (_) {}
+  }
+  const tracks = new Set(job.streams.flatMap(stream => stream.getTracks()));
+  tracks.forEach(track => { try { track.stop(); } catch (_) {} });
+}
+
+async function recordClipMp4(clip, job, onProgress) {
+  const types = getSupportedMp4RecordingTypes();
+  if (!types.length) throw new Error("Este navegador no permite grabar MP4. Utiliza una versión actualizada de Chrome, Edge o Safari con grabación MP4.");
+  const canvas = clipElement("clipPreviewCanvas");
+  if (typeof canvas.captureStream !== "function") throw new Error("El navegador no permite grabar el lienzo de vídeo.");
+  await loadSubFontAsset(getSubtitleFont());
+  if (audioCtx.state === "suspended") await audioCtx.resume();
+  if (job.reason) throw new Error(job.reason);
+  if (audioCtx.state !== "running") throw new Error("No se ha podido iniciar el audio. Vuelve a pulsar Descargar.");
+  renderClipFrame(canvas, clip, clip.start);
+  const videoStream = canvas.captureStream(30); job.streams.push(videoStream);
+  const destination = audioCtx.createMediaStreamDestination(); job.streams.push(destination.stream);
+  const stream = new MediaStream([...videoStream.getVideoTracks(), ...destination.stream.getAudioTracks()]); job.streams.push(stream);
+  let failure = null;
+  for (const mimeType of types) {
+    try {
+      const candidate = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 10000000, audioBitsPerSecond: 192000 });
+      if (!/^video\/mp4(?:\s*;|$)/i.test(candidate.mimeType || mimeType)) throw new Error("El navegador ha seleccionado un contenedor distinto de MP4.");
+      job.recorder = candidate; break;
+    } catch (error) { failure = error; }
+  }
+  if (!job.recorder) throw new Error("No se pudo iniciar la grabación MP4: " + (failure?.message || "Formato no disponible."));
+  const recorder = job.recorder, duration = clip.end - clip.start;
+  return await new Promise((resolve, reject) => {
+    job.reject = reject; const chunks = [];
+    recorder.ondataavailable = event => { if (event.data?.size > 0) chunks.push(event.data); };
+    recorder.onerror = event => { cancelClipExport("El navegador ha interrumpido la grabación: " + (event.error?.message || "error del codificador") + ". No se descargará un clip incompleto."); };
+    recorder.onstop = () => {
+      if (job.reason) { reject(new Error(job.reason)); return; }
+      if (job.when === null || audioCtx.currentTime - job.when < duration - 0.08) { reject(new Error("La grabación se detuvo antes del final. No se descargará un clip incompleto.")); return; }
+      const blob = new Blob(chunks, { type: recorder.mimeType || "video/mp4" });
+      if (!blob.size) { reject(new Error("La grabación quedó vacía. Vuelve a exportar con esta pestaña visible.")); return; }
+      resolve(blob);
+    };
+    // El lienzo contiene ya el primer fotograma. No añadimos silencio inicial
+    // al intervalo elegido: imagen y pistas comparten el mismo reloj de audio.
+    recorder.start(100); job.when = audioCtx.currentTime;
+    job.nodes = scheduleClipAudio(clipAudioPlan(clip.start, clip.end), job.when, destination, true);
+    const step = () => {
+      if (job.reason || clipEditorState.exportJob !== job) return;
+      try {
+        if (audioCtx.state !== "running") { cancelClipExport("El audio se ha pausado durante la exportación. No se descargará un clip incompleto."); return; }
+        const elapsed = Math.max(0, audioCtx.currentTime - job.when), time = clip.start + Math.min(elapsed, duration);
+        clipEditorState.cursor = time; renderClipFrame(canvas, clip, Math.min(time, clip.end - 1e-7)); updateClipTimeDisplay();
+        onProgress(Math.min(100, Math.round(elapsed / duration * 100)));
+        if (elapsed >= duration) {
+          stopClipAudio(job.nodes);
+          try { if (recorder.state === "recording") recorder.stop(); } catch (error) { reject(error); }
+        } else job.raf = requestAnimationFrame(step);
+      } catch (error) { cancelClipExport("No se pudo dibujar el vídeo: " + error.message + ". No se descargará un clip incompleto."); }
+    };
+    job.raf = requestAnimationFrame(step);
+  });
+}
+
+async function downloadSelectedClip() {
+  if (clipEditorState.exportJob) return false;
+  const original = selectedClip(), error = clipReadinessError(original);
+  if (error) { clipElement("clipError").textContent = error; return false; }
+  if (document.hidden) { clipElement("clipStatus").textContent = "Mantén esta pestaña visible mientras se exporta el clip."; return false; }
+  if (isExportingVideo || imageGenerationInProgress || syncInProgress) return false;
+  pauseClipPreview();
+  const clip = { ...original }, index = clipEditorState.items.indexOf(original) + 1;
+  const job = { reason: "", recorder: null, nodes: [], streams: [], raf: null, when: null, reject: null };
+  clipEditorState.exportJob = job; clipElement("clipProgress").hidden = false; clipElement("clipProgress").value = 0;
+  clipElement("clipStatus").textContent = "Preparando clip MP4…"; updateClipEditorControls();
+  try {
+    const blob = await recordClipMp4(clip, job, percent => {
+      clipElement("clipProgress").value = percent;
+      clipElement("clipStatus").textContent = `Exportando clip ${index}: ${percent}%. Mantén la pestaña visible (${clipSeconds(clip.end - clip.start)} s de vídeo).`;
+    });
+    if (job.reason) throw new Error(job.reason);
+    const url = URL.createObjectURL(blob), anchor = document.createElement("a");
+    anchor.href = url; anchor.download = `clip_${String(index).padStart(3, "0")}_${clipSeconds(clip.start)}-${clipSeconds(clip.end)}s_${clip.aspect.replace(":", "x")}.mp4`;
+    document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+    original.downloaded = true; clipElement("clipProgress").value = 100;
+    clipElement("clipStatus").textContent = `✓ Clip ${index} exportado en MP4. Selecciona otro clip o añade uno nuevo para continuar.`;
+    return blob;
+  } catch (error) {
+    clipElement("clipStatus").textContent = "⚠ " + (error.message || String(error)); clipElement("clipProgress").hidden = true;
+    return false;
+  } finally {
+    cleanupClipExport(job); if (clipEditorState.exportJob === job) clipEditorState.exportJob = null;
+    renderClipList(); updateClipEditorControls(); renderClipPreview();
+  }
+}
+
+function initializeClipEditor() {
+  clipElement("clipCloseBtn").addEventListener("click", closeClipEditor);
+  clipElement("clipEditor").addEventListener("cancel", event => { event.preventDefault(); closeClipEditor(); });
+  clipElement("clipAddBtn").addEventListener("click", addClip);
+  clipElement("clipDuplicateBtn").addEventListener("click", duplicateClip);
+  clipElement("clipDeleteBtn").addEventListener("click", deleteClip);
+  clipElement("clipSplitBtn").addEventListener("click", splitProjectIntoClips);
+  clipElement("clipPlayBtn").addEventListener("click", toggleClipPreview);
+  clipElement("clipSeek").addEventListener("input", event => seekClipPreview(event.target.value));
+  ["clipStart", "clipEnd", "clipAspect", "clipFit", "clipText", "clipFontSize", "clipTextColor", "clipTextX", "clipTextY", "clipSubtitles"].forEach(id => clipElement(id).addEventListener("input", readClipFields));
+  clipElement("clipDownloadBtn").addEventListener("click", downloadSelectedClip);
+  clipElement("clipCancelExportBtn").addEventListener("click", () => cancelClipExport());
+  const canvas = clipElement("clipPreviewCanvas");
+  canvas.addEventListener("pointerdown", beginClipTextDrag); canvas.addEventListener("pointermove", moveClipTextDrag);
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => canvas.addEventListener(type, endClipTextDrag));
+  canvas.addEventListener("keydown", moveClipTextWithKeyboard);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) return;
+    pauseClipPreview();
+    cancelClipExport("La pestaña dejó de estar visible. No se descargará un clip incompleto. Repite la exportación sin cambiar de pestaña ni minimizar el navegador.");
+  });
+}
+initializeClipEditor();
 
 window.addEventListener("DOMContentLoaded", () => {
   const imageModelSelect = document.getElementById("aiImageModel");
