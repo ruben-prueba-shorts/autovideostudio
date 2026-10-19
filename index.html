@@ -242,21 +242,21 @@
     <!-- PESTAÑA 0: ESTUDIO IA -->
     <div class="tab-View active" id="tab0">
       <div class="card ai-card">
-        <h2>📝 1. Tu guion e imágenes limpias con IA (Google Flow Turbo & Cloudflare)</h2>
-        <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y generará imágenes en paralelo con los motores de Google Flow (Nano Banana 2 / Lite) o Cloudflare.</p>
+        <h2>📝 1. Tu guion e imágenes limpias con IA (Gemini API & Cloudflare)</h2>
+        <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y generará imágenes en paralelo con los modelos oficiales de imagen de Gemini (Nano Banana) o Cloudflare.</p>
 
         <div class="settings-grid" style="margin-bottom:12px;">
           <div>
             <label for="aiImageModel">Motor de generación de imágenes</label>
             <select id="aiImageModel" onchange="setImageModelPreference(this.value)">
-              <option value="google-flow-flash" selected>🍌🍌 Google Flow · Nano Banana 2 (Rápido + Personaje Ref.)</option>
-              <option value="google-flow-lite">⚡ Google Flow · Nano Banana 2 Lite (Ultra Rápido · Baja Latencia)</option>
-              <option value="google-flow-2.1">✨ Google Flow · Nano Banana 2.1 (Alta Fidelidad + Ref.)</option>
-              <option value="google-flow-pro">🎬 Google Flow · Nano Banana Pro (Calidad Estudio)</option>
+              <option value="google-flow-flash" selected>🍌 Gemini · Nano Banana 2.1 (Calidad + referencias)</option>
+              <option value="google-flow-lite">⚡ Gemini 3.1 Flash Lite Image (Más rápido · 1K)</option>
+              <option value="google-flow-2.1">✨ Gemini 3.1 Flash Image (Admite 512px)</option>
+              <option value="google-flow-pro">🎬 Gemini 3 Pro Image (Calidad premium)</option>
               <option value="cloudflare">☁️ Cloudflare Worker · FLUX.1 Schnell</option>
             </select>
 
-            <!-- Panel de configuración de Google Flow (Gemini API) -->
+            <!-- Panel de configuración de Gemini API (modelos Nano Banana) -->
             <div id="googleFlowConfigBox" style="margin-top:10px; display:flex; flex-direction:column; gap:7px; padding:12px; border:1px solid rgba(139, 92, 246, 0.4); border-radius:10px; background:rgba(139, 92, 246, 0.06);">
               <label for="googleFlowApiKey">🔑 Clave API de Google (AI Studio / Gemini API Key)</label>
               <input type="password" id="googleFlowApiKey" placeholder="AIzaSy..." autocomplete="new-password" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
@@ -274,14 +274,15 @@
                   <label for="aiFlowResolution">📐 Modo Latencia / Resolución</label>
                   <select id="aiFlowResolution" onchange="saveGoogleFlowSettings()">
                     <option value="1K" selected>1K Estándar (Equilibrado)</option>
-                    <option value="512">512px Turbo (Mínima Espera)</option>
+                    <option value="512">512px Turbo (solo Gemini 3.1 Flash Image)</option>
                   </select>
                 </div>
               </div>
-              <label for="googleFlowEndpointUrl" style="margin-top:2px;">🌐 Endpoint / Proxy Opcional (Dejar por defecto para conexión directa)</label>
-              <input type="text" id="googleFlowEndpointUrl" value="https://generativelanguage.googleapis.com/v1beta/models" placeholder="https://generativelanguage.googleapis.com/v1beta/models" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
+              <label for="googleFlowEndpointUrl" style="margin-top:2px;">🌐 Endpoint Gemini API / proxy privado (deja el oficial por defecto)</label>
+              <input type="text" id="googleFlowEndpointUrl" value="https://generativelanguage.googleapis.com/v1beta/interactions" placeholder="https://generativelanguage.googleapis.com/v1beta/interactions" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
+              <div style="font-size:.74rem;color:var(--text-muted);line-height:1.4;">No uses proxies CORS públicos: pueden rechazar la petición y exponer tu clave API.</div>
               <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
-                <button type="button" class="btn btn-ai" onclick="testGoogleFlowConnection()">⚡ Comprobar Google Flow API</button>
+                <button type="button" class="btn btn-ai" onclick="testGoogleFlowConnection()">⚡ Comprobar clave y conexión Gemini</button>
               </div>
             </div>
 
@@ -717,11 +718,13 @@ function isValidHex(hex) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(hex) || /^(white|black|red|green|blue|yellow|purple|orange)$/i.test(hex);
 }
 
+// IDs oficiales de modelos de imagen disponibles en Gemini API.
+// Los nombres internos de las opciones se mantienen para no romper preferencias guardadas.
 const GOOGLE_FLOW_MODELS = {
-  "google-flow-flash": "gemini-2.0-flash",
-  "google-flow-lite":  "gemini-2.0-flash-lite",
-  "google-flow-2.1":   "gemini-1.5-flash",
-  "google-flow-pro":   "gemini-2.0-flash"
+  "google-flow-flash": "gemini-nano-banana-2.1",
+  "google-flow-lite":  "gemini-3.1-flash-lite-image",
+  "google-flow-2.1":   "gemini-3.1-flash-image",
+  "google-flow-pro":   "gemini-3-pro-image"
 };
 
 function isGoogleFlowModel(val) {
@@ -1027,7 +1030,7 @@ function showAILog(msg, isError = false) {
 }
 
 const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
-const GOOGLE_FLOW_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
+const GOOGLE_FLOW_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions";
 let selectedVideoFormat = "short";
 
 function getSelectedImageEngine() {
@@ -1050,8 +1053,11 @@ function getGoogleFlowEndpointUrl() {
   let value = input ? input.value.trim() : "";
   if (!value) value = localStorage.getItem("autovideo_google_flow_endpoint") || GOOGLE_FLOW_DEFAULT_ENDPOINT;
   if (!value) value = GOOGLE_FLOW_DEFAULT_ENDPOINT;
-  // Imagen 3 requires v1 endpoint. Automatically normalize v1beta to v1.
-  value = value.replace(/\/v1beta\/models/g, "/v1/models").replace(/\/v1beta/g, "/v1");
+  // Migra automáticamente la antigua configuración /v1/models o /v1beta/models
+  // al endpoint actual de Interactions API. Respeta otros proxies privados configurados.
+  if (/^https:\/\/generativelanguage\.googleapis\.com\/v1(?:beta)?\/models\/?$/i.test(value)) {
+    value = GOOGLE_FLOW_DEFAULT_ENDPOINT;
+  }
   return value.replace(/\/+$/, "");
 }
 
@@ -1081,43 +1087,46 @@ function saveGoogleFlowSettings() {
 
 async function testGoogleFlowConnection() {
   const apiKey = getGoogleFlowApiKey();
-  const endpoint = getGoogleFlowEndpointUrl();
   const modelId = getSelectedGoogleModelId();
   if (!apiKey) {
-    showAILog("Introduce tu clave API de Google (AI Studio / Gemini API) para usar los motores de Google Flow.", true);
+    showAILog("Introduce tu clave API de Google AI Studio / Gemini API para comprobar la conexión.", true);
     return;
   }
-  showAILog(`⏳ Comprobando conexión con Google Flow (<b>${escapeHtml(modelId)}</b>)...`);
+
+  // Esta comprobación valida la clave y la conectividad sin generar una imagen ni consumir
+  // cuota de generación. No se usa corsproxy.io ni ningún proxy público.
+  showAILog("⏳ Comprobando la clave de Gemini API (sin generar imágenes)...");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
-    const url = `${endpoint}/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    let res, data = {};
-    try {
-      res = await fetch(url, {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] })
-      });
-      data = await res.json();
-    } catch (corsErr) {
-      const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(url);
-      res = await fetch(proxyUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] })
-      });
-      data = await res.json();
-    }
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+      method: "GET",
+      mode: "cors",
+      headers: { "x-goog-api-key": apiKey },
+      signal: controller.signal
+    });
+    const rawText = await res.text();
+    let data = {};
+    try { data = JSON.parse(rawText); } catch (_) {}
+
     if (!res.ok || data.error) {
-      const msg = data.error?.message || data.error || ("HTTP " + res.status);
-      throw new Error(msg);
+      const detail = data.error?.message || data.error?.status || rawText.slice(0, 300) || ("HTTP " + res.status);
+      throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
     }
-    showAILog(`✅ <b>Google Flow API conectada con éxito.</b> Motor activo: <code>${escapeHtml(modelId)}</code> · Modo paralelo: <b>${getSelectedConcurrency()}x hilos simultáneos</b>.`);
+
+    showAILog(`✅ <b>Conexión con Gemini API correcta.</b> La clave se ha aceptado y la API responde. Modelo seleccionado: <code>${escapeHtml(modelId)}</code>. Esta comprobación no genera ninguna imagen ni consume cuota de generación; la disponibilidad del modelo se confirmará al generar. · Paralelo: <b>${getSelectedConcurrency()}x</b>.`);
   } catch (err) {
-    showAILog("❌ <b>Error al conectar con Google Flow API:</b> " + escapeHtml(err.message), true);
+    let message = err?.message || "Error desconocido";
+    if (err?.name === "AbortError") {
+      message = "La comprobación tardó demasiado (20 s). Revisa la conexión e inténtalo de nuevo.";
+    } else if (/failed to fetch|networkerror|load failed/i.test(message)) {
+      message = "El navegador no pudo conectar directamente con Google. Comprueba Internet, extensiones de bloqueo y que la web se sirva por HTTPS. No se ha usado un proxy público; si tu navegador bloquea la llamada, la solución segura es un proxy propio en Cloudflare Worker.";
+    }
+    showAILog("❌ <b>Error al comprobar Gemini API:</b> " + escapeHtml(message), true);
+  } finally {
+    clearTimeout(timeout);
   }
 }
-
 function getCloudflareWorkerUrl() {
   const input = document.getElementById("cloudflareWorkerUrl");
   let value = input ? input.value.trim() : "";
@@ -1216,38 +1225,43 @@ function isImagePayloadTooLarge(error) {
     || /(?:request|payload|entity|content).{0,25}too large|peticion.{0,25}demasiado grande/.test(detail);
 }
 
-// Generador nativo con motores de Google Flow (Nano Banana 2 / Lite / 2.1 / Pro) optimizado para baja latencia
+// Generador nativo mediante Gemini Interactions API (modelos de imagen Nano Banana).
 async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, signal) {
   const apiKey = getGoogleFlowApiKey();
-  const endpointBase = getGoogleFlowEndpointUrl();
+  const endpoint = getGoogleFlowEndpointUrl();
   const modelId = getSelectedGoogleModelId();
-  if (!apiKey) throw cloudflareImageError("Configura tu clave API de Google en Estudio IA para generar con Google Flow.", 401);
+  if (!apiKey) {
+    throw cloudflareImageError("Configura tu clave API de Google AI Studio / Gemini API en Estudio IA.", 401);
+  }
 
-  const parts = [];
-  if (useReference && autoVideoReferenceImageData && modelId !== "gemini-2.0-flash-lite") {
-    const base64Data = autoVideoReferenceImageData.split("base64,").pop();
-    parts.push({
-      inlineData: {
-        mimeType: autoVideoReferenceImageMime || "image/jpeg",
-        data: base64Data
-      }
-    });
-    parts.push({
-      text: `Maintain strict visual consistency with the character and art style shown in the reference image. Generate this scene as an image with zero text: ${prompt}`
-    });
-  } else {
-    parts.push({ text: `Generate a high-quality visual scene image with zero text, pure graphics: ${prompt}` });
+  const mappedAspect = aspectRatio === "9:16" ? "9:16" : "16:9";
+  const selectedResolution = getSelectedFlowResolution();
+  // La salida 512px solo está admitida por Gemini 3.1 Flash Image. El resto de modelos
+  // recibe 1K para evitar errores de parámetros no compatibles.
+  const imageSize = selectedResolution === "512" && modelId === "gemini-3.1-flash-image" ? "512px" : "1K";
+  const input = [{ type: "text", text: String(prompt || "").trim() }];
+
+  if (useReference && autoVideoReferenceImageData) {
+    const referenceBase64 = autoVideoReferenceImageData.split("base64,").pop();
+    if (referenceBase64) {
+      input.push({
+        type: "image",
+        mime_type: autoVideoReferenceImageMime || "image/jpeg",
+        data: referenceBase64
+      });
+    }
   }
 
   const payload = {
-    contents: [{ role: "user", parts }],
-    generationConfig: {
-      responseModalities: ["IMAGE"],
-      imageConfig: { aspectRatio: aspectRatio === "9:16" ? "9:16" : "16:9" }
+    model: modelId,
+    input,
+    response_format: {
+      type: "image",
+      mime_type: "image/jpeg",
+      aspect_ratio: mappedAspect,
+      image_size: imageSize
     }
   };
-
-  const requestUrl = `${endpointBase}/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   const controller = new AbortController();
   const cancel = () => controller.abort();
@@ -1257,29 +1271,26 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
 
   let response, rawText;
   try {
-    try {
-      response = await fetch(requestUrl, {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      rawText = await response.text();
-    } catch (corsErr) {
-      const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(requestUrl);
-      response = await fetch(proxyUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      rawText = await response.text();
-    }
+    response = await fetch(endpoint, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    rawText = await response.text();
   } catch (error) {
     if (signal?.aborted) throw abortImageError();
-    if (error.name === "AbortError") throw cloudflareImageError("Tiempo de espera agotado en Google Flow API. Se reintentará.", 408);
-    throw cloudflareImageError("Error de conexión (Failed to fetch). Comprueba tu conexión a internet.", 0);
+    if (error?.name === "AbortError") {
+      throw cloudflareImageError("La generación de imagen en Gemini ha tardado más de 2 minutos. Se volverá a intentar.", 408);
+    }
+    throw cloudflareImageError(
+      "No se pudo conectar directamente con Gemini API (Failed to fetch). Comprueba Internet, HTTPS y las extensiones del navegador. No se usa un proxy CORS público.",
+      0
+    );
   } finally {
     clearTimeout(timeout);
     signal?.removeEventListener("abort", cancel);
@@ -1290,41 +1301,35 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
   const retryAfter = parseImageRetryAfter(response.headers.get("Retry-After"));
 
   if (!response.ok || data.error) {
-    const detail = data.error?.message || data.error || rawText.slice(0, 350) || ("HTTP " + response.status);
+    const detail = data.error?.message || data.error?.status || data.error || rawText.slice(0, 350) || ("HTTP " + response.status);
     const error = cloudflareImageError(typeof detail === "string" ? detail : JSON.stringify(detail), response.status, data, retryAfter);
     error.providerMessage = error.message;
     throw error;
   }
 
-  let dataUrl = "";
-  if (Array.isArray(data.candidates)) {
-    for (const cand of data.candidates) {
-      const candParts = cand?.content?.parts || [];
-      for (const p of candParts) {
-        const inline = p.inlineData || p.inline_data;
-        if (inline && inline.data) {
-          const mime = inline.mimeType || inline.mime_type || "image/jpeg";
-          dataUrl = `data:${mime};base64,${inline.data}`;
-          break;
-        }
+  // Gemini Interactions API devuelve la imagen generada en output_image.data (base64).
+  let image = data.output_image || data.outputImage || null;
+  if (!image?.data && Array.isArray(data.steps)) {
+    for (let i = data.steps.length - 1; i >= 0 && !image?.data; i--) {
+      const step = data.steps[i];
+      if (step?.type === "image" && step?.data) image = step;
+      if (Array.isArray(step?.content)) {
+        const block = [...step.content].reverse().find(item => item?.type === "image" && item?.data);
+        if (block) image = block;
       }
-      if (dataUrl) break;
     }
   }
+  const imageBase64 = image?.data || image?.bytesBase64Encoded || "";
+  const mimeType = image?.mime_type || image?.mimeType || "image/jpeg";
+  const dataUrl = imageBase64 ? `data:${mimeType};base64,${imageBase64}` : (image?.dataURI || image?.dataUrl || image?.url || "");
 
   if (!dataUrl) {
-    const blockReason = data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || "";
-    throw cloudflareImageError(
-      blockReason ? `Google Flow no devolvió imagen (motivo: ${blockReason}).` : "Respuesta sin imagen desde Google Flow. Se volverá a intentar.",
-      blockReason ? 422 : 502,
-      data,
-      retryAfter
-    );
+    const explanation = data.output_text ? ` La API devolvió texto en lugar de imagen: ${String(data.output_text).slice(0, 180)}` : "";
+    throw cloudflareImageError("Gemini API respondió, pero no devolvió una imagen." + explanation, 502, data, retryAfter);
   }
 
   return await loadImageCrossOrigin(dataUrl, 60000, signal);
 }
-
 async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, signal) {
   const workerUrl = getCloudflareWorkerUrl();
   const accessKey = getCloudflareAccessKey();
@@ -1501,7 +1506,7 @@ async function retryPendingImageItems(items) {
   nextSlotAvailableAt = 0;
 
   const engineLabel = isGoogleFlowModel()
-    ? `Google Flow (${getSelectedGoogleModelId()})`
+    ? `Gemini API (${getSelectedGoogleModelId()})`
     : "Cloudflare FLUX.1";
 
   let failure = null;
@@ -1579,7 +1584,7 @@ async function retryImageAtSlot(index) {
 async function startImageGenerationQueue(imagePrompts) {
   if (isGoogleFlowModel()) {
     if (!getGoogleFlowApiKey()) {
-      showAILog("Introduce tu clave API de Google (AI Studio / Gemini API) en la pestaña 0 (Estudio IA) antes de generar con Google Flow.", true);
+      showAILog("Introduce tu clave API de Google (AI Studio / Gemini API) en la pestaña 0 (Estudio IA) antes de generar con Gemini API.", true);
       switchTab(0);
       return;
     }
@@ -4499,7 +4504,8 @@ window.addEventListener("DOMContentLoaded", () => {
       setImageModelPreference(savedModel);
 
       const flowKey = localStorage.getItem("autovideo_google_flow_key") || "";
-      const flowEndpoint = (localStorage.getItem("autovideo_google_flow_endpoint") || GOOGLE_FLOW_DEFAULT_ENDPOINT).replace(/\/v1beta\/models/g, "/v1/models").replace(/\/v1beta/g, "/v1");
+      let flowEndpoint = localStorage.getItem("autovideo_google_flow_endpoint") || GOOGLE_FLOW_DEFAULT_ENDPOINT;
+      if (/^https:\/\/generativelanguage\.googleapis\.com\/v1(?:beta)?\/models\/?$/i.test(flowEndpoint.trim())) flowEndpoint = GOOGLE_FLOW_DEFAULT_ENDPOINT;
       const savedConcurrency = localStorage.getItem("autovideo_image_concurrency") || "3";
       const savedResolution = localStorage.getItem("autovideo_flow_resolution") || "1K";
       if (document.getElementById("googleFlowApiKey")) document.getElementById("googleFlowApiKey").value = flowKey;
