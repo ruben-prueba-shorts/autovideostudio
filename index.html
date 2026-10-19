@@ -279,7 +279,7 @@
                 </div>
               </div>
               <label for="googleFlowEndpointUrl" style="margin-top:2px;">🌐 Endpoint / Proxy Opcional (Dejar por defecto para conexión directa)</label>
-              <input type="text" id="googleFlowEndpointUrl" value="https://generativelanguage.googleapis.com/v1/models" placeholder="https://generativelanguage.googleapis.com/v1beta/models" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
+              <input type="text" id="googleFlowEndpointUrl" value="https://generativelanguage.googleapis.com/v1beta/models" placeholder="https://generativelanguage.googleapis.com/v1beta/models" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
               <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
                 <button type="button" class="btn btn-ai" onclick="testGoogleFlowConnection()">⚡ Comprobar Google Flow API</button>
               </div>
@@ -718,10 +718,10 @@ function isValidHex(hex) {
 }
 
 const GOOGLE_FLOW_MODELS = {
-  "google-flow-flash": "imagen-3.0-generate-002",
-  "google-flow-lite":  "imagen-3.0-generate-002",
-  "google-flow-2.1":   "imagen-3.0-generate-002",
-  "google-flow-pro":   "imagen-3.0-generate-002"
+  "google-flow-flash": "gemini-2.0-flash",
+  "google-flow-lite":  "gemini-2.0-flash-lite",
+  "google-flow-2.1":   "gemini-1.5-flash",
+  "google-flow-pro":   "gemini-2.0-flash"
 };
 
 function isGoogleFlowModel(val) {
@@ -1027,7 +1027,7 @@ function showAILog(msg, isError = false) {
 }
 
 const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
-const GOOGLE_FLOW_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1/models";
+const GOOGLE_FLOW_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 let selectedVideoFormat = "short";
 
 function getSelectedImageEngine() {
@@ -1087,16 +1087,16 @@ async function testGoogleFlowConnection() {
     showAILog("Introduce tu clave API de Google (AI Studio / Gemini API) para usar los motores de Google Flow.", true);
     return;
   }
-  showAILog(`⏳ Comprobando conexión rápida con Google Flow Imagen 3 (<b>${escapeHtml(modelId)}</b>)...`);
+  showAILog(`⏳ Comprobando conexión con Google Flow (<b>${escapeHtml(modelId)}</b>)...`);
   try {
-    const url = `${endpoint}/${encodeURIComponent(modelId)}:predict?key=${encodeURIComponent(apiKey)}`;
+    const url = `${endpoint}/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`;
     let res, data = {};
     try {
       res = await fetch(url, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instances: [{ prompt: "test connection" }], parameters: { sampleCount: 1, aspectRatio: "1:1" } })
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] })
       });
       data = await res.json();
     } catch (corsErr) {
@@ -1104,7 +1104,7 @@ async function testGoogleFlowConnection() {
       res = await fetch(proxyUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instances: [{ prompt: "test connection" }], parameters: { sampleCount: 1, aspectRatio: "1:1" } })
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] })
       });
       data = await res.json();
     }
@@ -1223,18 +1223,31 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
   const modelId = getSelectedGoogleModelId();
   if (!apiKey) throw cloudflareImageError("Configura tu clave API de Google en Estudio IA para generar con Google Flow.", 401);
 
-  const requestUrl = `${endpointBase}/${encodeURIComponent(modelId)}:predict?key=${encodeURIComponent(apiKey)}`;
-  const mappedAspect = aspectRatio === "9:16" ? "9:16" : "16:9";
-  
+  const parts = [];
+  if (useReference && autoVideoReferenceImageData && modelId !== "gemini-2.0-flash-lite") {
+    const base64Data = autoVideoReferenceImageData.split("base64,").pop();
+    parts.push({
+      inlineData: {
+        mimeType: autoVideoReferenceImageMime || "image/jpeg",
+        data: base64Data
+      }
+    });
+    parts.push({
+      text: `Maintain strict visual consistency with the character and art style shown in the reference image. Generate this scene as an image with zero text: ${prompt}`
+    });
+  } else {
+    parts.push({ text: `Generate a high-quality visual scene image with zero text, pure graphics: ${prompt}` });
+  }
+
   const payload = {
-    instances: [{ prompt: String(prompt || "").trim() }],
-    parameters: {
-      sampleCount: 1,
-      aspectRatio: mappedAspect,
-      personGeneration: "allow_adult",
-      safetySetting: "block_medium_and_above"
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      responseModalities: ["IMAGE"],
+      imageConfig: { aspectRatio: aspectRatio === "9:16" ? "9:16" : "16:9" }
     }
   };
+
+  const requestUrl = `${endpointBase}/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   const controller = new AbortController();
   const cancel = () => controller.abort();
@@ -1254,7 +1267,6 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
       });
       rawText = await response.text();
     } catch (corsErr) {
-      // Fallback to CORS Proxy (corsproxy.io supports POST requests seamlessly)
       const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(requestUrl);
       response = await fetch(proxyUrl, {
         method: "POST",
@@ -1267,7 +1279,7 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
   } catch (error) {
     if (signal?.aborted) throw abortImageError();
     if (error.name === "AbortError") throw cloudflareImageError("Tiempo de espera agotado en Google Flow API. Se reintentará.", 408);
-    throw cloudflareImageError("Error de conexión (Failed to fetch). Comprueba tu conexión a internet o ejecuta la página con un servidor local (ej. python -m http.server).", 0);
+    throw cloudflareImageError("Error de conexión (Failed to fetch). Comprueba tu conexión a internet.", 0);
   } finally {
     clearTimeout(timeout);
     signal?.removeEventListener("abort", cancel);
@@ -1284,17 +1296,30 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
     throw error;
   }
 
-  // Extract base64 image from predictions[0].bytesBase64Encoded
   let dataUrl = "";
-  if (Array.isArray(data.predictions) && data.predictions[0]?.bytesBase64Encoded) {
-    const mime = data.predictions[0].mimeType || data.predictions[0].mime_type || "image/jpeg";
-    dataUrl = `data:${mime};base64,${data.predictions[0].bytesBase64Encoded}`;
-  } else if (data.dataURI || data.dataUrl || data.url) {
-    dataUrl = data.dataURI || data.dataUrl || data.url;
+  if (Array.isArray(data.candidates)) {
+    for (const cand of data.candidates) {
+      const candParts = cand?.content?.parts || [];
+      for (const p of candParts) {
+        const inline = p.inlineData || p.inline_data;
+        if (inline && inline.data) {
+          const mime = inline.mimeType || inline.mime_type || "image/jpeg";
+          dataUrl = `data:${mime};base64,${inline.data}`;
+          break;
+        }
+      }
+      if (dataUrl) break;
+    }
   }
 
   if (!dataUrl) {
-    throw cloudflareImageError("Respuesta sin imagen desde Google Flow (Imagen 3). Se volverá a intentar.", 502, data, retryAfter);
+    const blockReason = data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason || "";
+    throw cloudflareImageError(
+      blockReason ? `Google Flow no devolvió imagen (motivo: ${blockReason}).` : "Respuesta sin imagen desde Google Flow. Se volverá a intentar.",
+      blockReason ? 422 : 502,
+      data,
+      retryAfter
+    );
   }
 
   return await loadImageCrossOrigin(dataUrl, 60000, signal);
