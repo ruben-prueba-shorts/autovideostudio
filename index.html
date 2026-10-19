@@ -1100,7 +1100,7 @@ async function testGoogleFlowConnection() {
       });
       data = await res.json();
     } catch (corsErr) {
-      const proxyUrl = `https://api.allorigins.win/raw?url=` + encodeURIComponent(url);
+      const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(url);
       res = await fetch(proxyUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1254,8 +1254,8 @@ async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, si
       });
       rawText = await response.text();
     } catch (corsErr) {
-      // Fallback to public CORS proxy if direct fetch is blocked by browser CORS policy
-      const proxyUrl = `https://api.allorigins.win/raw?url=` + encodeURIComponent(requestUrl);
+      // Fallback to CORS Proxy (corsproxy.io supports POST requests seamlessly)
+      const proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(requestUrl);
       response = await fetch(proxyUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
