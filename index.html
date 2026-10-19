@@ -1048,7 +1048,10 @@ function getGoogleFlowApiKey() {
 function getGoogleFlowEndpointUrl() {
   const input = document.getElementById("googleFlowEndpointUrl");
   let value = input ? input.value.trim() : "";
+  if (!value) value = localStorage.getItem("autovideo_google_flow_endpoint") || GOOGLE_FLOW_DEFAULT_ENDPOINT;
   if (!value) value = GOOGLE_FLOW_DEFAULT_ENDPOINT;
+  // Imagen 3 requires v1 endpoint. Automatically normalize v1beta to v1.
+  value = value.replace(/\/v1beta\/models/g, "/v1/models").replace(/\/v1beta/g, "/v1");
   return value.replace(/\/+$/, "");
 }
 
@@ -4452,7 +4455,7 @@ window.addEventListener("DOMContentLoaded", () => {
       setImageModelPreference(savedModel);
 
       const flowKey = localStorage.getItem("autovideo_google_flow_key") || "";
-      const flowEndpoint = localStorage.getItem("autovideo_google_flow_endpoint") || GOOGLE_FLOW_DEFAULT_ENDPOINT;
+      const flowEndpoint = (localStorage.getItem("autovideo_google_flow_endpoint") || GOOGLE_FLOW_DEFAULT_ENDPOINT).replace(/\/v1beta\/models/g, "/v1/models").replace(/\/v1beta/g, "/v1");
       const savedConcurrency = localStorage.getItem("autovideo_image_concurrency") || "3";
       const savedResolution = localStorage.getItem("autovideo_flow_resolution") || "1K";
       if (document.getElementById("googleFlowApiKey")) document.getElementById("googleFlowApiKey").value = flowKey;
