@@ -1402,7 +1402,7 @@ async function handleVoiceUpload(file) {
   document.getElementById("syncAllBtn").disabled = false;
   document.getElementById("syncAllBtn").textContent = "🔄 Sincronizar Todo";
   verifiedSyncBuffer = verifiedSyncScript = null;
-  if (speechRecognitionTask) destroySpeechWorker("El audio ha cambiado. Se analizará el nuevo archivo.");
+  if (speechRecognitionTask || speechWorkerJobs.size) destroySpeechWorker("El audio ha cambiado. Se analizará el nuevo archivo.");
   speechRecognitionTask = speechRecognitionBuffer = speechTranscript = speechTranscriptBuffer = null;
   if (isPlaying) pausePlayback();
   isDemoSynthMode = false;
@@ -1873,12 +1873,21 @@ function speechRecognitionWorkerMain() {
       const decode = tokenizer.decode.bind(tokenizer);
       tokenizer.decode = (ids, args) => Array.isArray(ids) && ids.length === 0 ? "" : decode(ids, args);
     }
+    // En 2.17.2, el recorte de las atenciones usa fotogramas del encoder,
+    // mientras el pipeline entrega fotogramas mel (el doble). Excluir el
+    // relleno posterior al audio antes de calcular las marcas de palabra.
+    const whisperModel = transcriber.model;
+    if (typeof whisperModel?._extract_token_timestamps === "function") {
+      const extract = whisperModel._extract_token_timestamps.bind(whisperModel);
+      whisperModel._extract_token_timestamps = (output, heads, frames, precision) =>
+        extract(output, heads, Number.isFinite(frames) ? Math.max(1, Math.floor(frames / 2)) : frames, precision);
+    }
     modelInUse = model;
   }
 
   self.onmessage = ({ data }) => {
     queue = queue.catch(() => {}).then(async () => {
-      const { id, audio, ranges, model, language, activity, completed } = data;
+      const { id, audio, ranges, model, language, activity, completed, alignmentText } = data;
       const send = value => self.postMessage({ id, ...value });
       try {
         if (!library) {
@@ -2007,6 +2016,30 @@ function speechRecognitionWorkerMain() {
           return { text, chunks: extra.chunks || [] };
         }
 
+        async function alignKnownText(fragment, text) {
+          const tokenizer = transcriber.tokenizer;
+          const ids = tokenizer.encode(" " + String(text).trim(), null, { add_special_tokens: false });
+          if (!ids.length || ids.length > 400) throw new Error("El tramo del guion necesita dividirse para alinearlo.");
+          const prefix = tokenizer.get_decoder_prompt_ids({ language, task: "transcribe", no_timestamps: true });
+          const first = Math.max(3, ...prefix.map(pair => pair[0])) + 1;
+          const eos = tokenizer.model.convert_tokens_to_ids(["<|endoftext|>"])[0];
+          if (!Number.isInteger(eos)) throw new Error("No se pudo preparar el final del tramo de voz.");
+          const forced = [...prefix, ...ids.map((token, i) => [first + i, token]), [first + ids.length, eos]];
+          const inputs = await transcriber.processor(fragment);
+          const generated = await transcriber.model.generate(inputs.input_features, {
+            forced_decoder_ids: forced, return_timestamps: false, return_token_timestamps: true,
+            num_frames: Math.floor(fragment.length / transcriber.processor.feature_extractor.config.hop_length),
+            max_new_tokens: first + ids.length, num_beams: 1, do_sample: false
+          });
+          const tokens = generated.sequences?.[0];
+          const times = generated.token_timestamps?.tolist?.()[0];
+          if (!tokens?.length || !times?.length) throw new Error("El tramo no contiene marcas acústicas válidas.");
+          const [decoded, extra] = tokenizer._decode_asr([
+            { tokens, token_timestamps: times, stride: [fragment.length / 16000, 0, 0] }
+          ], { return_timestamps: "word", time_precision: 0.02, force_full_sequences: false });
+          return { text: decoded, chunks: extra.chunks || [] };
+        }
+
         async function recognizeRange(range, rootIndex, depth = 0) {
           if (isQuiet(range)) return [];
           const left = Math.max(0, range.start - 1.2);
@@ -2049,6 +2082,14 @@ function speechRecognitionWorkerMain() {
           throw failure || new Error("No se han podido reconocer las palabras de este tramo.");
         }
 
+        if (alignmentText) {
+          send({ type: "progress", phase: "audio", progress: 0, message: "Localizando las palabras pendientes en su tramo de audio…" });
+          const aligned = wordsInRange(await alignKnownText(audio, alignmentText), 0, duration, { start: 0, end: duration });
+          if (!aligned.length || hasUnrecognizedSpeech(aligned, { start: 0, end: duration })) throw new Error("No se pudo verificar la voz de ese tramo.");
+          send({ type: "result", words: aligned });
+          return;
+        }
+
         const words = [];
         for (let i = 0; i < ranges.length; i++) {
           const restored = Array.isArray(completed?.[i]);
@@ -2078,7 +2119,7 @@ function destroySpeechWorker(message) {
   speechWorkerJobs.clear();
 }
 
-function recognizeAudioInWorker(audio, ranges, model, language, onProgress, checkpoint = {}) {
+function recognizeAudioInWorker(audio, ranges, model, language, onProgress, checkpoint = {}, request = {}) {
   return new Promise((resolve, reject) => {
     if (!speechWorker) {
       try {
@@ -2113,8 +2154,8 @@ function recognizeAudioInWorker(audio, ranges, model, language, onProgress, chec
     const timer = setTimeout(() => destroySpeechWorker("No se ha podido cargar el modelo de voz. Comprueba Internet y vuelve a sincronizar."), 240000);
     if (!Array.isArray(checkpoint.chunks)) checkpoint.chunks = ranges.map(() => null);
     speechWorkerJobs.set(id, { resolve, reject, onProgress, timer, checkpoint, ranges, writes: Promise.resolve() });
-    const activity = speechActivityMap ? { hop: speechActivityMap.hop, voiced: speechActivityMap.voiced } : null;
-    speechWorker.postMessage({ id, audio, ranges, model, language, activity, completed: checkpoint.chunks }, [audio.buffer]);
+    const activity = request.activity !== undefined ? request.activity : speechActivityMap ? { hop: speechActivityMap.hop, voiced: speechActivityMap.voiced } : null;
+    speechWorker.postMessage({ id, audio, ranges, model, language, activity, completed: checkpoint.chunks, alignmentText: request.alignmentText }, [audio.buffer]);
   });
 }
 
@@ -2215,7 +2256,7 @@ async function getRecognizedSpeech(buffer, progress, model = "Xenova/whisper-bas
     let cacheKey = "";
     try {
       const hash = await crypto.subtle.digest("SHA-256", mono.buffer);
-      cacheKey = "speech-v4:" + model + ":" + language + ":" + Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("");
+      cacheKey = "speech-v5:" + model + ":" + language + ":" + Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("");
       const cached = await recoveryStore("get", cacheKey);
       if (cached?.length) return sanitizeRecognizedWords(cached, buffer.duration);
     } catch (_) {}
@@ -2338,7 +2379,7 @@ function refineWordAgainstVoice(timing, map, preferLastRegion = false) {
   return timing;
 }
 
-async function alignScenesToVoice(lines, recognized, duration, map) {
+async function alignScenesToVoice(lines, recognized, duration, map, options = {}) {
   const reference = [];
   lines.forEach((text, sceneIndex) => String(text).trim().split(/\s+/).filter(Boolean).forEach(word => reference.push({ word, sceneIndex })));
   const expandedReference = expandedAlignmentWords(reference);
@@ -2353,7 +2394,27 @@ async function alignScenesToVoice(lines, recognized, duration, map) {
   const anchors = matchedParts.map((parts, i) => parts.length / partCounts[i] >= 0.6
     ? { start: parts[0].start, end: parts[parts.length - 1].end } : null);
   const matchedCount = anchors.filter(Boolean).length;
-  if (matchedCount / reference.length < 0.78 || Array.from(expandedMatches).filter(i => i >= 0).length / expandedRecognized.length < 0.65) {
+  const globalMatch = matchedCount / reference.length >= 0.78 && Array.from(expandedMatches).filter(i => i >= 0).length / expandedRecognized.length >= 0.65;
+  const weakScenes = new Set();
+  for (let sceneIndex = 0; sceneIndex < lines.length; sceneIndex++) {
+    const ids = reference.map((item, i) => item.sceneIndex === sceneIndex ? i : -1).filter(i => i >= 0);
+    if (!ids.length || ids.filter(i => anchors[i]).length / ids.length < 0.45) weakScenes.add(sceneIndex);
+  }
+  for (let i = 0; i < anchors.length;) {
+    if (anchors[i]) {
+      if (i && anchors[i - 1] && anchors[i].start <= anchors[i - 1].start) weakScenes.add(reference[i].sceneIndex);
+      i++; continue;
+    }
+    let j = i + 1;
+    while (j < anchors.length && !anchors[j]) j++;
+    const gap = (anchors[j]?.start ?? map?.lastVoiceEnd ?? duration) - (anchors[i - 1]?.end ?? map?.firstVoiceStart ?? 0);
+    if (j - i > 7 || gap > 6 || gap < (j - i) * 0.025) {
+      for (let k = i; k < j; k++) weakScenes.add(reference[k].sceneIndex);
+    }
+    i = j;
+  }
+  if (options.inspect) return { reference, anchors, matchedCount, globalMatch, weakScenes: [...weakScenes].sort((a, b) => a - b) };
+  if (!globalMatch) {
     throw new Error("El audio reconocido no coincide suficientemente con el guion. Comprueba que has cargado la narración completa y el mismo texto.");
   }
   for (let sceneIndex = 0; sceneIndex < lines.length; sceneIndex++) {
@@ -2397,12 +2458,109 @@ async function alignScenesToVoice(lines, recognized, duration, map) {
   return { grouped, cuts, matchedCount, reconstructed: reference.length - matchedCount };
 }
 
+async function alignScenesWithRecovery(lines, recognized, buffer, progress, model = "Xenova/whisper-base") {
+  try { return await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap); }
+  catch (originalError) {
+    const analysis = await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap, { inspect: true });
+    // Sólo recuperar huecos de una narración que ya coincide globalmente.
+    // Un archivo diferente no debe convertirse en una falsa sincronización.
+    if (!analysis.globalMatch || !analysis.weakScenes.length) throw originalError;
+    const version = syncRequestVersion;
+    const mono = await audioForSpeechRecognition(buffer);
+    const blocks = [];
+    for (const index of analysis.weakScenes) {
+      const previous = blocks[blocks.length - 1];
+      if (previous && previous.last + 1 === index) previous.last = index;
+      else blocks.push({ first: index, last: index });
+    }
+    const script = lines.join(" ");
+    const plain = normalizeText(script);
+    const es = (plain.match(/\b(el|la|los|las|una|un|que|del|pero|para|como|por|con)\b/g) || []).length;
+    const en = (plain.match(/\b(the|and|you|your|with|from|for|this|that|what|was|were|have|has)\b/g) || []).length;
+    const language = es >= 3 && es >= en ? "spanish" : en >= 3 ? "english" : null;
+    let repaired = recognized;
+    let failure = originalError;
+    try {
+      for (const block of blocks) {
+        if (version !== syncRequestVersion || voiceBuffer !== buffer) throw new Error("El audio ha cambiado durante la sincronización.");
+        let before = null, after = null;
+        for (let i = 0; i < analysis.reference.length; i++) {
+          if (!analysis.anchors[i]) continue;
+          if (analysis.reference[i].sceneIndex < block.first) before = analysis.anchors[i];
+          else if (analysis.reference[i].sceneIndex > block.last) { after = analysis.anchors[i]; break; }
+        }
+        const lower = Math.max(0, before?.end || 0);
+        const upper = Math.min(buffer.duration, after?.start ?? buffer.duration);
+        if (upper - lower < 0.08) continue;
+        const sampleStart = Math.floor(lower * 16000);
+        const fullClip = mono.slice(sampleStart, Math.ceil(upper * 16000));
+        const localMap = buildSpeechActivityMap({ length: fullClip.length, duration: fullClip.length / 16000,
+          sampleRate: 16000, numberOfChannels: 1, getChannelData: () => fullClip });
+        let start = localMap?.firstVoiceStart || 0;
+        let end = localMap?.lastVoiceEnd ?? fullClip.length / 16000;
+        if (localMap) {
+          const pauses = localMap.silenceIntervals.filter(p => p.duration >= 0.25);
+          if (before && pauses[0]?.start - start < 0.6) start = Math.max(start, pauses[0].end);
+          const lastPause = pauses[pauses.length - 1];
+          if (after && lastPause && end - lastPause.end < 0.6) end = Math.min(end, lastPause.start);
+        }
+        const text = lines.slice(block.first, block.last + 1).join(" ");
+        const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+        const active = localMap ? speechSecondsAt(localMap, end) - speechSecondsAt(localMap, start) : end - start;
+        if (end <= start || active < wordCount * 0.035) continue;
+        const firstSample = Math.max(0, Math.floor(start * 16000));
+        const clip = fullClip.slice(firstSample, Math.ceil(end * 16000));
+        const offset = (sampleStart + firstSample) / 16000;
+        const clipDuration = clip.length / 16000;
+        const clipMap = buildSpeechActivityMap({ length: clip.length, duration: clipDuration, sampleRate: 16000,
+          numberOfChannels: 1, getChannelData: () => clip });
+        const activity = clipMap ? { hop: clipMap.hop, voiced: clipMap.voiced } : null;
+        const description = block.first === block.last ? `la escena ${block.first + 1}` : `las escenas ${block.first + 1}–${block.last + 1}`;
+        let recovered = null;
+        for (const repairModel of [...new Set([model, "Xenova/whisper-small"])]) {
+          try {
+            progress({ message: `Recuperando ${description} con su guion y su audio…` });
+            let key = "";
+            try {
+              const hash = await crypto.subtle.digest("SHA-256", clip.buffer);
+              key = "speech-align-v1:" + repairModel + ":" + language + ":" + text + ":" + Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("");
+              recovered = await recoveryStore("get", key);
+            } catch (_) {}
+            if (!recovered?.length) {
+              recovered = await recognizeAudioInWorker(clip.slice(), getRecognitionRanges(clipDuration, clipMap), repairModel, language,
+                data => progress({ ...data, phase: "repair", message: `Recuperando ${description}: ${data.message}` }), {},
+                { activity, alignmentText: clipDuration <= 27 ? text : undefined });
+            }
+            const candidate = sanitizeRecognizedWords(recovered, clipDuration).map(word => ({ ...word, start: word.start + offset, end: word.end + offset }));
+            if (!candidate.length) throw new Error("Faltan marcas de palabra en el tramo pendiente.");
+            const combined = sanitizeRecognizedWords([
+              ...repaired.filter(word => (word.start + word.end) / 2 < lower || (word.start + word.end) / 2 >= upper), ...candidate
+            ].sort((a, b) => a.start - b.start), buffer.duration);
+            const check = await alignScenesToVoice(lines, combined, buffer.duration, speechActivityMap, { inspect: true });
+            if (!check.globalMatch || check.weakScenes.some(i => i >= block.first && i <= block.last)) throw new Error("El tramo necesita una segunda comprobación de voz.");
+            repaired = combined;
+            if (key) await recoveryStore("put", key, recovered);
+            break;
+          } catch (error) { failure = error; recovered = null; }
+        }
+        if (!recovered) throw failure;
+      }
+      if (version !== syncRequestVersion || voiceBuffer !== buffer) throw new Error("El audio ha cambiado durante la sincronización.");
+      const alignment = await alignScenesToVoice(lines, repaired, buffer.duration, speechActivityMap);
+      speechTranscriptBuffer = buffer; speechTranscript = { model, words: repaired };
+      return alignment;
+    } finally {
+      if (speechWorker && speechWorkerJobs.size === 0) destroySpeechWorker("La recuperación de voz ha terminado.");
+    }
+  }
+}
+
 function getProjectSceneLines() {
   const raw = document.getElementById("scriptArea").value.trim();
   let lines = raw ? getScriptLines() : [];
   const mode = document.getElementById("promptGenMode")?.value || "auto";
   if (loadedImages.length && (mode === "manual19" || !lines.length)) lines = distributeTextIntoTargetCount(lines, loadedImages.length);
-  return lines;
+  return lines.filter(line => normalizeAlignmentToken(line));
 }
 
 function updateSyncProgress(message, isError = false) {
@@ -2439,6 +2597,7 @@ async function autoSyncProject(goToTimeline = true) {
     if (version !== syncRequestVersion) return;
     updateSyncProgress(data.message);
     if (data.phase === "audio") button.textContent = `⏳ Sincronizando ${Math.round(data.progress * 100)}%`;
+    else if (data.phase === "repair") button.textContent = "⏳ Ajustando escenas…";
   };
   try {
     renderCurrentFrame();
@@ -2447,14 +2606,14 @@ async function autoSyncProject(goToTimeline = true) {
       recognized = await getRecognizedSpeech(buffer, report);
       if (version !== syncRequestVersion) return false;
       report({ message: "Ajustando las palabras del guion a sus marcas de tiempo…" });
-      alignment = await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap);
+      alignment = await alignScenesWithRecovery(lines, recognized, buffer, report);
     }
     catch (firstError) {
       if (version !== syncRequestVersion || voiceBuffer !== buffer) return false;
       report({ message: "Comprobando las palabras con un modelo de voz más preciso (puede tardar)…" });
       recognized = await getRecognizedSpeech(buffer, report, "Xenova/whisper-small");
       if (version !== syncRequestVersion || voiceBuffer !== buffer) return false;
-      alignment = await alignScenesToVoice(lines, recognized, buffer.duration, speechActivityMap);
+      alignment = await alignScenesWithRecovery(lines, recognized, buffer, report, "Xenova/whisper-small");
     }
     if (version !== syncRequestVersion || voiceBuffer !== buffer || document.getElementById("scriptArea").value.trim() !== script) {
       if (version === syncRequestVersion) updateSyncProgress("El guion o el audio han cambiado durante el análisis. Pulsa Sincronizar Todo para aplicar la versión actual.", true);
