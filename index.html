@@ -978,6 +978,12 @@ function cloudflareImageError(message, status = 0, data = {}, retryAfterMs = 0) 
   return error;
 }
 
+function isImagePayloadTooLarge(error) {
+  const detail = normalizeText((error?.message || "") + " " + JSON.stringify(error?.details || {}));
+  return error?.status === 413 || /\b3006\b/.test(detail)
+    || /(?:request|payload|entity|content).{0,25}too large|peticion.{0,25}demasiado grande/.test(detail);
+}
+
 async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, signal) {
   const workerUrl = getCloudflareWorkerUrl();
   const accessKey = getCloudflareAccessKey();
@@ -987,6 +993,7 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, si
     payload.referenceImage = autoVideoReferenceImageData.split("base64,").pop();
     payload.referenceImageMimeType = autoVideoReferenceImageMime || "image/jpeg";
   }
+  const requestBody = JSON.stringify(payload);
   const controller = new AbortController();
   const cancel = () => controller.abort();
   if (signal?.aborted) throw abortImageError();
@@ -998,7 +1005,7 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, si
     response = await fetch(workerUrl + "/generate", {
       method: "POST", mode: "cors",
       headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
-      body: JSON.stringify(payload), signal: controller.signal
+      body: requestBody, signal: controller.signal
     });
     rawText = await response.text();
   } catch (error) {
@@ -1014,7 +1021,14 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, si
   const retryAfter = parseImageRetryAfter(response.headers.get("Retry-After"));
   if (!response.ok || data.success === false || data.ok === false || data.error) {
     const detail = data.error || data.errors || rawText.slice(0, 350) || ("HTTP " + response.status);
-    throw cloudflareImageError(typeof detail === "string" ? detail : JSON.stringify(detail), response.status, data, retryAfter);
+    const error = cloudflareImageError(typeof detail === "string" ? detail : JSON.stringify(detail), response.status, data, retryAfter);
+    error.providerMessage = error.message;
+    if (isImagePayloadTooLarge(error)) {
+      error.permanent = true;
+      const size = new Blob([requestBody]).size;
+      error.message = `El servidor rechaza por tamaño una petición individual de ${size} bytes (${String(prompt).length} caracteres de prompt, ${payload.referenceImage ? "con imagen de referencia" : "sin imagen de referencia"}). Revisa el límite de la URL configurada. Detalle: ${error.message}`;
+    }
+    throw error;
   }
   const url = data.dataURI || data.dataUrl || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
   if (!url) throw cloudflareImageError("Respuesta incompleta: falta la imagen. Se volverá a intentar.", response.status, data, retryAfter);
@@ -1098,7 +1112,7 @@ async function generateImageWithRetries(prompt, aspect, sceneNumber, totalCount,
       if (signal?.aborted || error.name === "AbortError") throw abortImageError();
       if (isCloudflareImageQuotaError(error)) throw error;
       // Sólo quitar la referencia si el servicio rechaza ese formato expresamente.
-      if (useReference && [400, 413, 415, 422].includes(error.status) && /reference|referencia|base64|image input|image.*size/i.test(error.message)) {
+      if (useReference && [400, 413, 415, 422].includes(error.status) && /reference|referencia|base64|image input|image.*size/i.test(error.providerMessage || error.message)) {
         useReference = false; referenceFallback = true;
       } else if (error.permanent || /unauthorized|invalid.*(key|token)|authentication|forbidden|invalid url/i.test(error.message)) {
         throw error;
@@ -1361,8 +1375,9 @@ async function generateImagesFromPromptsAI() {
       switchTab(0);
       return;
     }
-    const extraStyle = styleInput ? `, ${styleInput}` : "";
-    imagePrompts = manualLines.map(lineContent => `${lineContent.replace(/\.+$/, "").trim()}${extraStyle}, ${styleSuffix}`);
+    // El estilo pertenece al modo automático y queda oculto en el manual.
+    // No reutilizarlo: puede contener una lista completa del proyecto anterior.
+    imagePrompts = manualLines.map(lineContent => `${lineContent.replace(/\.+$/, "").trim()}, ${styleSuffix}`);
   } else {
     const styleAsList = parseManualList(styleInput);
     const hasNumberedStyleList = styleAsList.length >= 2 && /(?:^|\n)\s*(?:scene|escena|imagen|prompt)?\s*\d+[\.\)\-:]/i.test(styleInput);
