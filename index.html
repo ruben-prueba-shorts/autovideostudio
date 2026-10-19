@@ -480,7 +480,7 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="btn btn-success" id="exportVideoBtn" onclick="exportVideoYouTubeMaster()" style="justify-content:center; padding:11px;">
-          🎬 Descargar Vídeo (.WEBM)
+          🎬 Descargar Vídeo (.MP4)
         </button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
           <button class="btn" onclick="downloadSRT()" style="justify-content:center;">📥 Subtítulos (.SRT)</button>
@@ -2489,29 +2489,15 @@ async function alignScenesToVoice(lines, recognized, duration, map, options = {}
     const ids = reference.map((item, i) => item.sceneIndex === sceneIndex ? i : -1).filter(i => i >= 0);
     if (!ids.length || ids.filter(i => anchors[i]).length / ids.length < 0.45) weakScenes.add(sceneIndex);
   }
-  for (let i = 0; i < anchors.length;) {
-    if (anchors[i]) {
-      if (i && anchors[i - 1] && anchors[i].start <= anchors[i - 1].start) weakScenes.add(reference[i].sceneIndex);
-      i++; continue;
-    }
-    let j = i + 1;
-    while (j < anchors.length && !anchors[j]) j++;
-    const gap = (anchors[j]?.start ?? map?.lastVoiceEnd ?? duration) - (anchors[i - 1]?.end ?? map?.firstVoiceStart ?? 0);
-    const canSeparateJoinedWords = j - i <= 4 && i > 0 && j < anchors.length
-      && reference[i - 1].sceneIndex === reference[i].sceneIndex && reference[j].sceneIndex === reference[i].sceneIndex
-      && anchors[j].end - anchors[i - 1].start >= (j - i + 2) * 0.025 && anchors[j].end - anchors[i - 1].start <= 6;
-    if (j - i > 7 || gap > 6 || (gap < (j - i) * 0.025 && !canSeparateJoinedWords)) {
-      for (let k = i; k < j; k++) weakScenes.add(reference[k].sceneIndex);
-    }
-    i = j;
-  }
-  if (options.inspect) return { reference, anchors, matchedCount, globalMatch, weakScenes: [...weakScenes].sort((a, b) => a - b) };
-  if (!globalMatch) {
+  // La inspección debe usar los mismos límites acústicos y comprobaciones que
+  // el ajuste final. Inspeccionar sólo las marcas originales dejaba sin
+  // recuperación escenas cuyos huecos desaparecían al recortar una pausa.
+  if (!options.inspect && !globalMatch) {
     throw new Error("El audio reconocido no coincide suficientemente con el guion. Comprueba que has cargado la narración completa y el mismo texto.");
   }
   for (let sceneIndex = 0; sceneIndex < lines.length; sceneIndex++) {
     const ids = reference.map((item, i) => item.sceneIndex === sceneIndex ? i : -1).filter(i => i >= 0);
-    if (!ids.length || ids.filter(i => anchors[i]).length / ids.length < 0.45) throw new Error(`No se ha localizado con fiabilidad la escena ${sceneIndex + 1} en el audio.`);
+    if (!options.inspect && (!ids.length || ids.filter(i => anchors[i]).length / ids.length < 0.45)) throw new Error(`No se ha localizado con fiabilidad la escena ${sceneIndex + 1} en el audio.`);
   }
   const timings = reference.map((item, i) => {
     if (!anchors[i]) return null;
@@ -2541,7 +2527,12 @@ async function alignScenesToVoice(lines, recognized, duration, map, options = {}
       if (pauses.length && i > 0 && reference[i - 1].sceneIndex !== reference[i].sceneIndex) start = Math.max(start, pauses[0].end);
       if (pauses.length && j < reference.length && reference[j].sceneIndex !== reference[i].sceneIndex) end = Math.min(end, pauses[pauses.length - 1].start);
     }
-    if (j - i > 7 || end - start > 6 || end - start < (j - i) * 0.025) throw new Error(`Hay una parte del guion que no se ha podido localizar en la voz (escena ${reference[i].sceneIndex + 1}).`);
+    if (j - i > 7 || end - start > 6 || end - start < (j - i) * 0.025) {
+      if (!options.inspect) throw new Error(`Hay una parte del guion que no se ha podido localizar en la voz (escena ${reference[i].sceneIndex + 1}).`);
+      for (let k = i; k < j; k++) weakScenes.add(reference[k].sceneIndex);
+      i = j;
+      continue;
+    }
     const filled = createWordTimings(reference.slice(i, j).map(item => item.word).join(" "), start, Math.max(start + 0.02, end), map);
     filled.forEach((word, k) => {
       const index = i + k;
@@ -2557,6 +2548,7 @@ async function alignScenesToVoice(lines, recognized, duration, map, options = {}
     for (let i = 1; i < timings.length; i++) {
       if (reference[i - 1].sceneIndex === reference[i].sceneIndex) continue;
       const word = timings[i];
+      if (!word || !timings[i - 1]) continue;
       const candidates = map.silenceIntervals.filter(p => p.duration >= 0.30
         && p.end >= word.start - 0.35 && p.end <= word.start
         && p.end >= timings[i - 1].end);
@@ -2568,9 +2560,15 @@ async function alignScenesToVoice(lines, recognized, duration, map, options = {}
     }
   }
   for (let i = 0; i < timings.length - 1; i++) {
+    if (!timings[i] || !timings[i + 1]) continue;
     timings[i].end = Math.min(timings[i].end, timings[i + 1].start);
-    if (timings[i].end <= timings[i].start) throw new Error("El reconocimiento devolvió palabras superpuestas. Vuelve a sincronizar para comprobar la voz.");
+    if (timings[i].end <= timings[i].start) {
+      if (!options.inspect) throw new Error("El reconocimiento devolvió palabras superpuestas. Vuelve a sincronizar para comprobar la voz.");
+      weakScenes.add(reference[i].sceneIndex);
+      weakScenes.add(reference[i + 1].sceneIndex);
+    }
   }
+  if (options.inspect) return { reference, anchors, matchedCount, globalMatch, weakScenes: [...weakScenes].sort((a, b) => a - b) };
   const grouped = lines.map((_, sceneIndex) => timings.filter((word, i) => reference[i].sceneIndex === sceneIndex));
   const cuts = [0, ...grouped.slice(1).map(words => words[0].start), duration];
   for (let i = 1; i < cuts.length; i++) if (cuts[i] <= cuts[i - 1]) throw new Error("No se han podido distinguir todos los límites de escena en la voz.");
@@ -3245,6 +3243,15 @@ function createProceduralSceneImage(title, topColor, bottomColor, accentColor, i
   return { name: title + ".png", url, imgObj: img };
 }
 
+function getSupportedMp4RecordingTypes() {
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return [];
+  return [
+    'video/mp4;codecs="avc1.424028,mp4a.40.2"',
+    "video/mp4;codecs=avc1,mp4a.40.2",
+    "video/mp4"
+  ].filter(type => { try { return MediaRecorder.isTypeSupported(type); } catch (_) { return false; } });
+}
+
 async function exportVideoYouTubeMaster() {
   if (isExportingVideo) return;
   if (imageGenerationInProgress || syncInProgress) { alert("Espera a que termine la generación o la sincronización antes de exportar."); return; }
@@ -3260,6 +3267,13 @@ async function exportVideoYouTubeMaster() {
   }
   if (document.hidden) {
     alert("Para evitar desfases, mantén AutoVideo visible en primer plano durante toda la exportación.");
+    return;
+  }
+  const mp4Types = getSupportedMp4RecordingTypes();
+  if (!mp4Types.length) {
+    const message = "Este navegador no permite grabar vídeo MP4. Abre este HTML en una versión actualizada de Chrome, Edge o Safari que admita la grabación MP4 y vuelve a exportar. El proyecto se conserva.";
+    document.getElementById("exportStatus").textContent = "❌ " + message;
+    alert(message);
     return;
   }
   pausePlayback();
@@ -3330,9 +3344,16 @@ async function exportVideoYouTubeMaster() {
 
     const combinedTracks = [...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()];
     combinedStream = new MediaStream(combinedTracks);
-    let mimeType = "video/webm;codecs=vp9,opus";
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "video/webm";
-    recorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 12000000 });
+    let recorderFailure = null;
+    for (const mimeType of mp4Types) {
+      try {
+        const candidate = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 12000000, audioBitsPerSecond: 192000 });
+        if (!/^video\/mp4(?:\s*;|$)/i.test(candidate.mimeType || mimeType)) throw new Error("El navegador ha seleccionado un contenedor distinto de MP4.");
+        recorder = candidate;
+        break;
+      } catch (error) { recorderFailure = error; }
+    }
+    if (!recorder) throw new Error("No se pudo iniciar la grabación MP4: " + (recorderFailure?.message || "Formato no disponible."));
     activeExportRecorder = recorder;
     activeExportNodes = localNodes.slice();
     const chunks = [];
@@ -3344,7 +3365,12 @@ async function exportVideoYouTubeMaster() {
       try { if (recorder.state === "recording") recorder.stop(); } catch (_) {}
     };
     recorder.onstop = () => {
+      if (!exportAbortReason && exportScheduledStartAt !== null && audioCtx
+        && audioCtx.currentTime - exportScheduledStartAt < totalDuration - 0.08) {
+        exportAbortReason = "La grabación se ha detenido antes de terminar el vídeo. No se descargará un archivo incompleto. Vuelve a exportar con la página visible.";
+      }
       const wasAborted = Boolean(exportAbortReason);
+      localNodes.forEach(node => { try { node.stop(); } catch (_) {} });
       if (canvasStream) canvasStream.getTracks().forEach(track => { try { track.stop(); } catch (_) {} });
       if (combinedStream) combinedStream.getTracks().forEach(track => { try { track.stop(); } catch (_) {} });
       activeExportRecorder = null;
@@ -3356,18 +3382,18 @@ async function exportVideoYouTubeMaster() {
         statusEl.textContent = "❌ " + exportAbortReason;
         return;
       }
-      const blob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+      const blob = new Blob(chunks, { type: recorder.mimeType || "video/mp4" });
       if (!blob.size) {
         statusEl.textContent = "❌ La grabación quedó vacía. Vuelve a exportar con la página visible.";
         return;
       }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = "video_faceless_youtube_master.webm";
+      a.href = url; a.download = "video_faceless_youtube_master.mp4";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 60000);
       progInner.style.width = "100%";
-      statusEl.innerHTML = "✅ <b>Vídeo exportado.</b> El audio y la línea de tiempo comparten un mismo instante de inicio.";
+      statusEl.innerHTML = "✅ <b>Vídeo MP4 exportado.</b> El audio y la línea de tiempo comparten un mismo instante de inicio.";
     };
 
     currentTime = 0;
