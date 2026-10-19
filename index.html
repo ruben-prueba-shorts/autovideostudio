@@ -242,52 +242,16 @@
     <!-- PESTAÑA 0: ESTUDIO IA -->
     <div class="tab-View active" id="tab0">
       <div class="card ai-card">
-        <h2>📝 1. Tu guion e imágenes limpias con IA (Gemini API & Cloudflare)</h2>
-        <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y generará imágenes en paralelo con los modelos oficiales de imagen de Gemini (Nano Banana) o Cloudflare.</p>
+        <h2>📝 1. Tu guion e imágenes limpias con IA</h2>
+        <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y generará imágenes limpias mediante Cloudflare.</p>
 
         <div class="settings-grid" style="margin-bottom:12px;">
           <div>
             <label for="aiImageModel">Motor de generación de imágenes</label>
             <select id="aiImageModel" onchange="setImageModelPreference(this.value)">
-              <option value="google-flow-flash" selected>🍌 Gemini · Nano Banana 2.1 (Calidad + referencias)</option>
-              <option value="google-flow-lite">⚡ Gemini 3.1 Flash Lite Image (Más rápido · 1K)</option>
-              <option value="google-flow-2.1">✨ Gemini 3.1 Flash Image (Admite 512px)</option>
-              <option value="google-flow-pro">🎬 Gemini 3 Pro Image (Calidad premium)</option>
-              <option value="cloudflare">☁️ Cloudflare Worker · FLUX.1 Schnell</option>
+              <option value="cloudflare" selected>Cloudflare FLUX.1 Schnell</option>
             </select>
-
-            <!-- Panel de configuración de Gemini API (modelos Nano Banana) -->
-            <div id="googleFlowConfigBox" style="margin-top:10px; display:flex; flex-direction:column; gap:7px; padding:12px; border:1px solid rgba(139, 92, 246, 0.4); border-radius:10px; background:rgba(139, 92, 246, 0.06);">
-              <label for="googleFlowApiKey">🔑 Clave API de Google (AI Studio / Gemini API Key)</label>
-              <input type="password" id="googleFlowApiKey" placeholder="AIzaSy..." autocomplete="new-password" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:2px;">
-                <div>
-                  <label for="aiConcurrencySelect">🚀 Hilos (Gemini usa 1 para evitar límites)</label>
-                  <select id="aiConcurrencySelect" onchange="saveGoogleFlowSettings()">
-                    <option value="1">1x Secuencial (1 a 1)</option>
-                    <option value="2">2x Rápido (2 a la vez)</option>
-                    <option value="3" selected>3x Turbo (3 a la vez · Ideal)</option>
-                    <option value="4">4x Ultra Paralelo (4 a la vez)</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="aiFlowResolution">📐 Modo Latencia / Resolución</label>
-                  <select id="aiFlowResolution" onchange="saveGoogleFlowSettings()">
-                    <option value="1K" selected>1K Estándar (Equilibrado)</option>
-                    <option value="512">512px Turbo (solo Gemini 3.1 Flash Image)</option>
-                  </select>
-                </div>
-              </div>
-              <label for="googleFlowEndpointUrl" style="margin-top:2px;">🌐 Endpoint Gemini API / proxy privado (deja el oficial por defecto)</label>
-              <input type="text" id="googleFlowEndpointUrl" value="https://generativelanguage.googleapis.com/v1beta/interactions" placeholder="https://generativelanguage.googleapis.com/v1beta/interactions" oninput="saveGoogleFlowSettings()" onchange="saveGoogleFlowSettings()">
-              <div style="font-size:.74rem;color:var(--text-muted);line-height:1.4;">Gemini se ejecuta con una solicitud cada vez para reducir errores 429. No uses proxies CORS públicos: pueden rechazar la petición y exponer tu clave API.</div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
-                <button type="button" class="btn btn-ai" onclick="testGoogleFlowConnection()">⚡ Comprobar clave y conexión Gemini</button>
-              </div>
-            </div>
-
-            <!-- Panel de configuración de Cloudflare Worker -->
-            <div id="cloudflareConfigBox" style="margin-top:10px; display:none; flex-direction:column; gap:7px;">
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:7px;">
               <label for="cloudflareWorkerUrl">URL del Worker de imágenes</label>
               <input type="text" id="cloudflareWorkerUrl" value="https://autovideo-image-worker.jarambedioszz.workers.dev" placeholder="https://autovideo-image-worker.jarambedioszz.workers.dev" autocomplete="url" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
               <label for="cloudflareAccessKey">Clave de acceso del Worker (APP_SECRET)</label>
@@ -718,27 +682,8 @@ function isValidHex(hex) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(hex) || /^(white|black|red|green|blue|yellow|purple|orange)$/i.test(hex);
 }
 
-// IDs oficiales de modelos de imagen disponibles en Gemini API.
-// Los nombres internos de las opciones se mantienen para no romper preferencias guardadas.
-const GOOGLE_FLOW_MODELS = {
-  "google-flow-flash": "gemini-nano-banana-2.1",
-  "google-flow-lite":  "gemini-3.1-flash-lite-image",
-  "google-flow-2.1":   "gemini-3.1-flash-image",
-  "google-flow-pro":   "gemini-3-pro-image"
-};
-
-function isGoogleFlowModel(val) {
-  const current = val || (document.getElementById("aiImageModel")?.value || "google-flow-flash");
-  return current !== "cloudflare";
-}
-
 function setImageModelPreference(val) {
   try { localStorage.setItem("autovideo_image_model", val); } catch (_) {}
-  const flowBox = document.getElementById("googleFlowConfigBox");
-  const cfBox = document.getElementById("cloudflareConfigBox");
-  const isFlow = isGoogleFlowModel(val);
-  if (flowBox) flowBox.style.display = isFlow ? "flex" : "none";
-  if (cfBox) cfBox.style.display = isFlow ? "none" : "flex";
 }
 
 function togglePromptMode(mode) {
@@ -1030,103 +975,8 @@ function showAILog(msg, isError = false) {
 }
 
 const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
-const GOOGLE_FLOW_DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions";
 let selectedVideoFormat = "short";
 
-function getSelectedImageEngine() {
-  const sel = document.getElementById("aiImageModel");
-  return sel ? sel.value : "google-flow-flash";
-}
-
-function getSelectedGoogleModelId() {
-  const engine = getSelectedImageEngine();
-  return GOOGLE_FLOW_MODELS[engine] || "gemini-3.1-flash-image";
-}
-
-function getGoogleFlowApiKey() {
-  const input = document.getElementById("googleFlowApiKey");
-  return input ? input.value.trim() : "";
-}
-
-function getGoogleFlowEndpointUrl() {
-  const input = document.getElementById("googleFlowEndpointUrl");
-  let value = input ? input.value.trim() : "";
-  if (!value) value = localStorage.getItem("autovideo_google_flow_endpoint") || GOOGLE_FLOW_DEFAULT_ENDPOINT;
-  if (!value) value = GOOGLE_FLOW_DEFAULT_ENDPOINT;
-  // Migra automáticamente la antigua configuración /v1/models o /v1beta/models
-  // al endpoint actual de Interactions API. Respeta otros proxies privados configurados.
-  if (/^https:\/\/generativelanguage\.googleapis\.com\/v1(?:beta)?\/models\/?$/i.test(value)) {
-    value = GOOGLE_FLOW_DEFAULT_ENDPOINT;
-  }
-  return value.replace(/\/+$/, "");
-}
-
-function getSelectedConcurrency() {
-  const sel = document.getElementById("aiConcurrencySelect");
-  const val = parseInt(sel ? sel.value : "3", 10);
-  return Number.isFinite(val) ? Math.max(1, Math.min(4, val)) : 3;
-}
-
-function getSelectedFlowResolution() {
-  const sel = document.getElementById("aiFlowResolution");
-  return sel && sel.value === "512" ? "512" : "1K";
-}
-
-function saveGoogleFlowSettings() {
-  try {
-    const key = getGoogleFlowApiKey();
-    const endpoint = getGoogleFlowEndpointUrl();
-    const concurrency = String(getSelectedConcurrency());
-    const resolution = getSelectedFlowResolution();
-    localStorage.setItem("autovideo_google_flow_key", key);
-    localStorage.setItem("autovideo_google_flow_endpoint", endpoint);
-    localStorage.setItem("autovideo_image_concurrency", concurrency);
-    localStorage.setItem("autovideo_flow_resolution", resolution);
-  } catch (_) {}
-}
-
-async function testGoogleFlowConnection() {
-  const apiKey = getGoogleFlowApiKey();
-  const modelId = getSelectedGoogleModelId();
-  if (!apiKey) {
-    showAILog("Introduce tu clave API de Google AI Studio / Gemini API para comprobar la conexión.", true);
-    return;
-  }
-
-  // Esta comprobación valida la clave y la conectividad sin generar una imagen ni consumir
-  // cuota de generación. No se usa corsproxy.io ni ningún proxy público.
-  showAILog("⏳ Comprobando la clave de Gemini API (sin generar imágenes)...");
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
-  try {
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
-      method: "GET",
-      mode: "cors",
-      headers: { "x-goog-api-key": apiKey },
-      signal: controller.signal
-    });
-    const rawText = await res.text();
-    let data = {};
-    try { data = JSON.parse(rawText); } catch (_) {}
-
-    if (!res.ok || data.error) {
-      const detail = data.error?.message || data.error?.status || rawText.slice(0, 300) || ("HTTP " + res.status);
-      throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
-    }
-
-    showAILog(`✅ <b>Conexión con Gemini API correcta.</b> La clave se ha aceptado y la API responde. Modelo seleccionado: <code>${escapeHtml(modelId)}</code>. Esta comprobación no genera ninguna imagen ni consume cuota de generación; la disponibilidad del modelo se confirmará al generar. · Paralelo: <b>${getSelectedConcurrency()}x</b>.`);
-  } catch (err) {
-    let message = err?.message || "Error desconocido";
-    if (err?.name === "AbortError") {
-      message = "La comprobación tardó demasiado (20 s). Revisa la conexión e inténtalo de nuevo.";
-    } else if (/failed to fetch|networkerror|load failed/i.test(message)) {
-      message = "El navegador no pudo conectar directamente con Google. Comprueba Internet, extensiones de bloqueo y que la web se sirva por HTTPS. No se ha usado un proxy público; si tu navegador bloquea la llamada, la solución segura es un proxy propio en Cloudflare Worker.";
-    }
-    showAILog("❌ <b>Error al comprobar Gemini API:</b> " + escapeHtml(message), true);
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 function getCloudflareWorkerUrl() {
   const input = document.getElementById("cloudflareWorkerUrl");
   let value = input ? input.value.trim() : "";
@@ -1162,6 +1012,10 @@ async function testCloudflareWorker() {
     showAILog("❌ <b>Error:</b> " + err.message, true);
   }
 }
+
+
+
+
 
 // Un único acceso a IndexedDB para conservar imágenes terminadas entre reintentos.
 function openAutoVideoDb() {
@@ -1225,121 +1079,6 @@ function isImagePayloadTooLarge(error) {
     || /(?:request|payload|entity|content).{0,25}too large|peticion.{0,25}demasiado grande/.test(detail);
 }
 
-// Generador nativo mediante Gemini Interactions API (modelos de imagen Nano Banana).
-async function fetchGoogleFlowImage(prompt, aspectRatio, useReference = true, signal) {
-  const apiKey = getGoogleFlowApiKey();
-  const endpoint = getGoogleFlowEndpointUrl();
-  const modelId = getSelectedGoogleModelId();
-  if (!apiKey) {
-    throw cloudflareImageError("Configura tu clave API de Google AI Studio / Gemini API en Estudio IA.", 401);
-  }
-
-  const mappedAspect = aspectRatio === "9:16" ? "9:16" : "16:9";
-  const selectedResolution = getSelectedFlowResolution();
-  // La salida 512px solo está admitida por Gemini 3.1 Flash Image. El resto de modelos
-  // recibe 1K para evitar errores de parámetros no compatibles.
-  const imageSize = selectedResolution === "512" && modelId === "gemini-3.1-flash-image" ? "512px" : "1K";
-  const input = [{ type: "text", text: String(prompt || "").trim() }];
-
-  if (useReference && autoVideoReferenceImageData) {
-    const referenceBase64 = autoVideoReferenceImageData.split("base64,").pop();
-    if (referenceBase64) {
-      input.push({
-        type: "image",
-        mime_type: autoVideoReferenceImageMime || "image/jpeg",
-        data: referenceBase64
-      });
-    }
-  }
-
-  const payload = {
-    model: modelId,
-    input,
-    response_format: {
-      type: "image",
-      mime_type: "image/jpeg",
-      aspect_ratio: mappedAspect,
-      image_size: imageSize
-    }
-  };
-
-  const controller = new AbortController();
-  const cancel = () => controller.abort();
-  if (signal?.aborted) throw abortImageError();
-  signal?.addEventListener("abort", cancel, { once: true });
-  const timeout = setTimeout(() => controller.abort(), 90000);
-
-  let response, rawText;
-  try {
-    response = await fetch(endpoint, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-    rawText = await response.text();
-  } catch (error) {
-    if (signal?.aborted) throw abortImageError();
-    if (error?.name === "AbortError") {
-      throw cloudflareImageError("La generación de imagen en Gemini ha tardado más de 2 minutos. Se volverá a intentar.", 408);
-    }
-    throw cloudflareImageError(
-      "No se pudo conectar directamente con Gemini API (Failed to fetch). Comprueba Internet, HTTPS y las extensiones del navegador. No se usa un proxy CORS público.",
-      0
-    );
-  } finally {
-    clearTimeout(timeout);
-    signal?.removeEventListener("abort", cancel);
-  }
-
-  let data;
-  try { data = JSON.parse(rawText); } catch (_) { data = {}; }
-  const retryAfter = parseImageRetryAfter(response.headers.get("Retry-After"));
-
-  if (!response.ok || data.error) {
-    const detail = data.error?.message || data.error?.status || data.error || rawText.slice(0, 350) || ("HTTP " + response.status);
-    const error = cloudflareImageError(typeof detail === "string" ? detail : JSON.stringify(detail), response.status, data, retryAfter);
-    error.providerMessage = error.message;
-    throw error;
-  }
-
-  // En la Interactions API REST, la imagen puede aparecer en output_image o
-  // dentro de steps[].content[] (type: "model_output", content type: "image").
-  const interaction = data.interaction || data;
-  let image = interaction.output_image || interaction.outputImage || null;
-  const steps = Array.isArray(interaction.steps) ? interaction.steps : (Array.isArray(data.steps) ? data.steps : []);
-  if (!image?.data) {
-    for (let i = steps.length - 1; i >= 0 && !image?.data; i--) {
-      const step = steps[i];
-      if (step?.type === "image" && step?.data) image = step;
-      if (Array.isArray(step?.content)) {
-        const block = [...step.content].reverse().find(item => item?.type === "image" && (item?.data || item?.bytesBase64Encoded));
-        if (block) image = block;
-      }
-    }
-  }
-  const imageBase64 = image?.data || image?.bytesBase64Encoded || "";
-  const mimeType = image?.mime_type || image?.mimeType || "image/jpeg";
-  const dataUrl = imageBase64 ? `data:${mimeType};base64,${imageBase64}` : (image?.dataURI || image?.dataUrl || image?.url || "");
-
-  if (!dataUrl) {
-    const outputText = interaction.output_text || interaction.outputText || steps
-      .flatMap(step => Array.isArray(step?.content) ? step.content : [])
-      .filter(item => item?.type === "text")
-      .map(item => item.text || "")
-      .join(" ");
-    const state = interaction.status ? ` Estado: ${interaction.status}.` : "";
-    const explanation = outputText ? ` Respuesta de Google: ${String(outputText).slice(0, 220)}` : "";
-    const shape = steps.length ? ` Pasos devueltos: ${steps.map(step => step?.type || "sin tipo").join(", ")}.` : " La respuesta no contiene pasos de imagen.";
-    throw cloudflareImageError("Gemini API respondió, pero no devolvió una imagen." + state + explanation + shape, 502, data, retryAfter);
-  }
-
-  return await loadImageCrossOrigin(dataUrl, 60000, signal);
-}
 async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, signal) {
   const workerUrl = getCloudflareWorkerUrl();
   const accessKey = getCloudflareAccessKey();
@@ -1354,6 +1093,7 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, si
   const cancel = () => controller.abort();
   if (signal?.aborted) throw abortImageError();
   signal?.addEventListener("abort", cancel, { once: true });
+  // El timeout cubre también la descarga del cuerpo, no sólo las cabeceras.
   const timeout = setTimeout(() => controller.abort(), 180000);
   let response, rawText;
   try {
@@ -1387,6 +1127,7 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, si
   }
   const url = data.dataURI || data.dataUrl || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
   if (!url) throw cloudflareImageError("Respuesta incompleta: falta la imagen. Se volverá a intentar.", response.status, data, retryAfter);
+  // Si sólo falla la descarga de una URL ya generada, no volvemos a pagar otra generación.
   for (let attempt = 0;; attempt++) {
     if (signal?.aborted) throw abortImageError();
     try { return await loadImageCrossOrigin(url, 120000, signal); }
@@ -1396,13 +1137,6 @@ async function fetchCloudflareImage(prompt, aspectRatio, useReference = true, si
       await waitForImageRetry(Math.min(15000, 2000 * 2 ** attempt), signal);
     }
   }
-}
-
-async function fetchSelectedEngineImage(prompt, aspectRatio, useReference = true, signal) {
-  if (isGoogleFlowModel()) {
-    return await fetchGoogleFlowImage(prompt, aspectRatio, useReference, signal);
-  }
-  return await fetchCloudflareImage(prompt, aspectRatio, useReference, signal);
 }
 
 function loadImageCrossOrigin(url, timeoutMs = 45000, signal) {
@@ -1425,6 +1159,7 @@ function loadImageCrossOrigin(url, timeoutMs = 45000, signal) {
     img.onload = () => {
       try {
         if (!img.naturalWidth || !img.naturalHeight) throw new Error("Imagen vacía.");
+        // El propio bitmap validado sirve para el vídeo; evitamos una segunda decodificación.
         const c = document.createElement("canvas");
         c.width = img.naturalWidth; c.height = img.naturalHeight;
         c.getContext("2d").drawImage(img, 0, 0);
@@ -1440,7 +1175,7 @@ function loadImageCrossOrigin(url, timeoutMs = 45000, signal) {
 
 function isCloudflareImageQuotaError(error) {
   const message = normalizeText((error?.message || "") + " " + JSON.stringify(error?.details || {}));
-  return /\b(3036|4006)\b/.test(message) || /daily free allocation|used up your daily|daily limit|quota exceeded|resource_exhausted|billing|insufficient credits|credit allocation exhausted|low on credits|cuota diaria/.test(message)
+  return /\b(3036|4006)\b/.test(message) || /daily free allocation|used up your daily|daily limit|quota exceeded|insufficient credits|credit allocation exhausted|low on credits|cuota diaria/.test(message)
     || (/neurons/.test(message) && /used up|exhausted/.test(message));
 }
 
@@ -1452,75 +1187,37 @@ function updateRetryFailedButton() {
   btn.disabled = !imageGenerationInProgress && count === 0;
 }
 
-// Control de escalonamiento ligero para permitir concurrencia real sin ráfagas en el mismo milisegundo
-let nextSlotAvailableAt = 0;
-async function acquireParallelSlot(signal) {
-  const concurrency = getSelectedConcurrency();
-  const minGap = concurrency > 1 ? Math.max(260, Math.round(imageRequestSpacing / concurrency)) : imageRequestSpacing;
-  const now = Date.now();
-  const scheduled = Math.max(now, nextSlotAvailableAt);
-  nextSlotAvailableAt = scheduled + minGap;
-  if (scheduled > now) {
-    await waitForImageRetry(scheduled - now, signal);
-  }
-}
-
 async function generateImageWithRetries(prompt, aspect, sceneNumber, totalCount, signal) {
   let useReference = Boolean(autoVideoReferenceImageData);
   let referenceFallback = false;
-  const maxAttempts = 2; // una petición inicial y un único reintento
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  for (let attempt = 1;; attempt++) {
     if (signal?.aborted) throw abortImageError();
     if (navigator.onLine === false) {
-      throw cloudflareImageError("El navegador indica que no hay conexión. Comprueba Internet y pulsa «Reintentar fallidas».", 0);
+      showAILog(`⏳ Sin conexión. La imagen ${sceneNumber}/${totalCount} se reanudará al recuperar Internet.`);
+      await waitForImageRetry(5000, signal);
+      continue;
     }
-    await acquireParallelSlot(signal);
+    await waitForImageRetry(Math.max(0, lastImageRequestAt + imageRequestSpacing - Date.now()), signal);
     lastImageRequestAt = Date.now();
-
     try {
-      const result = await fetchSelectedEngineImage(prompt, aspect, useReference, signal);
-      imageRequestSpacing = Math.max(300, imageRequestSpacing * 0.88);
+      const result = await fetchCloudflareImage(prompt, aspect, useReference, signal);
+      imageRequestSpacing = Math.max(1800, imageRequestSpacing * 0.90);
       return { result, usedReferenceFallback: referenceFallback };
     } catch (error) {
       if (signal?.aborted || error.name === "AbortError") throw abortImageError();
-
-      const originalMessage = String(error?.providerMessage || error?.message || "Error desconocido");
-      const normalizedMessage = normalizeText(originalMessage);
-      const quotaOrBilling = /quota|resource_exhausted|daily limit|billing|insufficient|used up|allocation|cuota|credits exhausted/.test(normalizedMessage);
-
-      // Cuota agotada: no repetir peticiones que no pueden funcionar ahora.
-      if ((error.status === 429 && quotaOrBilling) || (isCloudflareImageQuotaError(error) && error.status !== 429)) {
-        error.message = `Google ha indicado un límite de cuota o créditos. No seguiré reintentando automáticamente. Detalle: ${originalMessage}`;
-        error.permanent = true;
+      if (isCloudflareImageQuotaError(error)) throw error;
+      // Sólo quitar la referencia si el servicio rechaza ese formato expresamente.
+      if (useReference && [400, 413, 415, 422].includes(error.status) && /reference|referencia|base64|image input|image.*size/i.test(error.providerMessage || error.message)) {
+        useReference = false; referenceFallback = true;
+      } else if (error.permanent || /unauthorized|invalid.*(key|token)|authentication|forbidden|invalid url/i.test(error.message)) {
         throw error;
       }
-
-      // Si el rechazo se debe a la imagen de referencia, vuelve a probar sin ella
-      // una sola vez; evita cambiar el prompt ni perder el resto de escenas.
-      if (useReference && [400, 413, 415, 422].includes(error.status) && /reference|referencia|base64|image input|image.*size|inlineData/i.test(originalMessage)) {
-        useReference = false;
-        referenceFallback = true;
-      } else if (error.permanent || [400, 401, 403, 404, 405, 413, 415, 422].includes(error.status)
-          || /unauthorized|invalid.*(key|token)|api_key_invalid|authentication|forbidden|invalid url|api key not valid|permission denied/i.test(originalMessage)) {
-        throw error;
-      }
-
-      if (error.status === 429) imageRequestSpacing = Math.min(12000, Math.max(1200, imageRequestSpacing * 1.6));
-
-      if (attempt >= maxAttempts) {
-        const statusText = error.status ? `HTTP ${error.status}` : "error de red";
-        error.message = `La escena ${sceneNumber}/${totalCount} ha fallado tras ${maxAttempts} intentos (${statusText}). ${originalMessage.slice(0, 260)}. Se ha detenido el lote para no dejarlo reintentando indefinidamente.`;
-        error.permanent = true;
-        throw error;
-      }
-
-      const delay = Math.max(error.retryAfterMs || 0, (error.status === 429 ? 5000 : 1800) + Math.random() * 700);
-      showAILog(`⚠️ Escena ${sceneNumber}/${totalCount}: ${escapeHtml(originalMessage.slice(0, 190))}. Reintentando una última vez en ${Math.ceil(delay / 1000)} s (${attempt + 1}/${maxAttempts})...`, true);
+      if (error.status === 429) imageRequestSpacing = Math.min(30000, imageRequestSpacing * 1.7);
+      const delay = Math.max(error.retryAfterMs || 0, Math.min(90000, 2500 * 2 ** Math.min(6, attempt - 1)) + Math.random() * 1000);
+      showAILog(`⏳ Imagen ${sceneNumber}/${totalCount}: el servicio está ocupado o ha fallado temporalmente. Nuevo intento en ${Math.ceil(delay / 1000)} s (intento ${attempt + 1}). Las imágenes terminadas se conservan.`);
       await waitForImageRetry(delay, signal);
     }
   }
-  throw new Error(`No se pudo generar la escena ${sceneNumber}/${totalCount}.`);
 }
 
 async function retryPendingImageItems(items) {
@@ -1533,62 +1230,31 @@ async function retryPendingImageItems(items) {
   const signal = imageRunController.signal;
   updateRetryFailedButton();
   const aspect = document.getElementById("aspectSelect").value === "9:16" ? "9:16" : "16:9";
-  const concurrency = isGoogleFlowModel() ? 1 : Math.min(getSelectedConcurrency(), pendingItems.length);
-  imageRequestSpacing = concurrency > 1 ? 300 : 750;
-  nextSlotAvailableAt = 0;
-
-  const engineLabel = isGoogleFlowModel()
-    ? `Gemini API (${getSelectedGoogleModelId()})`
-    : "Cloudflare FLUX.1";
-
   let failure = null;
-  let fatalAbort = false;
-  let cursor = 0;
-  const startTimeMs = Date.now();
-
-  const runWorker = async () => {
-    while (!fatalAbort && !signal.aborted) {
-      const idx = cursor++;
-      if (idx >= pendingItems.length) break;
-      const item = pendingItems[idx];
-      if (!loadedImages.includes(item) || !item.isPending) continue;
-      const sceneNumber = (item.sceneIndex ?? loadedImages.indexOf(item)) + 1;
-      const doneNow = loadedImages.filter(x => !x.isPending).length;
-      showAILog(`🚀 <b>${escapeHtml(engineLabel)} · Modo ${concurrency}x Paralelo:</b> generando escena ${sceneNumber}/${loadedImages.length} (${doneNow} completadas)...`);
-      try {
-        const generated = await generateImageWithRetries(item.prompt, aspect, sceneNumber, loadedImages.length, signal);
-        const replaced = replacePendingImage(item, generated.result, generated.usedReferenceFallback);
-        if (replaced && generationCacheKey) {
-          const slot = loadedImages.find(x => x.sceneIndex === item.sceneIndex && !x.isPending);
-          if (slot) await recoveryStore("put", "image:" + generationCacheKey + ":" + item.sceneIndex, {
-            url: slot.url, prompt: slot.prompt, usedReferenceFallback: slot.usedReferenceFallback
-          });
-        }
-        renderMediaGrid(); renderSceneListUI(); renderCurrentFrame();
-      } catch (error) {
-        item.lastError = error.message;
-        failure = error;
-        // Un fallo de Gemini suele afectar al lote completo (clave, modelo, cuota o endpoint).
-        // Parar en la primera escena fallida evita enviar muchas peticiones idénticas.
-        if (error.name === "AbortError" || isCloudflareImageQuotaError(error) || error.status === 429
-            || /api_key_invalid|unauthorized|forbidden/i.test(error.message || "") || isGoogleFlowModel()) {
-          fatalAbort = true;
-          break;
-        }
-      }
-    }
-  };
-
   try {
-    await Promise.all(Array.from({ length: concurrency }, () => runWorker()));
+    for (const item of pendingItems) {
+      if (!loadedImages.includes(item)) continue;
+      const sceneNumber = (item.sceneIndex ?? loadedImages.indexOf(item)) + 1;
+      showAILog(`🎨 Generando imagen ${sceneNumber} de ${loadedImages.length} · ${loadedImages.filter(x => !x.isPending).length} completadas.`);
+      const generated = await generateImageWithRetries(item.prompt, aspect, sceneNumber, loadedImages.length, signal);
+      const replaced = replacePendingImage(item, generated.result, generated.usedReferenceFallback);
+      if (replaced && generationCacheKey) {
+        const slot = loadedImages.find(x => x.sceneIndex === item.sceneIndex && !x.isPending);
+        if (slot) await recoveryStore("put", "image:" + generationCacheKey + ":" + item.sceneIndex, {
+          url: slot.url, prompt: slot.prompt, usedReferenceFallback: slot.usedReferenceFallback
+        });
+      }
+      renderMediaGrid(); renderSceneListUI(); renderCurrentFrame();
+    }
+  } catch (error) {
+    failure = error;
+    pendingItems.filter(item => loadedImages.includes(item)).forEach(item => { item.lastError = error.message; });
   } finally {
     imageGenerationInProgress = false;
     imageRunController = null;
     renderMediaGrid(); renderSceneListUI(); renderCurrentFrame(); updateRetryFailedButton();
   }
-
   const remaining = loadedImages.filter(item => item?.isPending).length;
-  const elapsedSec = ((Date.now() - startTimeMs) / 1000).toFixed(1);
   if (runVersion !== imageRunVersion) return;
   if (!remaining) {
     if (generationJobKey) {
@@ -1596,13 +1262,13 @@ async function retryPendingImageItems(items) {
       if (checkpoint) await recoveryStore("put", generationJobKey, { ...checkpoint, complete: true });
     }
     const fallback = loadedImages.filter(item => item.usedReferenceFallback).map(item => item.sceneIndex + 1);
-    showAILog(`✅ <b>¡Las ${loadedImages.length} imágenes se han generado en ${elapsedSec} s!</b> (${escapeHtml(engineLabel)} · ${concurrency}x paralelo).${fallback.length ? ` En las escenas ${fallback.join(", ")} se omitió la referencia.` : ""}`);
-  } else if (failure?.name === "AbortError" || signal.aborted) {
+    showAILog(`✅ <b>Las ${loadedImages.length} imágenes están generadas.</b>${fallback.length ? ` El servicio rechazó la referencia en las escenas ${fallback.join(", ")}; se generaron sin ella.` : ""}`);
+  } else if (failure?.name === "AbortError") {
     showAILog(`⏸ Generación pausada. Quedan ${remaining} imágenes. Pulsa «Reintentar fallidas» para continuar.`);
   } else {
     const cause = isCloudflareImageQuotaError(failure)
-      ? "El proveedor ha alcanzado el límite de cuota. Espera unos segundos o revisa tu plan y pulsa «Reintentar fallidas»."
-      : `Error en algunas escenas: ${escapeHtml(failure?.message || "Revisa la clave API y la configuración.")} Pulsa «Reintentar fallidas» para generar solo las pendientes.`;
+      ? "El proveedor ha agotado la cuota de imágenes. Amplía o espera a que se restablezca tu cuota y pulsa «Reintentar fallidas»."
+      : `El proveedor ha rechazado la solicitud: ${escapeHtml(failure?.message || "Revisa URL, clave y configuración.")} Corrige la causa y pulsa «Reintentar fallidas».`;
     showAILog(`⚠️ ${cause} Se conservan todas las imágenes terminadas; quedan ${remaining} pendientes.`, true);
   }
 }
@@ -1617,19 +1283,7 @@ async function retryImageAtSlot(index) {
 }
 
 async function startImageGenerationQueue(imagePrompts) {
-  if (isGoogleFlowModel()) {
-    if (!getGoogleFlowApiKey()) {
-      showAILog("Introduce tu clave API de Google (AI Studio / Gemini API) en la pestaña 0 (Estudio IA) antes de generar con Gemini API.", true);
-      switchTab(0);
-      return;
-    }
-  } else {
-    if (!getCloudflareAccessKey()) {
-      showAILog("Introduce la clave del Worker de Cloudflare en Estudio IA antes de generar.", true);
-      switchTab(0);
-      return;
-    }
-  }
+  if (!getCloudflareAccessKey()) { showAILog("Introduce la clave del Worker en Estudio IA antes de generar.", true); switchTab(0); return; }
   if (imageGenerationInProgress) return;
   imageGenerationInProgress = true;
   const runVersion = ++imageRunVersion;
@@ -1637,16 +1291,14 @@ async function startImageGenerationQueue(imagePrompts) {
   imageRunController = prepareController;
   updateRetryFailedButton();
   const aspect = document.getElementById("aspectSelect").value;
-  const providerIdentity = isGoogleFlowModel()
-    ? `google-flow:${getSelectedGoogleModelId()}:${getSelectedFlowResolution()}`
-    : `cloudflare:${getCloudflareWorkerUrl()}`;
-  const identity = JSON.stringify([providerIdentity, aspect, imagePrompts, autoVideoReferenceImageData || ""]);
+  const identity = JSON.stringify([getCloudflareWorkerUrl(), aspect, imagePrompts, autoVideoReferenceImageData || ""]);
+  // SHA-256 evita reutilizar resultados de otro prompt, formato o referencia.
   generationCacheKey = "";
   generationJobKey = "";
   try {
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity));
     generationJobKey = "image-job:" + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
-  } catch (_) {}
+  } catch (_) { /* Sin almacenamiento disponible, la cola sigue funcionando en memoria. */ }
   const previousImages = loadedImages.slice();
   const sameProject = previousImages.length === imagePrompts.length && previousImages.some(item => item.isPending) && previousImages.every((item, i) => item.prompt === imagePrompts[i] && item.generationIdentity === identity);
   imageGenerationInProgress = true;
@@ -1666,13 +1318,10 @@ async function startImageGenerationQueue(imagePrompts) {
           try {
             const image = await loadImageCrossOrigin(saved.url, 45000, prepareController.signal);
             item = { name: String(i + 1).padStart(3, "0") + "_IA.jpg", url: image.dataUrl, imgObj: image.imgObj, sceneIndex: i, prompt: imagePrompts[i], isPending: false, usedReferenceFallback: saved.usedReferenceFallback };
-          } catch (_) {}
+          } catch (_) { /* Sólo este resultado se vuelve a generar si la copia está dañada. */ }
         }
       }
-      if (!item) {
-        const placeholder = createPendingSceneImage(i + 1, imagePrompts[i], "En cola de generación...");
-        item = { ...placeholder, sceneIndex: i, prompt: imagePrompts[i], isPending: true };
-      }
+      if (!item) item = { name: String(i + 1).padStart(3, "0") + "_PENDIENTE", url: "", imgObj: null, sceneIndex: i, prompt: imagePrompts[i], isPending: true };
       item.generationIdentity = identity;
       restored.push(item);
     }
@@ -1693,6 +1342,7 @@ async function startImageGenerationQueue(imagePrompts) {
     switchTab(3);
   }
 }
+
 
 function parseManualList(rawText) {
   if (!rawText || !rawText.trim()) return [];
@@ -4534,20 +4184,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const imageModelSelect = document.getElementById("aiImageModel");
   if (imageModelSelect) {
     try {
-      const savedModel = localStorage.getItem("autovideo_image_model") || "google-flow-flash";
-      imageModelSelect.value = savedModel;
-      setImageModelPreference(savedModel);
-
-      const flowKey = localStorage.getItem("autovideo_google_flow_key") || "";
-      let flowEndpoint = localStorage.getItem("autovideo_google_flow_endpoint") || GOOGLE_FLOW_DEFAULT_ENDPOINT;
-      if (/^https:\/\/generativelanguage\.googleapis\.com\/v1(?:beta)?\/models\/?$/i.test(flowEndpoint.trim())) flowEndpoint = GOOGLE_FLOW_DEFAULT_ENDPOINT;
-      const savedConcurrency = localStorage.getItem("autovideo_image_concurrency") || "3";
-      const savedResolution = localStorage.getItem("autovideo_flow_resolution") || "1K";
-      if (document.getElementById("googleFlowApiKey")) document.getElementById("googleFlowApiKey").value = flowKey;
-      if (document.getElementById("googleFlowEndpointUrl")) document.getElementById("googleFlowEndpointUrl").value = flowEndpoint;
-      if (document.getElementById("aiConcurrencySelect")) document.getElementById("aiConcurrencySelect").value = savedConcurrency;
-      if (document.getElementById("aiFlowResolution")) document.getElementById("aiFlowResolution").value = savedResolution;
-
+      imageModelSelect.value = "cloudflare";
       const workerUrl = localStorage.getItem("autovideo_cloudflare_worker_url") || IMAGE_WORKER_DEFAULT_URL;
       const accessKey = localStorage.getItem("autovideo_cloudflare_access_key") || "";
       document.getElementById("cloudflareWorkerUrl").value = workerUrl;
