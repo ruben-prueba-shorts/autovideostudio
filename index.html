@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AutoVideo Faceless Studio — AI Master Pro</title>
+<title>Faceless Studio · Creador gratuito de vídeos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Bebas+Neue&family=Cinzel:wght@700&family=Lobster&family=Montserrat:wght@900&family=Oswald:wght@700&family=Permanent+Marker&family=Poppins:wght@700&family=Roboto:wght@700&display=swap" rel="stylesheet">
@@ -143,45 +143,28 @@
   .progress-outer { width: 100%; height: 10px; background: var(--bg-input); border-radius: 99px; overflow: hidden; display: none; }
   .progress-inner { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.1s; }
 </style>
-<style id="clipEditorStyles">
-  #clipEditor { margin:auto; padding:0; width:min(1080px,96vw); max-height:94vh; max-height:94dvh; color:var(--text-main); background:var(--bg-panel); border:1px solid #435b91; border-radius:16px; box-shadow:0 24px 100px #000b; overflow:auto; }
-  #clipEditor::backdrop { background:rgba(3,7,18,.86); }
-  #clipEditor .clip-header { padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--border); }
-  #clipEditor h2 { font-size:1.1rem; margin-bottom:5px; }
-  #clipEditor .clip-hint { color:var(--text-muted); font-size:.8rem; line-height:1.5; }
-  #clipEditor .clip-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(320px,410px); gap:20px; padding:20px; }
-  #clipEditor .clip-stage { height:min(53vh,560px); height:min(53dvh,560px); min-height:200px; display:flex; align-items:center; justify-content:center; background:#05070b; border-radius:10px; border:1px solid var(--border); overflow:hidden; }
-  #clipPreviewCanvas { max-width:100%; max-height:100%; width:auto; height:auto; display:block; touch-action:none; cursor:default; }
-  #clipPreviewCanvas:focus-visible { outline:2px solid #60a5fa; outline-offset:-3px; }
-  #clipEditor .clip-preview-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0 8px; }
-  #clipEditor .clip-preview-controls input { min-width:90px; }
-  #clipEditor .clip-time { color:#93c5fd; font:12px monospace; font-variant-numeric:tabular-nums; }
-  #clipEditor .clip-list { display:flex; flex-direction:column; gap:6px; max-height:146px; overflow-y:auto; margin-bottom:10px; }
-  #clipEditor .clip-item { display:flex; flex-direction:column; gap:3px; text-align:left; width:100%; }
-  #clipEditor .clip-item[aria-pressed="true"] { border-color:#a78bfa; background:rgba(139,92,246,.18); }
-  #clipEditor .clip-item small { color:var(--text-muted); font-weight:400; }
-  #clipEditor .clip-toolbar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
-  #clipEditor .clip-toolbar .btn { padding:6px 10px; font-size:.77rem; }
-  #clipEditor .clip-toolbar input { width:76px; padding:6px 8px; }
-  #clipEditor fieldset { border:0; padding:0; min-width:0; }
-  #clipEditor .clip-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  #clipEditor label { display:block; color:#cbd5e1; font-size:.78rem; margin-bottom:5px; }
-  #clipEditor .clip-full { grid-column:1/-1; }
-  #clipEditor .clip-inline { display:flex; gap:8px; align-items:center; }
-  #clipEditor input[type="color"] { width:48px; height:35px; padding:2px; border:1px solid var(--border); border-radius:6px; background:var(--bg-input); cursor:pointer; }
-  #clipEditor textarea { resize:vertical; min-height:68px; }
-  #clipEditor .clip-error { color:#fca5a5; font-size:.8rem; line-height:1.4; min-height:18px; margin-top:8px; }
-  #clipEditor .clip-download { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-  #clipEditor .clip-status { margin-top:10px; font-size:.8rem; line-height:1.45; color:#93c5fd; }
-  #clipEditor .clip-progress { width:100%; height:9px; margin-top:10px; accent-color:#10b981; }
-  #clipEditor [hidden] { display:none !important; }
-  #clipEditor button:focus-visible, #clipEditor input:focus-visible, #clipEditor select:focus-visible, #clipEditor textarea:focus-visible { outline:2px solid #a78bfa; outline-offset:2px; }
-  @media(max-width:740px) { #clipEditor .clip-body { grid-template-columns:1fr; padding:14px; gap:14px; } #clipEditor .clip-stage { height:42vh; height:42dvh; } #clipEditor .clip-header { padding:14px; } }
+<meta name="description" content="Estudio personal de vídeos, estilos ilustrados, narración, subtítulos, MP4 y clips. Plan gratuito con límites transparentes.">
+<style>
+:root{--bg-dark:#f7f7f4;--bg-panel:#fff;--bg-card:#f5f5f0;--bg-input:#fafaf7;--border:#e4e4dc;--accent:#e96840;--accent-hover:#d34e26;--accent-purple:#6458a8;--accent-green:#246c50;--text-main:#20221f;--text-muted:#73776d;--accent-amber:#9c6b14}
+body{font-family:Inter,'Segoe UI',system-ui,sans-serif;background:var(--bg-dark)}
+header{height:72px;padding:0 25px;background:#fff}.brand{gap:10px;letter-spacing:-.6px}.brand-icon{background:#22251f;border-radius:11px;color:white;font-size:19px}.brand small{font-weight:500;letter-spacing:0;color:var(--text-muted);font-size:11px}.brand-title{font-size:17px;letter-spacing:-.7px}.badge-local{background:#eaf2eb;color:#38654a;border:0;font-size:11px}
+.btn{font-size:12px;border-radius:8px;padding:9px 13px;background:#fff;box-shadow:0 1px 2px #1e201907;justify-content:center}.btn:hover:not(:disabled){background:#f1f1ea;border-color:#c4c5ba;color:#20221f}.btn-primary,.btn-ai{background:#e96840;border-color:#e96840;color:#fff}.btn-primary:hover:not(:disabled),.btn-ai:hover:not(:disabled){background:#d6532c;color:#fff}.btn-success{background:#22251f;border-color:#22251f;color:#fff}.btn-success:hover:not(:disabled){background:#3b4237;color:#fff}.btn-amber{background:#faf3df;color:#866313;border-color:#e7d6a9}
+.workspace{grid-template-columns:196px minmax(440px,1fr) minmax(370px,43%)}.sidebar{padding:24px 12px;background:#f3f3ed;gap:5px}.step-btn{font-size:12px;font-weight:550;padding:11px 12px;gap:5px}.step-btn:hover{background:#e9e9e0;color:#222}.step-btn.active,.step-btn.ai-step.active{background:#fff;color:#20221f;border-color:#deded3;box-shadow:0 2px 4px #23261f06}.step-status{font-size:10px;background:#e9e9e0;color:#73776d}.step-status.ok{background:#e5eee4;color:#38654a}.sidebar-box{background:#eaece2;border:0;color:#59634e;font-size:11px}.sidebar-kicker{font-size:10px;text-transform:uppercase;letter-spacing:1.6px;color:#93978b;margin:0 12px 10px}.sidebar-bottom{margin-top:auto;display:grid;gap:10px}.sidebar-bottom .btn{justify-content:flex-start;background:transparent;box-shadow:none;border:0}
+.center-panel{padding:27px;gap:20px}.card{padding:21px;border-radius:12px;box-shadow:0 2px 3px #22240f03}.card.ai-card{background:#fff;border-color:var(--border)}.card h2{font-size:16px;letter-spacing:-.35px;font-weight:650;margin-bottom:7px}.card p.sub{line-height:1.65;font-size:12px;margin-bottom:16px}label{font-size:12px;color:#555e50}textarea,input,select{font-size:12px!important}textarea{line-height:1.7;resize:vertical}textarea:focus,input:focus,select:focus{outline:2px solid #e9684020;border-color:#e96840}.settings-grid{gap:13px}.right-panel{padding:25px 22px;gap:15px;background:#fff}.canvas-wrapper{border-radius:9px;min-height:220px;max-height:none;aspect-ratio:16/9;background:#151812;flex-shrink:0}.canvas-wrapper canvas#previewCanvas{width:100%;height:100%;max-height:440px;object-fit:contain}.player-controls{padding:10px;background:#fafaf7}.time-code{font-size:10px;color:#6d7565;min-width:85px}.status-banner,.ai-log{background:#f4f4eb;border-color:#dfdfcf;color:#63674f;font-size:11px;line-height:1.6}.progress-inner{background:#e96840}.media-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}.media-item .m-controls{background:#fff}.media-item .m-controls button{color:#555e50}.media-item img{height:100px}.dropzone{border:1px dashed #d0d4c6;background:#fafbf6;padding:18px;font-size:12px}.dropzone:hover{background:#f2f5eb;border-color:#829770}
+.section-kicker{font-size:10px;text-transform:uppercase;letter-spacing:1.7px;color:#a26e3f;margin-bottom:9px;font-weight:650}.studio-title{font-size:28px;line-height:1.18;letter-spacing:-1.1px;margin:0 0 9px;font-weight:650}.muted{color:var(--text-muted);font-size:12px;line-height:1.65}.section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:20px}.section-head .pill{white-space:nowrap}.pill{font-size:10px;border:1px solid var(--border);border-radius:99px;padding:5px 9px;color:#5b6852;background:#fafbf7}.style-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.style-tile{padding:0;text-align:left;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:9px;cursor:pointer;position:relative;color:#34372e;transition:transform .15s,border-color .15s}.style-tile:hover{transform:translateY(-2px);border-color:#b9c0aa}.style-tile.selected{outline:2px solid #e96840;border-color:transparent}.style-tile img{width:100%;aspect-ratio:1.45;object-fit:cover;display:block}.style-tile strong{padding:9px 9px 3px;font-size:11px;display:block;font-weight:650}.style-tile small{padding:0 9px 10px;display:block;color:#8a8d80;font-size:9px}.style-tile.selected:after{content:'✓';position:absolute;top:7px;right:7px;display:grid;place-items:center;width:20px;height:20px;background:#e96840;color:#fff;border-radius:50%;font-size:11px}.style-hint{font-size:10px;color:#909586;margin-top:12px;line-height:1.5}.fields2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:7px}.button-row{display:flex;gap:8px;flex-wrap:wrap}.divider{height:1px;background:var(--border);margin:19px 0}.callout{background:#f2f4e9;border:1px solid #dfe4d1;border-radius:9px;padding:13px;font-size:11px;line-height:1.65;color:#56634b}.callout.warn{background:#fff7e7;border-color:#ead9ae;color:#866313}.callout strong{font-weight:650}.progress-label{font-size:11px;color:#77816b;margin:10px 0;line-height:1.6}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{border:1px solid var(--border);padding:12px;border-radius:9px;background:#fafbf6}.metric b{display:block;font-size:21px;letter-spacing:-.7px;margin-bottom:3px}.metric span{font-size:10px;color:#7d8473}.budget-bar{height:6px;border-radius:99px;background:#eceee5;margin:12px 0;overflow:hidden}.budget-bar>div{background:#8b9c6b;height:100%;transition:width .2s}.full-width{width:100%}.mini-title{font-size:12px;font-weight:650;margin-bottom:10px}.scene-editor{background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:13px}.scene-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border);font-size:11px}.scene-content{display:grid;grid-template-columns:110px 1fr;gap:13px;padding:12px}.scene-content img{width:110px;height:84px;object-fit:cover;border-radius:7px;background:#edeede}.scene-content textarea{min-height:77px;padding:8px;font-size:11px!important}.scene-details{padding:0 12px 12px}.scene-details summary{cursor:pointer;font-size:10px;color:#7b836e}.scene-details .settings-grid{margin-top:12px}.scene-details .btn{font-size:10px}.filmstrip{display:flex;gap:7px;overflow-x:auto;padding-bottom:7px;scrollbar-width:thin}.film-frame{border:1px solid #e4e4dc;background:#fafaf7;min-width:80px;width:80px;flex-shrink:0;border-radius:5px;padding:0;overflow:hidden;text-align:left;cursor:pointer}.film-frame img{width:100%;height:45px;object-fit:cover}.film-frame span{font-size:9px;padding:5px;display:block;color:#73776d}.film-frame.active{border-color:#e96840;outline:1px solid #e96840}.preview-empty{text-align:center;font-size:12px;color:#d1d6c8}.clip-workspace{display:grid;grid-template-columns:1fr 170px;gap:15px}.clip-stage{position:relative;display:flex;align-items:center;justify-content:center;background:#181b15;border-radius:9px;overflow:hidden;touch-action:none}.clip-stage canvas{width:100%;height:auto;max-height:430px;object-fit:contain;cursor:move}.clip-list{display:grid;gap:9px}.clip-card{background:#fff;border:1px solid var(--border);border-radius:9px;padding:12px;display:grid;gap:9px}.clip-card .button-row{justify-content:space-between}.clip-card .field{font-size:11px}.clip-card.active{border-color:#e96840}.clip-meta{font-size:10px;color:#8a8e7e}.text-link{border:0;background:none;color:#bd5836;font:inherit;cursor:pointer;text-decoration:underline;font-size:11px}.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#252b20;color:white;padding:12px 18px;border-radius:9px;max-width:min(580px,90vw);font-size:12px;line-height:1.6;z-index:13000;box-shadow:0 5px 25px #0002}.toast[hidden]{display:none}.help-steps{counter-reset:steps;list-style:none;display:grid;gap:10px;margin:10px 0 20px}.help-steps li{counter-increment:steps;padding:11px 12px 11px 42px;position:relative;border:1px solid var(--border);border-radius:8px;font-size:12px;line-height:1.65}.help-steps li:before{content:counter(steps);position:absolute;left:12px;top:12px;font-size:10px;font-weight:700;background:#ecefe4;width:19px;height:19px;border-radius:50%;display:grid;place-items:center}.help-steps code{font-size:11px;color:#9a5c40}details.help{margin-top:15px}details.help summary{font-size:12px;font-weight:600;cursor:pointer}.limit-table{border-collapse:collapse;width:100%;font-size:11px;margin:15px 0}.limit-table td,.limit-table th{text-align:left;border-bottom:1px solid var(--border);padding:11px 8px;vertical-align:top;line-height:1.6}.limit-table th{color:#7b836e;font-weight:600}.sample-prompt{font-size:11px;background:#fafaf7;border:1px solid var(--border);border-radius:8px;padding:12px;line-height:1.7;white-space:pre-wrap;max-height:150px;overflow:auto}.header-actions .btn{white-space:nowrap}.template-list{display:flex;gap:7px;flex-wrap:wrap}.template-list button{font-size:10px}.empty-state{padding:30px 15px;text-align:center;border:1px dashed #dfe3d5;border-radius:9px;color:#909884;font-size:12px;line-height:1.7}.clip-title-overlay{pointer-events:none}.project-name{border:0!important;background:transparent!important;padding:0!important;font-weight:600;max-width:170px;color:#353c2f;font-size:12px!important}.hide-in-studio{display:none!important}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #e9684055;outline-offset:3px}.compact-select{padding:6px 8px!important}
+@media(min-width:1450px){.workspace{grid-template-columns:205px minmax(520px,1fr) minmax(500px,42%)}.style-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:1100px){.workspace{grid-template-columns:160px minmax(360px,1fr) 340px}.center-panel{padding:20px}.right-panel{padding:20px 14px}.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.header-actions .badge-local{display:none}.brand-title{font-size:15px}.scene-content{grid-template-columns:85px 1fr}.scene-content img{width:85px}.step-btn{font-size:11px;padding:10px 7px}.step-status{display:none}}
+@media(max-width:860px){body{height:auto;min-height:100vh;overflow:auto}header{height:auto;min-height:65px;padding:12px 15px;gap:12px;flex-wrap:wrap}.workspace{display:flex;flex-direction:column;overflow:visible}.sidebar{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:10px;gap:6px;position:sticky;top:0;z-index:20;border-bottom:1px solid var(--border)}.sidebar .step-btn{min-width:max-content;width:auto;padding:9px 11px}.sidebar-kicker,.sidebar-bottom{display:none}.center-panel{overflow:visible;order:2;padding:18px}.right-panel{order:1;overflow:visible;border-left:0;border-bottom:1px solid var(--border);padding:16px}.right-panel .preview-settings,.right-panel .export-card{display:none}.right-panel .canvas-wrapper{max-height:320px;width:min(100%,640px);align-self:center}.right-panel #filmstrip{max-width:100%}.right-panel .clip-preview-button{display:none}.style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.header-actions{gap:6px}.header-actions .btn{padding:8px;font-size:10px}.studio-title{font-size:25px}.fields2{grid-template-columns:1fr 1fr}.export-mobile{display:block!important}.clip-workspace{grid-template-columns:1fr 140px}}
+@media(max-width:480px){.style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fields2{grid-template-columns:1fr}.metric-grid{grid-template-columns:1fr 1fr}.clip-workspace{grid-template-columns:1fr}.clip-stage{max-width:230px;margin:auto}.scene-content{grid-template-columns:75px 1fr}.scene-content img{width:75px}.studio-title{font-size:23px}.card{padding:17px}.header-actions .secondary-head{display:none}}
+
+@media(max-width:860px){.sidebar-bottom{display:contents}.sidebar-bottom .sidebar-box{display:none}.right-panel .preview-settings,.right-panel .export-card{display:block}}
+@media(max-width:480px){.header-actions .secondary-head{display:inline-flex}}
+
 </style>
 </head>
 <body>
 
-<div class="format-gate" id="formatGate" role="dialog" aria-modal="true" aria-labelledby="formatGateTitle">
+<div class="format-gate hidden" id="formatGate" role="dialog" aria-modal="true" aria-labelledby="formatGateTitle">
   <div class="format-panel">
     <div style="font-size:.78rem;color:#a78bfa;font-weight:800;letter-spacing:.12em;">AUTOVIDEO · STUDIO AI MASTER</div>
     <h1 id="formatGateTitle" style="margin:10px 0 6px;font-size:clamp(1.5rem,4vw,2.2rem);">¿Qué tipo de vídeo vas a crear?</h1>
@@ -195,54 +178,26 @@
 </div>
 
 <header>
-  <div class="brand">
-    <div class="brand-icon">🤖</div>
-    <div>
-      <div>AutoVideo Faceless Studio <span style="color:#a78bfa;">AI MASTER PRO</span></div>
-      <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">IA Automatización de SFX · BGM en Bucle Automático · Control Inicio/Fin</div>
-    </div>
-  </div>
-  <div class="header-actions">
-    <span class="badge-local">⚡ SIN CLAVES</span>
-    <button class="btn btn-amber" onclick="loadBuiltInDemo()">✨ Cargar Demo</button>
-    <button class="btn btn-primary" id="syncAllBtn" onclick="autoSyncProject()">🔄 Sincronizar Todo</button>
-  </div>
-</header>
+ <div class="brand"><div class="brand-icon">✳</div><div><div class="brand-title">faceless<span style="font-weight:400">studio</span></div><small>Una historia. Todas tus versiones.</small></div></div>
+ <div class="header-actions"><span class="badge-local">CREADOR GRATUITO</span><button class="btn secondary-head" id="restoreDraftBtn" onclick="Studio.restoreDraft()">Recuperar borrador</button><button class="btn secondary-head" onclick="document.getElementById('projectInput').click()">Abrir</button><button class="btn" id="saveProjectBtn" onclick="Studio.saveProject()">Guardar proyecto</button><button class="btn btn-primary" id="syncAllBtn" onclick="autoSyncProject()">Sincronizar todo</button></div>
+ </header>
 
 <div class="workspace">
-  <aside class="sidebar">
-    <button class="step-btn ai-step active" onclick="switchTab(0)" id="nav0">
-      <span>🤖 0. Estudio IA</span>
-      <span class="step-status ai-badge" id="st0">IA Lista</span>
-    </button>
-    <button class="step-btn" onclick="switchTab(1)" id="nav1">
-      <span>1. Audio, BGM y SFX</span>
-      <span class="step-status" id="st1">Configurado</span>
-    </button>
-    <button class="step-btn" onclick="switchTab(2)" id="nav2">
-      <span>2. Guion y Prompts</span>
-      <span class="step-status" id="st2">Pendiente</span>
-    </button>
-    <button class="step-btn" onclick="switchTab(3)" id="nav3">
-      <span>3. Recursos Visuales</span>
-      <span class="step-status" id="st3">0 imgs</span>
-    </button>
-    <button class="step-btn" onclick="switchTab(4)" id="nav4">
-      <span>4. Línea de Tiempo & IA SFX</span>
-      <span class="step-status" id="st4">0 escenas</span>
-    </button>
-
-    <div class="sidebar-box">
-      <strong style="color:#c4b5fd; display:block; margin-bottom:4px;">🎵 Nota sobre BGM:</strong>
-      La música corta (ej. 30s) se repite automáticamente en bucle hasta el final. Si pones una muy larga (ej. 15m), se cortará al terminar el vídeo.
-    </div>
-  </aside>
+  <aside class="sidebar"><div class="sidebar-kicker">ESTUDIO DE CREACIÓN</div><button class="step-btn active" id="nav0" onclick="switchTab(0)"><span>◫ &nbsp; Plantilla y estilo</span><span class="step-status" id="st0"></span></button><button class="step-btn " id="nav2" onclick="switchTab(2)"><span>☰ &nbsp; Guion</span><span class="step-status" id="st2">—</span></button><button class="step-btn " id="nav1" onclick="switchTab(1)"><span>♫ &nbsp; Voz y sonido</span><span class="step-status" id="st1">—</span></button><button class="step-btn " id="nav3" onclick="switchTab(3)"><span>▧ &nbsp; Imágenes</span><span class="step-status" id="st3">—</span></button><button class="step-btn " id="nav4" onclick="switchTab(4)"><span>▤ &nbsp; Editar escenas</span><span class="step-status" id="st4">—</span></button><button class="step-btn " id="nav5" onclick="switchTab(5)"><span>✂ &nbsp; Clips</span><span class="step-status" id="st5"></span></button><div class="sidebar-bottom"><div class="sidebar-box"><strong>Tu proyecto se queda contigo.</strong><p style="margin-top:5px">Guárdalo con todas sus imágenes, voz y clips para seguir otro día.</p><div id="saveState" style="font-size:10px;margin-top:8px">Borrador en este navegador</div></div><button class="step-btn" id="nav7" onclick="switchTab(7)"><span>◉ &nbsp; Plan gratuito</span></button><button class="step-btn" id="nav6" onclick="switchTab(6)"><span>⚙ &nbsp; Conexión IA y ayuda</span></button></div></aside>
 
   <main class="center-panel">
+<div class="tab-View active" id="tab0">
+  <div><div class="section-kicker">TU PRÓXIMO VÍDEO EMPIEZA AQUÍ</div><div class="section-head"><div><h1 class="studio-title">Una historia. Tu estilo.</h1><p class="muted">Elige cómo se ve tu mundo y guarda una plantilla para volver a usarla.</p></div><span class="pill">Plan gratuito</span></div></div>
+  <div class="card"><div class="section-head"><div><h2>Estilo de las imágenes</h2><p class="muted">Un mismo estilo para todas las escenas.</p></div><span id="chosenStyle" class="pill">Doodle</span></div><div class="style-grid" id="styleGrid" aria-label="Estilos visuales"></div><p class="style-hint">Las tarjetas son bocetos orientativos. El estilo se aplica a los prompts automáticos; una lista manual utiliza sus propias descripciones. La IA crea cada imagen a partir de tu escena y del estilo elegido; el resultado puede variar.</p></div>
+  <div class="card"><h2>El reparto y el formato</h2><p class="sub">Describe al protagonista una vez. Su descripción se incluirá en cada prompt automático.</p><div class="field"><label for="characterDesc">Tu personaje</label><textarea id="characterDesc" rows="2" placeholder="Ej.: stickman de cabeza blanca redonda, ojos negros pequeños y cuerpo negro, sin pelo ni ropa.">A simple stickman with a perfectly round white head, two black dot eyes, thin black limbs, no hair, no clothes.</textarea></div><div class="fields2" style="margin-top:16px"><div class="field"><label for="studioFormat">Formato del vídeo</label><select id="studioFormat" onchange="Studio.setFormat(this.value)"><option value="16:9">YouTube · horizontal 16:9</option><option value="9:16">Shorts / TikTok · vertical 9:16</option><option value="1:1">Cuadrado · 1:1</option><option value="4:5">Retrato · 4:5</option></select></div><div class="field"><label for="scenePacing">Duración orientativa de cada escena</label><select id="scenePacing"><option value="4">Rápido · unos 4 segundos</option><option value="7" selected>Equilibrado · unos 7 segundos</option><option value="10">Tranquilo · unos 10 segundos</option><option value="15">Ahorro · unos 15 segundos</option></select></div></div><p class="style-hint">El ritmo sirve para dividir un guion al pulsar «Aplicar ritmo». La voz determina la duración real. FLUX gratuito no garantiza identidad exacta ni utiliza la foto como referencia.</p><div class="divider"></div><div class="fields2"><div class="field"><label for="cameraMode">Movimiento de cámara</label><select id="cameraMode" onchange="Studio.applyMotion()"><option value="gentle">Suave y variado</option><option value="none">Sin movimiento</option></select></div><div class="field"><label for="templateName">Nombre de la plantilla</label><input id="templateName" type="text" value="Mi plantilla"></div></div><div class="button-row" style="margin-top:14px"><button class="btn" onclick="Studio.saveTemplate()">Guardar plantilla</button><button class="btn btn-primary" onclick="switchTab(2)">Continuar al guion →</button></div><div id="templateList" class="template-list" style="margin-top:13px"></div></div>
+</div>
+<div class="tab-View" id="tab5"><div class="section-kicker">MULTIPLICA TU HISTORIA</div><div class="section-head"><div><h1 class="studio-title">Del vídeo al próximo clip.</h1><p class="muted">Elige los segundos, encuadra y añade tu texto. Cada clip se descarga por separado.</p></div></div><div class="card"><div class="button-row"><button class="btn btn-primary" onclick="Studio.addClip()">+ Nuevo clip</button><label for="autoClipSeconds" style="align-self:center">Dividir cada</label><input type="number" id="autoClipSeconds" min="1" max="3600" value="60" style="width:75px"><span class="muted" style="align-self:center">segundos</span><button class="btn" onclick="Studio.autoClips()">Crear todos los cortes</button></div><p class="style-hint">Usa «Sincronizar todo» antes de crear clips. No es necesario exportar primero el vídeo largo. Los cortes automáticos son por tiempo, sin selección editorial con IA.</p></div><div id="clipEditor" class="card" hidden><div class="clip-workspace"><div class="field"><div class="field"><label for="clipTitle">Texto del clip</label><textarea id="clipTitle" rows="2" placeholder="Escribe un título…" oninput="Studio.updateClip('text',this.value)"></textarea></div><div class="fields2"><div class="field"><label for="clipStart">Desde el segundo</label><input type="number" id="clipStart" min="0" step="0.1" oninput="Studio.updateClip('start',this.value)"></div><div class="field"><label for="clipEnd">Hasta el segundo</label><input type="number" id="clipEnd" min="0.1" step="0.1" oninput="Studio.updateClip('end',this.value)"></div></div><div class="fields2"><div class="field"><label for="clipAspect">Formato</label><select id="clipAspect" onchange="Studio.updateClip('aspect',this.value)"><option>9:16</option><option>16:9</option><option>1:1</option><option>4:5</option></select></div><div class="field"><label for="clipColor">Color del texto</label><input type="color" id="clipColor" value="#ffffff" oninput="Studio.updateClip('color',this.value)" style="width:100%;height:38px"></div></div><div class="field"><label for="clipSize">Tamaño del texto <span id="clipSizeValue">7%</span></label><input type="range" id="clipSize" min="2" max="15" value="7" step="0.25" oninput="Studio.updateClip('size',this.value)"></div><div class="fields2"><div class="field"><label for="clipX">Texto: izquierda ↔ derecha</label><input type="range" id="clipX" min="5" max="95" value="50" oninput="Studio.updateClip('x',this.value)"></div><div class="field"><label for="clipY">Texto: arriba ↕ abajo</label><input type="range" id="clipY" min="5" max="95" value="20" oninput="Studio.updateClip('y',this.value)"></div></div><div class="field"><label for="clipCrop">Encuadre horizontal de la imagen</label><input type="range" id="clipCrop" min="0" max="100" value="50" oninput="Studio.updateClip('crop',this.value)"></div><label><input type="checkbox" id="clipBox" checked onchange="Studio.updateClip('box',this.checked)"> Fondo oscuro bajo el título</label><label><input type="checkbox" id="clipSubs" checked onchange="Studio.updateClip('subs',this.checked)"> Mantener subtítulos</label><div class="button-row"><button class="btn" onclick="Studio.previewClip()" id="previewClipBtn">▶ Previsualizar clip</button><button class="btn btn-success" onclick="Studio.exportSelectedClip()">Descargar clip · MP4</button></div></div><div class="field"><label>Arrastra sobre la imagen para colocar el texto</label><div class="clip-stage" id="clipStage"><canvas id="clipCanvas" width="360" height="640" aria-label="Vista previa del clip. Usa los controles de posición para mover el título con el teclado."></canvas></div><input type="range" id="clipSeek" min="0" max="60" step="0.04" value="0" aria-label="Recorrer el clip" oninput="Studio.drawClip(Number(this.value))"></div></div></div><div class="clip-list" id="clipList"><div class="empty-state">Tus clips aparecerán aquí.<br>Crea uno o divide todo el vídeo en intervalos.</div></div></div>
+<div class="tab-View" id="tab7"><div class="section-kicker">CREA SIN SUSCRIPCIÓN AL EDITOR</div><h1 class="studio-title">Tu plan gratuito, claro.</h1><p class="muted">El editor no cobra ni tiene créditos propios. La IA usa el cupo de tu cuenta personal de Cloudflare Workers Free.</p><div class="card"><h2>Calculadora del proyecto</h2><div class="metric-grid" style="margin-top:17px"><div class="metric"><b id="planScenes">0</b><span>imágenes previstas</span></div><div class="metric"><b id="planDuration">0 min</b><span>voz aproximada</span></div><div class="metric"><b id="planEstimate">0</b><span>neuronas estimadas</span></div></div><div class="budget-bar"><div id="budgetFill" style="width:0%"></div></div><p id="budgetExplanation" class="muted"></p><div class="fields2" style="margin-top:17px"><div class="field"><label for="dailyBudget">Tope preventivo de este navegador</label><input type="number" id="dailyBudget" min="500" max="10000" value="9000" step="100" oninput="Studio.refreshBudget()"></div><div class="field"><label>Solicitudes estimadas hoy</label><span id="usedToday" class="muted"></span></div></div><div class="callout" style="margin-top:16px">Este contador es orientativo y local: no lee tu saldo real. El cupo de Cloudflare se comparte con tus otros proyectos y dispositivos. Un reintento también puede consumir. El plan Free detiene las solicitudes cuando se agota; no subas a un plan de pago.</div></div><div class="card"><h2>Qué puedes crear</h2><table class="limit-table"><thead><tr><th>Función</th><th>Límite real</th></tr></thead><tbody><tr><td>Editor, clips, subtítulos, exportaciones</td><td>Sin número diario impuesto por este HTML. Depende de memoria, espacio y navegador.</td></tr><tr><td>Imágenes FLUX.1 Schnell</td><td>10.000 neuronas/día compartidas con texto y voz. Referencia de planificación: 60 por imagen de 4 pasos; alrededor de 150–170 imágenes/día si gastas casi todo en imágenes. No es una cuota garantizada de imágenes.</td></tr><tr><td>Guion y prompts</td><td>Llama 3.1 en el mismo cupo. Generación por fragmentos; guion orientativo de 1–30 minutos. Revisa los hechos: no incluye búsquedas web.</td></tr><tr><td>Voz económica MeloTTS</td><td>Español, una voz del modelo. Aproximadamente 18,63 neuronas/minuto. Naturalidad y disponibilidad variables.</td></tr><tr><td>Voces Aura 2 en español</td><td>10 voces. Unas 2.727 neuronas por 1.000 caracteres: el cupo completo equivale a unos 3.600 caracteres, compartido con las imágenes y todo lo demás.</td></tr><tr><td>Duración</td><td>La duración final la fija el audio. Trabaja preferiblemente en proyectos de hasta 20 minutos y 150 escenas; no es un máximo técnico. Más duración puede agotar memoria o tardar mucho al reconocer la voz.</td></tr><tr><td>Calidad de salida</td><td>MP4 nativo si tu navegador admite H.264/AAC. 720p o 1080p a 30 fps. Renderizado en tiempo real; mantén la pestaña visible y el ordenador encendido.</td></tr><tr><td>Personajes y animación</td><td>Descripción compartida, sin identidad exacta garantizada. Imágenes con cámara; no genera escenas de vídeo con movimiento de personajes.</td></tr><tr><td>Publicar en redes</td><td>Esta versión entrega archivos. No conecta cuentas ni publica o programa vídeos en YouTube o TikTok.</td></tr></tbody></table><p class="muted">Estrategia para vídeos largos: voz propia o MeloTTS, ritmo de 7–15 segundos por imagen, reutilizar imágenes y exportar todos los clips del mismo proyecto. Los clips no vuelven a pedir imágenes a la IA.</p><p class="muted" style="margin-top:12px">Ejemplo orientativo: 120 imágenes ≈ 7.200 neuronas; 9 minutos de MeloTTS ≈ 168. Con guion y prompts podría entrar en un día si no hay mucho consumo previo ni reintentos. Con Aura, una narración larga puede superar por sí sola el cupo.</p><p class="style-hint">Condiciones verificadas el 20/10/2026. Reinicio del cupo: 00:00 UTC (02:00 Madrid en verano; 01:00 en invierno). El proveedor puede cambiar modelos, acceso y precios. <a href="https://developers.cloudflare.com/workers-ai/platform/pricing/" target="_blank" rel="noopener">Consultar condiciones oficiales</a>.</p></div></div>
+
     <!-- PESTAÑA 0: ESTUDIO IA -->
-    <div class="tab-View active" id="tab0">
+    <div class="tab-View" id="tab6">
       <div class="card ai-card">
-        <h2>📝 1. Tu guion e imágenes limpias con IA</h2>
+        <h2>Conexión de tu IA</h2><div id="connectionStatus" class="callout" style="margin:15px 0">Configura una vez tu conexión para generar imágenes, guion y voz.</div>
         <p class="sub">Pega tu guion. AutoVideo lo dividirá en escenas y generará imágenes limpias mediante Cloudflare.</p>
 
         <div class="settings-grid" style="margin-bottom:12px;">
@@ -253,7 +208,7 @@
             </select>
             <div style="margin-top:10px; display:flex; flex-direction:column; gap:7px;">
               <label for="cloudflareWorkerUrl">URL del Worker de imágenes</label>
-              <input type="text" id="cloudflareWorkerUrl" value="https://autovideo-image-worker.jarambedioszz.workers.dev" placeholder="https://autovideo-image-worker.jarambedioszz.workers.dev" autocomplete="url" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
+              <input type="text" id="cloudflareWorkerUrl" value="" placeholder="https://mi-estudio.mi-cuenta.workers.dev" autocomplete="url" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
               <label for="cloudflareAccessKey">Clave de acceso del Worker (APP_SECRET)</label>
               <input type="password" id="cloudflareAccessKey" placeholder="La clave que guardaste como APP_SECRET" autocomplete="new-password" oninput="saveCloudflareSettings()" onchange="saveCloudflareSettings()">
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -267,7 +222,7 @@
             </div>
             <select id="promptGenMode" style="margin-bottom:10px;" onchange="togglePromptMode(this.value)">
               <option value="auto" selected>✨ Automático (Guion + Estilo visual general)</option>
-              <option value="manual19">📋 Forzar Lista Exacta de Prompts (1 al 9)</option>
+              <option value="manual19">Lista manual · un prompt por escena</option>
             </select>
 
             <div id="styleBoxContainer">
@@ -276,14 +231,14 @@
             </div>
 
             <div id="manualListContainer" style="display:none; margin-top:8px;">
-              <label for="aiManualPrompts19">📋 Pega aquí tu lista exacta del 1 al 9</label>
+              <label for="aiManualPrompts19">Prompts manuales · cualquier cantidad</label>
               <textarea id="aiManualPrompts19" rows="4" placeholder="1. Extreme wide shot...&#10;2. High-angle shot..."></textarea>
             </div>
 
             <div style="margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:10px; background:var(--bg-input);">
               <label for="aiReferenceImage">🖼️ Imagen de referencia (Comprimida automáticamente)</label>
-              <p style="font-size:0.78rem; line-height:1.45; color:var(--text-muted); margin:6px 0 10px;">Sube tu personaje base. Se optimizará automáticamente para evitar errores de tamaño en Cloudflare.</p>
-              <input type="file" id="aiReferenceImage" accept="image/png,image/jpeg,image/webp" onchange="handleReferenceImageSelection(event)" style="width:100%; color:var(--text-main); font-size:0.82rem;">
+              <p style="font-size:0.78rem; line-height:1.45; color:var(--text-muted); margin:6px 0 10px;">El servidor gratuito de esta versión usa FLUX de texto a imagen y no aplica fotos de referencia. Usa la descripción del personaje en Plantilla. Este control solo sirve si conectas otro servidor compatible.</p>
+              <input disabled title="FLUX gratuito no admite referencia de imagen" type="file" id="aiReferenceImage" accept="image/png,image/jpeg,image/webp" onchange="handleReferenceImageSelection(event)" style="width:100%; color:var(--text-main); font-size:0.82rem;">
               <div id="aiReferencePreviewWrap" style="display:none; margin-top:10px; align-items:center; gap:12px;">
                 <img id="aiReferencePreview" alt="Vista previa" style="width:100px; height:100px; object-fit:contain; background:#080c14; border:1px solid var(--border); border-radius:8px;">
                 <div style="flex:1; min-width:0;">
@@ -291,7 +246,7 @@
                   <button type="button" class="btn" onclick="clearReferenceImage()" style="margin-top:8px;">Quitar imagen</button>
                 </div>
               </div>
-              <div id="aiReferenceStatus" style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:8px;">Sin imagen de referencia.</div>
+              <div id="aiReferenceStatus" style="font-size:0.76rem; line-height:1.45; color:var(--text-muted); margin-top:8px;">FLUX gratuito: referencia por descripción, sin identidad garantizada.</div>
             </div>
           </div>
         </div>
@@ -301,12 +256,16 @@
           <button class="btn btn-primary" onclick="switchTab(2)">📝 Ir a pegar el guion</button>
         </div>
         <textarea id="aiTopicInput" rows="1" style="display:none" aria-hidden="true"></textarea>
-        <div id="aiStatusLog" class="ai-log"></div>
+        
+<div class="card" id="freeSetup"><div class="section-kicker">CONFIGURACIÓN ÚNICA, SIN INSTALAR PROGRAMAS</div><h2>Conecta tu cupo gratuito</h2><p class="sub">Si tu URL actual ya genera imágenes, puedes conservarla para eso. Para guion y voz necesitas el servidor de esta versión. Créalo en un Worker nuevo para conservar tu configuración anterior.</p><div class="button-row"><button class="btn btn-primary" onclick="Studio.copyWorker()">Copiar código del servidor</button><button class="btn" onclick="Studio.downloadWorker()">Descargar código .JS</button></div><ol class="help-steps"><li>Abre <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">Cloudflare</a> y crea una cuenta o entra en la tuya. Elige <strong>Free</strong>. No añadas una suscripción de pago ni créditos de AI Gateway.</li><li>Entra en <strong>Workers &amp; Pages</strong> (puede aparecer dentro de Compute &amp; AI). Pulsa <strong>Create application → Create Worker</strong> o <strong>Start with Hello World</strong>.</li><li>Pon un nombre nuevo, por ejemplo <code>mi-estudio-gratis</code>, y pulsa <strong>Deploy</strong>.</li><li>En el Worker pulsa <strong>Edit code</strong>. Borra el ejemplo, pega el código del botón de arriba y pulsa <strong>Deploy</strong>.</li><li>Vuelve a tu Worker. Entra en <strong>Bindings → Add binding → Workers AI</strong>. Escribe <code>AI</code> como nombre y guarda.</li><li>Entra en <strong>Settings → Variables and Secrets → Add</strong>. Elige tipo <strong>Secret</strong>, nombre <code>APP_SECRET</code> y escribe una clave larga que inventes (por ejemplo, cuatro palabras y números). Guarda y despliega si aparece el botón.</li><li>Copia la dirección <code>https://tu-worker.tu-cuenta.workers.dev</code> del Worker. Pégala en <strong>URL del Worker</strong> de esta página y pega tu misma clave en <strong>APP_SECRET</strong>.</li><li>Pulsa <strong>Comprobar Cloudflare</strong>. Debe indicar <strong>imágenes, texto y voz</strong>. Si solo indica imágenes, tu servidor es de una versión anterior.</li><li>En <strong>Plan gratuito</strong> comprueba el cálculo. Empieza por un guion corto y pulsa <strong>Probar voz</strong>. No necesitas tarjetas ni una API key de Cloudflare en este HTML; solo la clave APP_SECRET que elegiste.</li></ol><details class="help"><summary>Si algo falla</summary><p class="muted" style="margin-top:12px">401: revisa APP_SECRET. 503 que menciona AI: añade el binding AI. 429/cupo diario: conserva el proyecto y espera al siguiente reinicio. 413: divide el prompt (máximo 2.048 caracteres). Algunos modelos pueden no estar disponibles para tu cuenta: la aplicación mostrará el error y conservará los fragmentos terminados. No sustituye modelos por otros de pago.</p><p class="muted" style="margin-top:9px">En Cloudflare, <strong>Workers AI → Usage</strong> muestra el consumo real. El contador del HTML es solo una previsión. La configuración del panel puede cambiar de nombre con futuras actualizaciones.</p></details><details class="help"><summary>Cómo crear tu primer vídeo</summary><ol class="help-steps"><li>En <strong>Plantilla</strong> elige estilo, personaje y formato.</li><li>En <strong>Guion</strong> pega una escena por línea o genera un borrador. Revisa su contenido y aplica ritmo si deseas otra cantidad de imágenes.</li><li>En <strong>Audio</strong> sube tu narración o prueba y genera una voz. Mantén el mismo texto del guion.</li><li>Pulsa <strong>Generar imágenes</strong>. Los prompts se pueden revisar y editar antes. No cierres la pestaña mientras trabaja.</li><li>Pulsa <strong>Sincronizar todo</strong>. El modelo de reconocimiento se descarga la primera vez. Revisa la vista previa y las escenas antes de exportar.</li><li>Elige 720p o 1080p y pulsa <strong>Descargar MP4</strong>. Mantén la pestaña visible durante todo el vídeo.</li><li>En <strong>Clips</strong> añade rangos o divide cada 60 segundos. Ajusta texto y encuadre. Descarga cada clip por separado.</li><li>Pulsa <strong>Guardar proyecto</strong> para guardar guion, imágenes, sonido y clips en un archivo que puedes volver a abrir. Las plantillas se guardan también en este navegador.</li></ol></details></div>
+
       </div>
     </div>
 
     <!-- PESTAÑA 1: AUDIO, BGM Y SFX -->
     <div class="tab-View" id="tab1">
+<div class="card"><div class="section-kicker">TU NARRACIÓN, AQUÍ MISMO</div><h2>Del guion a la voz.</h2><p class="sub">Genera audio en español o carga tu grabación. La opción económica deja más cupo para imágenes.</p><div class="fields2"><div class="field"><label for="voiceEngine">Motor de voz</label><select id="voiceEngine" onchange="Studio.voiceEngineChanged()"><option value="melo">MeloTTS · económico · una voz</option><option value="aura">Aura 2 · más expresivo · cupo reducido</option><option value="upload">Usar mi propio audio</option></select></div><div class="field"><label for="voiceChoice">Voz española · Aura</label><select id="voiceChoice" disabled><option value="aquila">Aquila</option><option value="alvaro">Álvaro</option><option value="carina">Carina</option><option value="celeste">Celeste</option><option value="diana">Diana</option><option value="estrella">Estrella</option><option value="javier">Javier</option><option value="nestor">Néstor</option><option value="selena">Selena</option><option value="sirio">Sirio</option></select></div></div><div class="callout" id="voiceBudgetNote" style="margin-top:14px">MeloTTS es la opción de ahorro. La expresividad puede ser inferior a ElevenLabs; prueba una muestra antes de generar todo.</div><div class="button-row" style="margin-top:14px"><button class="btn" id="sampleVoiceBtn" onclick="Studio.sampleVoice()">▶ Probar voz</button><button class="btn btn-primary" id="generateVoiceBtn" onclick="Studio.generateVoice()">Generar narración completa</button><button class="btn" id="downloadVoiceBtn" onclick="Studio.downloadVoice()" disabled>Descargar audio · WAV</button></div><audio controls id="voiceSamplePlayer" hidden style="width:100%;margin-top:14px"></audio><div class="progress-label" id="voiceGenerationStatus" role="status"></div><button class="text-link" id="cancelVoiceBtn" hidden onclick="Studio.cancelVoice()">Pausar generación (se conservan fragmentos)</button></div>
+
       <div class="card">
         <h2>🎙️ Audio Principal (Voz en Off del Guion)</h2>
         <div class="dropzone" onclick="document.getElementById('voiceInput').click()">
@@ -314,7 +273,7 @@
           <div id="voiceLabel" style="font-weight:600;">Haz clic aquí o arrastra tu archivo MP3 principal de Voz en Off</div>
           <input type="file" id="voiceInput" accept="audio/*" style="display:none" onchange="handleVoiceUpload(this.files[0])">
         </div>
-        <canvas id="waveformCanvas" width="700" height="64" style="width:100%; height:64px; margin-top:12px; background:#090d16; border-radius:8px; border:1px solid var(--border);"></canvas>
+        <canvas hidden id="waveformCanvas" width="700" height="64" style="width:100%; height:64px; margin-top:12px; background:#090d16; border-radius:8px; border:1px solid var(--border);"></canvas>
       </div>
 
       <div class="card">
@@ -342,7 +301,7 @@
 
       <div class="card">
         <h2>🔊 Banco de Efectos de Sonido (Risas, Teclado, Avispas...)</h2>
-        <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) y la IA los detectará automáticamente.</p>
+        <p class="sub">Sube tus archivos MP3/WAV. Nómbralos de forma clara (ej. <i>avispas.mp3</i> o <i>risas.mp3</i>) y el editor los asignará según sus palabras clave.</p>
         <div style="display:flex; gap:14px; align-items:center; margin-bottom:12px;">
           <button class="btn btn-primary" onclick="document.getElementById('sfxFileInput').click()">📂 Subir Archivo SFX</button>
           <input type="file" id="sfxFileInput" accept="audio/*" multiple style="display:none" onchange="handleSfxUpload(this.files)">
@@ -355,8 +314,10 @@
 
     <!-- PESTAÑA 2: GUION -->
     <div class="tab-View" id="tab2">
+<div class="card"><div class="section-kicker">DE UNA IDEA A UN GUION</div><h2>Cuéntalo con tu voz.</h2><p class="sub">Escribe tu guion abajo o pide un borrador a la IA. Nada se envía hasta que pulses generar.</p><div class="field"><label for="ideaInput">¿De qué quieres hablar?</label><textarea id="ideaInput" rows="2" placeholder="Ej.: qué pasaría si un banco te ingresara diez millones por error. Narración en segunda persona, suspense y final claro."></textarea></div><div class="fields2" style="margin:13px 0"><div class="field"><label for="targetMinutes">Duración orientativa</label><select id="targetMinutes"><option value="1">1 minuto</option><option value="3">3 minutos</option><option value="5">5 minutos</option><option value="9" selected>9 minutos</option><option value="12">12 minutos</option><option value="15">15 minutos</option><option value="20">20 minutos</option><option value="30">30 minutos</option></select></div><div class="field"><label for="scriptTone">Tono</label><select id="scriptTone"><option value="suspense en segunda persona">Suspense · segunda persona</option><option value="divulgativo, claro y riguroso">Documental · divulgación</option><option value="cercano, curioso y dinámico">Curioso · dinámico</option><option value="oscuro y cinematográfico">Oscuro · cinematográfico</option></select></div></div><div class="button-row"><button class="btn btn-primary" id="writeScriptBtn" onclick="Studio.writeScript()">Generar borrador con IA</button><button class="btn" onclick="Studio.paceScript()">Aplicar ritmo a mi guion</button></div><div id="scriptGenerationStatus" class="progress-label" role="status"></div></div>
+
       <div class="card">
-        <h2>📝 2. Tu guion</h2>
+        <h2>Tu guion · una escena por párrafo</h2>
         <p class="sub">Pega aquí tu guion completo. Con audio cargado, AutoVideo reconoce las palabras y sincroniza cada escena y subtítulo con la voz. La primera sincronización descarga el modelo de voz; después se procesa en tu navegador.</p>
         <textarea id="scriptArea" rows="8" placeholder="Pega aquí tu guion completo..." oninput="document.getElementById('aiTopicInput').value=this.value; updateScriptStatus()"></textarea>
         <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
@@ -370,7 +331,7 @@
       </div>
 
       <div class="card">
-        <h2>🎨 Instrucciones visuales (Sin texto)</h2>
+        <h2>Prompts de las imágenes</h2><p class="sub">Puedes usar el guion directamente o pedir a la IA que describa cada escena en inglés.</p><div class="button-row" style="margin-bottom:12px"><button class="btn" id="planPromptsBtn" onclick="Studio.planPrompts()">Planificar imágenes con IA</button><button class="btn" onclick="switchTab(6)">Editar lista de prompts</button></div><div id="promptsPlanningStatus" class="progress-label" role="status"></div>
         <textarea id="promptsArea" rows="6" placeholder="Aquí aparecerán las instrucciones visuales generadas..." readonly></textarea>
       </div>
     </div>
@@ -380,7 +341,7 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
           <div>
-            <h2>🖼️ 3. Recursos Visuales (Galería)</h2>
+            <h2>La galería de tu vídeo</h2>
             <p class="sub" style="margin-bottom:0;">Usa ◀ ▶ o escribe a mano el número de posición (desplaza el resto a la derecha).</p>
           </div>
           <div style="display:flex; gap:8px;">
@@ -394,7 +355,7 @@
           <div style="font-weight:600;">Haz clic o arrastra tus imágenes aquí</div>
           <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImagesUpload(this.files)">
         </div>
-        <div class="media-grid" id="mediaGrid"></div>
+        <div id="aiStatusLog" class="ai-log" role="status"></div><div class="media-grid" id="mediaGrid"></div>
       </div>
     </div>
 
@@ -403,16 +364,16 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
           <div>
-            <h2>⏱️ 4. Línea de Tiempo y Automatización IA de SFX</h2>
-            <p class="sub" style="margin-bottom:0;">Haz que la IA lea tu guion y coloque los efectos de sonido automáticamente según las palabras clave.</p>
+            <h2>Tu historia, escena a escena</h2>
+            <p class="sub" style="margin-bottom:0;">Revisa la imagen, el prompt y el tiempo de cada escena. Cambiar el texto aquí modifica los subtítulos, no la voz grabada.</p>
           </div>
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-ai" onclick="autoDetectAndAssignSFXWithAI()">🤖 Auto-Detectar SFX con IA</button>
+            <button class="btn btn-ai" onclick="autoDetectAndAssignSFXWithAI()">Asignar SFX por palabras clave</button>
             <button class="btn" onclick="addBlankScene()">➕ Añadir Escena</button>
           </div>
         </div>
         <div id="aiSfxLog" class="status-banner" style="display:none; margin-bottom:12px;"></div>
-        <div class="scene-list" id="sceneList"></div>
+        <div class="export-mobile button-row" style="display:none;margin-bottom:12px"><button class="btn btn-success" onclick="exportVideoYouTubeMaster()">Descargar MP4</button><button class="btn" onclick="Studio.saveProject()">Guardar proyecto</button></div><div class="scene-list" id="sceneList"></div>
       </div>
     </div>
   </main>
@@ -420,11 +381,11 @@
   <!-- PANEL DERECHO -->
   <aside class="right-panel">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h3 style="font-size:0.95rem;">👁️ Vista Previa en Tiempo Real</h3>
+      <h3 style="font-size:0.95rem;">Vista previa</h3>
       <span id="currentSceneBadge" style="font-size:0.75rem; color:#34d399; font-weight:600;">Escena 1</span>
     </div>
 
-    <div class="canvas-wrapper">
+    <div style="display:flex;justify-content:space-between;align-items:center"><input id="projectName" class="project-name" type="text" value="Mi próximo vídeo" aria-label="Nombre del proyecto"><span class="muted" id="projectSummary">Tu vídeo aparecerá aquí</span></div><div class="canvas-wrapper">
       <canvas id="previewCanvas" width="1280" height="720"></canvas>
     </div>
 
@@ -436,16 +397,14 @@
       </div>
     </div>
 
-    <button class="btn btn-ai" id="openClipEditorBtn" onclick="openClipEditor()" style="justify-content:center; padding:11px;">✂ Crear clips / Shorts con texto</button>
-
-    <div class="card" style="padding:14px;">
+    <div class="filmstrip" id="filmstrip" aria-label="Línea de tiempo de escenas"></div><div class="button-row"><button class="btn btn-primary" onclick="Studio.createVideo()">Preparar vídeo completo</button><button class="btn" onclick="switchTab(5)">✂ Crear clips</button><button class="btn" onclick="loadBuiltInDemo()">Demo visual</button></div><div class="card preview-settings" style="padding:14px;">
       <h3 style="font-size:0.88rem; margin-bottom:10px;">⚙️ Estilo de Edición y Subtítulos</h3>
       <div class="settings-grid">
         <div>
           <label>Formato</label>
           <select id="aspectSelect" onchange="changeAspectRatio(this.value)">
             <option value="9:16">9:16 Vertical (Shorts)</option>
-            <option value="16:9">16:9 Horizontal (YouTube)</option>
+            <option value="16:9" selected>16:9 Horizontal (YouTube)</option><option value="1:1">1:1 Cuadrado</option><option value="4:5">4:5 Retrato</option>
           </select>
         </div>
         <div>
@@ -466,7 +425,7 @@
           <label>Estilo Subtítulos</label>
           <select id="subsSelect" onchange="renderCurrentFrame()">
             <option value="box">Caja Oscura (Fondo Negro)</option>
-            <option value="clean">Sin Fondo (Texto + Borde)</option>
+            <option value="clean">Palabra destacada</option><option value="karaoke">Karaoke · subrayado</option><option value="pop">Pop · palabra activa</option><option value="headline">Titular coral</option><option value="minimal">Minimal · blanco</option>
             <option value="none">Desactivados</option>
           </select>
         </div>
@@ -504,22 +463,23 @@
             <option value="arial-black">Arial Black</option>
           </select>
         </div>
+        <div><label for="subSize">Tamaño subtítulos (% altura)</label><input id="subSize" type="number" min="2" max="12" step=".2" value="5.2" oninput="renderCurrentFrame()"></div><div><label for="subPosition">Posición vertical (%)</label><input id="subPosition" type="number" min="10" max="95" value="82" oninput="renderCurrentFrame()"></div>
       </div>
     </div>
 
-    <div class="card" style="padding:14px; margin-top:auto;">
-      <h3 style="font-size:0.88rem; margin-bottom:8px;">🚀 Exportar Vídeo Master Pro</h3>
-      <div id="exportStatus" class="status-banner" style="margin-bottom:10px;">
-        Listo para exportar vídeo con automatización IA, BGM y SFX precisos.
+    <div class="card export-card" style="padding:14px; margin-top:auto;">
+      <h3 style="font-size:0.88rem; margin-bottom:8px;">Tu vídeo está listo para salir</h3>
+      <div class="field" style="margin-bottom:12px"><label for="exportResolution">Resolución</label><select id="exportResolution"><option value="720">720p · menos memoria</option><option value="1080">1080p · mayor resolución</option></select></div><div id="exportStatus" class="status-banner" style="margin-bottom:10px;">
+        Pega tu guion, carga la voz y sincroniza las escenas.
       </div>
       <div class="progress-outer" id="exportProgressOuter" style="margin-bottom:10px;">
         <div class="progress-inner" id="exportProgressInner"></div>
       </div>
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="btn btn-success" id="exportVideoBtn" onclick="exportVideoYouTubeMaster()" style="justify-content:center; padding:11px;">
-          🎬 Descargar Vídeo (.MP4)
+          Descargar MP4
         </button>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button class="text-link" id="cancelExportBtn" onclick="Studio.stopExport()">Cancelar exportación</button><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
           <button class="btn" onclick="downloadSRT()" style="justify-content:center;">📥 Subtítulos (.SRT)</button>
           <button class="btn" onclick="downloadProjectJSON()" style="justify-content:center;">💾 Proyecto (.JSON)</button>
         </div>
@@ -528,64 +488,9 @@
   </aside>
 </div>
 
-<!-- El editor de clips tiene su propio lienzo y no modifica el montaje largo. -->
-<dialog id="clipEditor" aria-labelledby="clipEditorTitle" aria-describedby="clipEditorIntro">
-  <div class="clip-header">
-    <div>
-      <h2 id="clipEditorTitle">✂ Tus clips, a tu medida</h2>
-      <p id="clipEditorIntro" class="clip-hint">Elige los segundos del vídeo original, añade tu texto y descarga cada clip en MP4.</p>
-    </div>
-    <button class="btn" id="clipCloseBtn" type="button" aria-label="Cerrar editor de clips">Cerrar ✕</button>
-  </div>
-  <div class="clip-body">
-    <section aria-label="Previsualización del clip">
-      <div class="clip-stage"><canvas id="clipPreviewCanvas" width="720" height="1280" tabindex="0" aria-label="Previsualización. Arrastra el texto para moverlo; también puedes usar las flechas del teclado."></canvas></div>
-      <div class="clip-preview-controls">
-        <button class="btn btn-primary" id="clipPlayBtn" type="button">▶ Ver clip</button>
-        <input type="range" id="clipSeek" min="0" max="60" step="0.01" value="0" aria-label="Posición dentro del clip">
-      </div>
-      <p id="clipTimeDisplay" class="clip-time"></p>
-      <p class="clip-hint" style="margin-top:8px;">Arrastra el texto dentro de la imagen. Los subtítulos conservan los tiempos de la voz. Tu texto aparece durante todo este clip y se ajusta para caber dentro del vídeo.</p>
-      <p id="clipProjectInfo" class="clip-hint" style="margin-top:8px;"></p>
-    </section>
-    <section aria-label="Edición de clips">
-      <div id="clipList" class="clip-list" aria-label="Tus clips"></div>
-      <div class="clip-toolbar">
-        <button class="btn btn-ai" id="clipAddBtn" type="button">＋ Otro clip</button>
-        <button class="btn" id="clipDuplicateBtn" type="button">Duplicar</button>
-        <button class="btn" id="clipDeleteBtn" type="button">Eliminar</button>
-      </div>
-      <div class="clip-toolbar">
-        <label for="clipSplitSeconds" style="margin:0;">O divide todo cada</label>
-        <input id="clipSplitSeconds" type="number" min="1" step="1" value="60" aria-label="Duración de los cortes automáticos en segundos">
-        <span class="clip-hint">s</span>
-        <button class="btn" id="clipSplitBtn" type="button">Crear cortes</button>
-      </div>
-      <fieldset id="clipFields">
-        <legend class="clip-hint" style="margin-bottom:8px;" id="clipSelectedLabel">Editar clip 1</legend>
-        <div class="clip-fields">
-          <div><label for="clipStart">Desde el segundo</label><input id="clipStart" type="number" min="0" step="0.01" value="0"></div>
-          <div><label for="clipEnd">Hasta el segundo</label><input id="clipEnd" type="number" min="0" step="0.01" value="60"></div>
-          <div><label for="clipAspect">Formato de este clip</label><select id="clipAspect"><option value="9:16">9:16 · Shorts / TikTok</option><option value="16:9">16:9 · Horizontal</option><option value="1:1">1:1 · Cuadrado</option></select></div>
-          <div><label for="clipFit">Encuadre</label><select id="clipFit"><option value="crop">Llenar / recortar</option><option value="blur">Imagen entera + fondo</option></select></div>
-          <div class="clip-full"><label for="clipText">Texto de este clip (opcional)</label><textarea id="clipText" rows="2" maxlength="500" placeholder="Escribe un título o una frase…"></textarea></div>
-          <div class="clip-full"><label for="clipFontSize">Tamaño del texto: <output id="clipFontSizeLabel">56</output></label><div class="clip-inline"><input id="clipFontSize" type="range" min="12" max="160" step="1" value="56"><input id="clipTextColor" type="color" value="#ffffff" aria-label="Color del texto"></div></div>
-          <div><label for="clipTextX">Posición horizontal: <output id="clipTextXLabel">50</output>%</label><input id="clipTextX" type="range" min="0" max="100" step="0.1" value="50" style="width:100%;"></div>
-          <div><label for="clipTextY">Posición vertical: <output id="clipTextYLabel">16</output>%</label><input id="clipTextY" type="range" min="0" max="100" step="0.1" value="16" style="width:100%;"></div>
-          <div class="clip-full clip-inline"><input id="clipSubtitles" type="checkbox" checked><label for="clipSubtitles" style="margin:0;">Incluir los subtítulos del vídeo</label></div>
-        </div>
-      </fieldset>
-      <p id="clipError" class="clip-error" role="alert"></p>
-      <div class="clip-download">
-        <button class="btn btn-success" id="clipDownloadBtn" type="button">⬇ Descargar este clip (.MP4)</button>
-        <button class="btn" id="clipCancelExportBtn" type="button" hidden>Cancelar exportación</button>
-      </div>
-      <progress id="clipProgress" class="clip-progress" max="100" value="0" hidden aria-label="Exportación del clip"></progress>
-      <p id="clipStatus" class="clip-status" role="status" aria-live="polite">Cada clip se descarga por separado. Mantén la pestaña visible durante la exportación.</p>
-    </section>
-  </div>
-</dialog>
-
+<input type="file" id="projectInput" accept=".avfproject,.json" hidden onchange="Studio.loadProject(this.files[0]);this.value=''">
+<input type="file" id="replaceImageInput" accept="image/png,image/jpeg,image/webp" hidden onchange="Studio.receiveReplacement(this.files[0]);this.value=''">
+<div class="toast" id="studioToast" role="status" hidden></div>
 <script>
 let audioCtx = null;
 let voiceBuffer = null;
@@ -942,7 +847,7 @@ function clearReferenceImage() {
   autoVideoReferenceImageMime = "";
   document.getElementById("aiReferenceImage").value = "";
   document.getElementById("aiReferencePreviewWrap").style.display = "none";
-  document.getElementById("aiReferenceStatus").textContent = "Sin imagen de referencia.";
+  document.getElementById("aiReferenceStatus").textContent = "FLUX gratuito: referencia por descripción, sin identidad garantizada.";
 }
 
 function startProjectWithFormat() {
@@ -974,7 +879,7 @@ function showAILog(msg, isError = false) {
   el.innerHTML = msg;
 }
 
-const IMAGE_WORKER_DEFAULT_URL = "https://autovideo-image-worker.jarambedioszz.workers.dev";
+const IMAGE_WORKER_DEFAULT_URL = "";
 let selectedVideoFormat = "short";
 
 function getCloudflareWorkerUrl() {
@@ -1267,7 +1172,7 @@ async function retryPendingImageItems(items) {
     showAILog(`⏸ Generación pausada. Quedan ${remaining} imágenes. Pulsa «Reintentar fallidas» para continuar.`);
   } else {
     const cause = isCloudflareImageQuotaError(failure)
-      ? "El proveedor ha agotado la cuota de imágenes. Amplía o espera a que se restablezca tu cuota y pulsa «Reintentar fallidas»."
+      ? "El proveedor ha agotado la cuota de imágenes. Espera a que se restablezca tu cuota y pulsa «Reintentar fallidas»."
       : `El proveedor ha rechazado la solicitud: ${escapeHtml(failure?.message || "Revisa URL, clave y configuración.")} Corrige la causa y pulsa «Reintentar fallidas».`;
     showAILog(`⚠️ ${cause} Se conservan todas las imágenes terminadas; quedan ${remaining} pendientes.`, true);
   }
@@ -3599,587 +3504,6 @@ function downloadProjectJSON() {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-// EDITOR DE CLIPS: estado, lienzo y exportación independientes del vídeo largo.
-const clipEditorState = {
-  items: [], selectedId: null, nextId: 1, projectVoice: null, projectStamp: "",
-  cursor: 0, preview: null, playSerial: 0, exportJob: null, drag: null, textBox: null
-};
-
-function clipElement(id) { return document.getElementById(id); }
-function selectedClip() { return clipEditorState.items.find(clip => clip.id === clipEditorState.selectedId) || null; }
-function clipProjectDuration() { return Math.max(0, Math.min(Number(totalDuration) || 0, Number(voiceBuffer?.duration) || 0)); }
-function clipClamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
-function clipSeconds(value) { return Number.isFinite(value) ? String(Number(value.toFixed(3))) : "—"; }
-function clipDimensions(aspect) { return aspect === "16:9" ? [1280, 720] : aspect === "1:1" ? [1080, 1080] : [720, 1280]; }
-
-function newClip(start = 0, end = Math.min(60, clipProjectDuration()), template = null) {
-  return {
-    id: clipEditorState.nextId++, start, end, aspect: template?.aspect || "9:16",
-    fit: template?.fit || "crop", text: template?.text || "", fontSize: template?.fontSize || 56,
-    color: template?.color || "#ffffff", x: template?.x ?? 0.5, y: template?.y ?? 0.16,
-    subtitles: template?.subtitles ?? true, downloaded: false
-  };
-}
-
-function clipValidationError(clip) {
-  if (!clip || !Number.isFinite(clip.start) || !Number.isFinite(clip.end)) return "Escribe el segundo inicial y el final.";
-  if (clip.start < 0) return "El inicio no puede ser negativo.";
-  if (clip.end <= clip.start) return "El final debe ser posterior al inicio.";
-  if (clip.end - clip.start < 0.1 - 1e-9) return "El clip debe durar al menos 0,1 segundos.";
-  if (clip.end > clipProjectDuration() + 1e-6) return `El vídeo termina en el segundo ${clipSeconds(clipProjectDuration())}.`;
-  return "";
-}
-
-function clipReadinessError(clip) {
-  const error = clipValidationError(clip);
-  if (error) return error;
-  if (!voiceBuffer || isDemoSynthMode || !hasVerifiedVoiceSync()) return "Carga la narración y sincroniza el vídeo antes de crear clips.";
-  if (!scenes.length) return "Primero sincroniza el vídeo.";
-  for (const scene of scenes) {
-    if (scene.end <= clip.start || scene.start >= clip.end) continue;
-    const image = loadedImages[scene.imgIndex];
-    if (!image || image.isPending || !image.imgObj || !(image.imgObj.naturalWidth || image.imgObj.width)) {
-      return "Hay una imagen pendiente en este intervalo. Termina de generar las imágenes antes de descargarlo.";
-    }
-  }
-  return "";
-}
-
-function openClipEditor() {
-  if (isExportingVideo || syncInProgress || imageGenerationInProgress) {
-    alert("Espera a que termine la generación, sincronización o exportación del vídeo."); return false;
-  }
-  if (!voiceBuffer || isDemoSynthMode || !hasVerifiedVoiceSync() || !scenes.length) {
-    alert("Carga la narración y pulsa «Sincronizar Todo» antes de crear clips."); return false;
-  }
-  const dialog = clipElement("clipEditor");
-  if (typeof dialog.showModal !== "function") { alert("Actualiza el navegador para utilizar el editor de clips."); return false; }
-  if (dialog.open) return true;
-  pausePlayback();
-  const stamp = JSON.stringify(scenes.map(scene => [scene.start, scene.end, scene.text]));
-  if (clipEditorState.projectVoice !== voiceBuffer || clipEditorState.projectStamp !== stamp) {
-    clipEditorState.items = []; clipEditorState.nextId = 1;
-    clipEditorState.projectVoice = voiceBuffer; clipEditorState.projectStamp = stamp;
-  }
-  if (!clipEditorState.items.length) clipEditorState.items.push(newClip());
-  clipElement("clipProjectInfo").textContent = `Vídeo original: ${clipSeconds(clipProjectDuration())} s · ${scenes.length} escenas. Los intervalos pueden solaparse. Los cortes automáticos se añaden a tu lista.`;
-  clipElement("clipStart").max = clipElement("clipEnd").max = String(clipProjectDuration());
-  dialog.showModal();
-  selectClip(clipEditorState.items[0].id);
-  return true;
-}
-
-function closeClipEditor() {
-  pauseClipPreview();
-  cancelClipExport("Exportación cancelada al cerrar el editor. Puedes volver a descargar el clip.");
-  clipEditorState.drag = null;
-  if (clipElement("clipEditor").open) clipElement("clipEditor").close();
-  clipElement("openClipEditorBtn").focus();
-}
-
-function renderClipList() {
-  const list = clipElement("clipList"); list.replaceChildren();
-  clipEditorState.items.forEach((clip, index) => {
-    const button = document.createElement("button");
-    button.type = "button"; button.className = "btn clip-item";
-    button.setAttribute("aria-pressed", String(clip.id === clipEditorState.selectedId));
-    button.disabled = Boolean(clipEditorState.exportJob);
-    const title = document.createElement("span");
-    title.textContent = `Clip ${index + 1} · ${clipSeconds(clip.start)} → ${clipSeconds(clip.end)} s${clip.downloaded ? " · ✓ Exportado" : ""}`;
-    const detail = document.createElement("small");
-    detail.textContent = `${clip.aspect} · ${clipSeconds(clip.end - clip.start)} s${clip.text ? " · " + clip.text.replace(/\s+/g, " ").slice(0, 50) : ""}`;
-    button.append(title, detail); button.addEventListener("click", () => selectClip(clip.id)); list.appendChild(button);
-  });
-}
-
-function selectClip(id) {
-  if (clipEditorState.exportJob) return;
-  pauseClipPreview();
-  const clip = clipEditorState.items.find(item => item.id === id); if (!clip) return;
-  clipEditorState.selectedId = id;
-  clipEditorState.cursor = Number.isFinite(clip.start) ? clip.start : 0;
-  clipElement("clipStart").value = Number.isFinite(clip.start) ? clipSeconds(clip.start) : "";
-  clipElement("clipEnd").value = Number.isFinite(clip.end) ? clipSeconds(clip.end) : "";
-  clipElement("clipAspect").value = clip.aspect; clipElement("clipFit").value = clip.fit;
-  clipElement("clipText").value = clip.text; clipElement("clipFontSize").value = clip.fontSize;
-  clipElement("clipTextColor").value = clip.color; clipElement("clipSubtitles").checked = clip.subtitles;
-  clipElement("clipStatus").textContent = "Ajusta los tiempos y el texto. Cada clip se exporta en tiempo real; mantén esta pestaña visible.";
-  renderClipList(); updateClipEditorControls(); renderClipPreview();
-}
-
-function addClip() {
-  if (clipEditorState.exportJob) return;
-  const previous = selectedClip();
-  const start = previous && Number.isFinite(previous.end) && previous.end <= clipProjectDuration() - 0.1 ? previous.end : 0;
-  const clip = newClip(start, Math.min(clipProjectDuration(), start + 60));
-  clipEditorState.items.push(clip); selectClip(clip.id);
-}
-
-function duplicateClip() {
-  const previous = selectedClip(); if (!previous || clipEditorState.exportJob) return;
-  const clip = newClip(previous.start, previous.end, previous);
-  clipEditorState.items.push(clip); selectClip(clip.id);
-}
-
-function deleteClip() {
-  if (clipEditorState.exportJob || clipEditorState.items.length <= 1) return;
-  const index = clipEditorState.items.findIndex(clip => clip.id === clipEditorState.selectedId);
-  clipEditorState.items.splice(index, 1);
-  selectClip(clipEditorState.items[Math.min(index, clipEditorState.items.length - 1)].id);
-}
-
-function splitProjectIntoClips() {
-  if (clipEditorState.exportJob) return;
-  const seconds = Number(clipElement("clipSplitSeconds").value), duration = clipProjectDuration();
-  if (!Number.isFinite(seconds) || seconds < 1) { clipElement("clipStatus").textContent = "Escribe una duración de al menos 1 segundo para los cortes automáticos."; return; }
-  // El último fragmento conserva también las fracciones de segundo del audio.
-  const count = Math.ceil((duration - 1e-9) / seconds);
-  if (count > 2000) { clipElement("clipStatus").textContent = "Elige intervalos más largos para crear como máximo 2000 clips de una vez."; return; }
-  const added = [];
-  for (let i = 0; i < count; i++) {
-    const start = i * seconds, end = Math.min(duration, (i + 1) * seconds);
-    if (end - start < 0.1 - 1e-9 && added.length) added[added.length - 1].end = end;
-    else added.push(newClip(start, end));
-  }
-  clipEditorState.items.push(...added);
-  if (added.length) selectClip(added[0].id);
-  clipElement("clipStatus").textContent = `Se han añadido ${added.length} clips. Puedes ajustar los tiempos, el texto y descargar cada uno por separado.`;
-}
-
-function readClipFields() {
-  const clip = selectedClip(); if (!clip || clipEditorState.exportJob) return;
-  const number = id => clipElement(id).value.trim() === "" ? NaN : Number(clipElement(id).value);
-  const values = {
-    start: number("clipStart"), end: number("clipEnd"), aspect: clipElement("clipAspect").value,
-    fit: clipElement("clipFit").value, text: clipElement("clipText").value.slice(0, 500),
-    fontSize: clipClamp(number("clipFontSize") || 56, 12, 160), color: clipElement("clipTextColor").value,
-    x: clipClamp(number("clipTextX") / 100, 0, 1), y: clipClamp(number("clipTextY") / 100, 0, 1),
-    subtitles: clipElement("clipSubtitles").checked, downloaded: false
-  };
-  pauseClipPreview();
-  Object.assign(clip, values);
-  if (!clipValidationError(clip)) clipEditorState.cursor = clipClamp(clipEditorState.cursor, clip.start, clip.end);
-  renderClipList(); updateClipEditorControls(); renderClipPreview();
-}
-
-function updateClipEditorControls() {
-  const clip = selectedClip(), busy = Boolean(clipEditorState.exportJob), error = clipValidationError(clip);
-  clipElement("clipEditor").querySelectorAll("button, input, textarea, select").forEach(element => {
-    element.disabled = busy && element.id !== "clipCancelExportBtn" && element.id !== "clipCloseBtn";
-  });
-  clipElement("clipFields").disabled = busy;
-  clipElement("clipDeleteBtn").disabled = busy || clipEditorState.items.length <= 1;
-  clipElement("clipPlayBtn").disabled = busy || Boolean(error);
-  clipElement("clipDownloadBtn").disabled = busy || Boolean(error);
-  clipElement("clipSeek").disabled = busy || Boolean(error);
-  clipElement("clipPlayBtn").textContent = clipEditorState.preview ? "⏸ Pausar" : "▶ Ver clip";
-  clipElement("clipCancelExportBtn").hidden = !busy;
-  clipElement("clipError").textContent = error;
-  if (!clip) return;
-  clipElement("clipSelectedLabel").textContent = `Editar clip ${clipEditorState.items.indexOf(clip) + 1}`;
-  clipElement("clipFontSizeLabel").textContent = String(clip.fontSize);
-  clipElement("clipTextX").value = String(clip.x * 100); clipElement("clipTextY").value = String(clip.y * 100);
-  clipElement("clipTextXLabel").textContent = String(Math.round(clip.x * 100)); clipElement("clipTextYLabel").textContent = String(Math.round(clip.y * 100));
-  clipElement("clipSeek").max = String(!error ? clip.end - clip.start : 0);
-  updateClipTimeDisplay();
-}
-
-function updateClipTimeDisplay() {
-  const clip = selectedClip(); if (!clip) return;
-  const elapsed = Math.max(0, clipEditorState.cursor - (Number.isFinite(clip.start) ? clip.start : 0));
-  clipElement("clipSeek").value = String(elapsed);
-  clipElement("clipTimeDisplay").textContent = `Clip: ${clipSeconds(elapsed)} / ${clipSeconds(clip.end - clip.start)} s · Segundo original: ${clipSeconds(clipEditorState.cursor)}`;
-}
-
-function drawClipImage(ctx, w, h, scene, time, fit) {
-  const img = loadedImages[scene?.imgIndex]?.imgObj;
-  ctx.fillStyle = "#0b0f17"; ctx.fillRect(0, 0, w, h);
-  if (!img || !(img.naturalWidth || img.width)) return;
-  const p = clipClamp((time - scene.start) / Math.max(0.1, scene.end - scene.start), 0, 1);
-  let zoom = 1, dx = 0, dy = 0;
-  if (scene.effect === "Zoom In Suave") zoom = 1 + 0.12 * p;
-  else if (scene.effect === "Zoom Out Suave") zoom = 1.12 - 0.12 * p;
-  else if (scene.effect === "Zoom In Dramático") zoom = 1 + 0.24 * p;
-  else if (scene.effect === "Pan Derecha") { zoom = 1.12; dx = (p - 0.5) * w * 0.12; }
-  else if (scene.effect === "Pan Izquierda") { zoom = 1.12; dx = (0.5 - p) * w * 0.12; }
-  else if (scene.effect === "Pan Arriba") { zoom = 1.12; dy = (0.5 - p) * h * 0.12; }
-  else if (scene.effect === "Pan Abajo") { zoom = 1.12; dy = (p - 0.5) * h * 0.12; }
-  else if (scene.effect === "Zoom + Pan") { zoom = 1 + 0.16 * p; dx = (p - 0.5) * w * 0.06; }
-  else if (scene.effect === "Movimiento Ken Burns") { zoom = 1.04 + 0.08 * p; dx = (p - 0.5) * w * 0.045; dy = (0.5 - p) * h * 0.025; }
-  else if (scene.effect === "Pulso Suave") zoom = 1.04 + 0.035 * Math.sin(p * Math.PI * 2);
-  if (fit === "blur") {
-    ctx.save(); ctx.filter = "blur(22px) brightness(0.6)";
-    const bg = Math.max(w / img.width, h / img.height) * 1.2;
-    ctx.drawImage(img, (w - img.width * bg) / 2, (h - img.height * bg) / 2, img.width * bg, img.height * bg); ctx.restore();
-  }
-  const scale = (fit === "blur" ? Math.min(w / img.width, h / img.height) : Math.max(w / img.width, h / img.height)) * zoom;
-  ctx.drawImage(img, (w - img.width * scale) / 2 + dx, (h - img.height * scale) / 2 + dy, img.width * scale, img.height * scale);
-}
-
-function drawClipSubtitles(ctx, w, h, scene, time) {
-  const mode = clipElement("subsSelect").value;
-  if (mode === "none" || !scene?.text) return;
-  const cue = getSubtitleCues(scene).find(item => time >= item.start && time < item.end); if (!cue) return;
-  const font = getSubtitleFont(); let size = Math.round(h * 0.052);
-  ctx.save(); ctx.font = `${font.weight} ${size}px ${font.family}`;
-  const measured = ctx.measureText(cue.words.join(" ")).width;
-  if (measured > w * 0.86) { size = Math.max(8, Math.floor(size * w * 0.86 / measured)); ctx.font = `${font.weight} ${size}px ${font.family}`; }
-  const widths = cue.words.map((word, i) => ctx.measureText(word + (i < cue.words.length - 1 ? " " : "")).width);
-  const width = widths.reduce((a, b) => a + b, 0), y = h * 0.82;
-  if (mode === "box") {
-    ctx.fillStyle = "rgba(0,0,0,0.82)"; ctx.beginPath();
-    ctx.roundRect((w - width) / 2 - w * 0.025, y - size * 0.8, width + w * 0.05, size * 1.6, 10); ctx.fill();
-  }
-  let active = 0; cue.timings.forEach((word, i) => { if (time >= word.start) active = i; });
-  const requested = clipElement("subColorText").value.trim(), color = isValidHex(requested) ? requested : "#ffffff";
-  ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(2, size * 0.08); ctx.lineJoin = "round";
-  let x = (w - width) / 2;
-  cue.words.forEach((word, i) => {
-    const text = word + (i < cue.words.length - 1 ? " " : ""); ctx.strokeText(text, x, y);
-    ctx.fillStyle = i === active ? color : "#cbd5e1"; ctx.fillText(text, x, y); x += widths[i];
-  });
-  ctx.restore();
-}
-
-function clipTextLayout(ctx, w, h, clip) {
-  if (!clip.text.trim()) return null;
-  const font = getSubtitleFont(), maxWidth = w * 0.9;
-  let size = clip.fontSize * w / 720, lines = [];
-  for (let attempt = 0; attempt < 60; attempt++) {
-    ctx.font = `${font.weight} ${size}px ${font.family}`; lines = [];
-    for (const paragraph of clip.text.replace(/\r/g, "").split("\n")) {
-      if (!paragraph.trim()) { lines.push(""); continue; }
-      let line = "";
-      for (const word of paragraph.trim().split(/\s+/)) {
-        if (ctx.measureText(word).width <= maxWidth) {
-          const candidate = line ? line + " " + word : word;
-          if (line && ctx.measureText(candidate).width > maxWidth) { lines.push(line); line = word; }
-          else line = candidate;
-        } else {
-          if (line) { lines.push(line); line = ""; }
-          for (const letter of Array.from(word)) {
-            if (line && ctx.measureText(line + letter).width > maxWidth) { lines.push(line); line = letter; }
-            else line += letter;
-          }
-        }
-      }
-      lines.push(line);
-    }
-    if (lines.length * size * 1.18 <= h * 0.9) break;
-    size *= 0.9;
-  }
-  const width = Math.max(...lines.map(line => ctx.measureText(line).width), 1), height = lines.length * size * 1.18;
-  const pad = Math.max(4, size * 0.12), x = clipClamp(clip.x * w, width / 2 + pad, w - width / 2 - pad);
-  const y = clipClamp(clip.y * h, height / 2 + pad, h - height / 2 - pad);
-  return { x, y, width, height, size, lineHeight: size * 1.18, lines, pad };
-}
-
-function drawClipText(ctx, w, h, clip, selection) {
-  ctx.save(); const box = clipTextLayout(ctx, w, h, clip);
-  if (!box) { ctx.restore(); return null; }
-  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = clip.color;
-  ctx.strokeStyle = "#000000"; ctx.lineWidth = Math.max(2, box.size * 0.075); ctx.lineJoin = "round";
-  box.lines.forEach((line, i) => {
-    const y = box.y - box.height / 2 + box.lineHeight * (i + 0.5);
-    ctx.strokeText(line, box.x, y); ctx.fillText(line, box.x, y);
-  });
-  if (selection) {
-    ctx.strokeStyle = "#a78bfa"; ctx.lineWidth = Math.max(2, w / 360); ctx.setLineDash([8, 6]);
-    ctx.strokeRect(box.x - box.width / 2 - box.pad, box.y - box.height / 2 - box.pad, box.width + 2 * box.pad, box.height + 2 * box.pad);
-  }
-  ctx.restore(); return box;
-}
-
-function renderClipFrame(canvas, clip, time, selection = false) {
-  const [width, height] = clipDimensions(clip.aspect);
-  if (canvas.width !== width) canvas.width = width;
-  if (canvas.height !== height) canvas.height = height;
-  const ctx = canvas.getContext("2d"), index = findSceneIndexAtTime(time), scene = scenes[index];
-  ctx.save(); ctx.clearRect(0, 0, width, height);
-  drawClipImage(ctx, width, height, scene, time, clip.fit);
-  if (clip.subtitles) drawClipSubtitles(ctx, width, height, scene, time);
-  const textBox = drawClipText(ctx, width, height, clip, selection);
-  ctx.restore(); return { sceneIndex: index, textBox };
-}
-
-function renderClipPreview() {
-  const clip = selectedClip(); if (!clip || !clipElement("clipEditor").open || clipEditorState.exportJob) return;
-  let time = Number.isFinite(clipEditorState.cursor) ? clipEditorState.cursor : 0;
-  // Al llegar al final mostramos el último fotograma DEL clip, no la escena
-  // siguiente cuando el corte coincide exactamente con un cambio de imagen.
-  if (!clipValidationError(clip)) time = Math.min(time, clip.end - 1e-7);
-  try {
-    clipEditorState.textBox = renderClipFrame(clipElement("clipPreviewCanvas"), clip, time, !clipEditorState.preview).textBox;
-  } catch (error) {
-    const playing = clipEditorState.preview; clipEditorState.preview = null; clipEditorState.textBox = null;
-    if (playing) { cancelAnimationFrame(playing.raf); stopClipAudio(playing.nodes); }
-    clipElement("clipStatus").textContent = "No se pudo dibujar la previsualización: " + error.message;
-    updateClipEditorControls();
-  }
-  updateClipTimeDisplay();
-}
-
-// Recorta las tres pistas en el tiempo ORIGINAL, incluidas las colas de SFX
-// que empezaron antes del clip. La imagen y los subtítulos usan ese mismo tiempo.
-function clipAudioPlan(start, end) {
-  const plan = [{ buffer: voiceBuffer, delay: 0, offset: start, duration: end - start, loop: false, gain: 1, kind: "voice" }];
-  if (bgmBuffer?.duration > 0) {
-    const offset = Math.max(0, Number(clipElement("bgmOffsetInput").value) || 0);
-    plan.push({ buffer: bgmBuffer, delay: 0, offset: (offset + start) % bgmBuffer.duration, duration: end - start,
-      loop: true, gain: clipClamp(Number(clipElement("bgmVolSlider").value) / 100, 0, 1), kind: "bgm" });
-  }
-  scenes.forEach(scene => {
-    if (!scene.sfxId) return;
-    const item = userSfxList.find(sfx => sfx.id === scene.sfxId); if (!item?.buffer) return;
-    const from = Math.max(0, Number(scene.sfxStart ?? 2) || 0);
-    const to = Math.max(from + 0.1, Number(scene.sfxEnd ?? 3) || from + 1);
-    const eventStart = Math.max(0, scene.start + from), eventEnd = eventStart + Math.min(item.buffer.duration, to - from);
-    const overlapStart = Math.max(start, eventStart), overlapEnd = Math.min(end, eventEnd);
-    if (overlapEnd <= overlapStart) return;
-    plan.push({ buffer: item.buffer, delay: overlapStart - start, offset: overlapStart - eventStart,
-      duration: overlapEnd - overlapStart, loop: false, gain: 1, kind: "sfx" });
-  });
-  return plan;
-}
-
-function scheduleClipAudio(plan, when, destination, monitor = false) {
-  const nodes = [];
-  try {
-    plan.forEach(part => {
-      if (!part.buffer || part.duration <= 0) return;
-      const source = audioCtx.createBufferSource(); source.buffer = part.buffer; source.loop = part.loop; nodes.push(source);
-      if (part.gain !== 1) {
-        const gain = audioCtx.createGain(); gain.gain.value = part.gain; nodes.push(gain);
-        source.connect(gain); gain.connect(destination);
-        if (monitor && destination !== audioCtx.destination) gain.connect(audioCtx.destination);
-      } else {
-        source.connect(destination);
-        if (monitor && destination !== audioCtx.destination) source.connect(audioCtx.destination);
-      }
-      source.start(when + part.delay, part.offset, part.duration);
-    });
-    return nodes;
-  } catch (error) { stopClipAudio(nodes); throw error; }
-}
-
-function stopClipAudio(nodes) {
-  nodes.forEach(node => { try { if (typeof node.stop === "function") node.stop(); } catch (_) {} try { node.disconnect(); } catch (_) {} });
-}
-
-function pauseClipPreview() {
-  ++clipEditorState.playSerial;
-  const playing = clipEditorState.preview;
-  if (playing) {
-    clipEditorState.cursor = clipClamp(playing.from + Math.max(0, getAudibleAudioContextTime() - playing.when), playing.from, playing.end);
-    clipEditorState.preview = null; cancelAnimationFrame(playing.raf); stopClipAudio(playing.nodes);
-  }
-  updateClipEditorControls(); renderClipPreview();
-}
-
-async function toggleClipPreview() {
-  if (clipEditorState.preview) { pauseClipPreview(); return; }
-  if (clipEditorState.exportJob) return;
-  const clip = selectedClip(), error = clipReadinessError(clip);
-  if (error) { clipElement("clipError").textContent = error; return; }
-  const serial = ++clipEditorState.playSerial;
-  try {
-    await loadSubFontAsset(getSubtitleFont());
-    if (audioCtx.state === "suspended") await audioCtx.resume();
-    if (serial !== clipEditorState.playSerial || !clipElement("clipEditor").open || clipEditorState.exportJob) return;
-    if (clipEditorState.cursor < clip.start || clipEditorState.cursor >= clip.end - 0.001) clipEditorState.cursor = clip.start;
-    const from = clipEditorState.cursor, when = audioCtx.currentTime + 0.025;
-    const playing = { from, end: clip.end, when, nodes: scheduleClipAudio(clipAudioPlan(from, clip.end), when, audioCtx.destination), raf: null };
-    clipEditorState.preview = playing; updateClipEditorControls();
-    const step = () => {
-      if (clipEditorState.preview !== playing) return;
-      if (audioCtx.state !== "running") { pauseClipPreview(); clipElement("clipStatus").textContent = "La reproducción se ha pausado. Pulsa «Ver clip» para continuar."; return; }
-      clipEditorState.cursor = clipClamp(from + Math.max(0, getAudibleAudioContextTime() - when), from, clip.end);
-      renderClipPreview();
-      if (clipEditorState.cursor >= clip.end) { pauseClipPreview(); clipEditorState.cursor = clip.end; renderClipPreview(); return; }
-      playing.raf = requestAnimationFrame(step);
-    };
-    playing.raf = requestAnimationFrame(step);
-  } catch (error) { pauseClipPreview(); clipElement("clipStatus").textContent = "No se pudo reproducir el clip: " + error.message; }
-}
-
-function seekClipPreview(value) {
-  if (clipEditorState.exportJob) return;
-  const clip = selectedClip(); if (!clip || clipValidationError(clip)) return;
-  pauseClipPreview(); clipEditorState.cursor = clipClamp(clip.start + Number(value), clip.start, clip.end); renderClipPreview();
-}
-
-function clipPointerPosition(event) {
-  const canvas = clipElement("clipPreviewCanvas"), rect = canvas.getBoundingClientRect();
-  if (!rect.width || !rect.height) return null;
-  return { x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height };
-}
-
-function beginClipTextDrag(event) {
-  if (clipEditorState.exportJob || (event.button !== undefined && event.button !== 0)) return;
-  const point = clipPointerPosition(event), box = clipEditorState.textBox; if (!point || !box) return;
-  if (Math.abs(point.x - box.x) > box.width / 2 + box.pad + 12 || Math.abs(point.y - box.y) > box.height / 2 + box.pad + 12) return;
-  pauseClipPreview();
-  clipEditorState.drag = { pointerId: event.pointerId, dx: point.x - box.x, dy: point.y - box.y };
-  const canvas = clipElement("clipPreviewCanvas"); canvas.focus(); canvas.setPointerCapture(event.pointerId); event.preventDefault();
-}
-
-function moveClipTextDrag(event) {
-  const point = clipPointerPosition(event), box = clipEditorState.textBox, drag = clipEditorState.drag;
-  const canvas = clipElement("clipPreviewCanvas");
-  if (!drag || drag.pointerId !== event.pointerId || clipEditorState.exportJob) {
-    canvas.style.cursor = point && box && Math.abs(point.x - box.x) <= box.width / 2 + 12 && Math.abs(point.y - box.y) <= box.height / 2 + 12 ? "grab" : "default"; return;
-  }
-  if (!point) return;
-  const clip = selectedClip(); clip.x = clipClamp((point.x - drag.dx) / canvas.width, 0, 1); clip.y = clipClamp((point.y - drag.dy) / canvas.height, 0, 1); clip.downloaded = false;
-  canvas.style.cursor = "grabbing"; updateClipEditorControls(); renderClipPreview(); event.preventDefault();
-}
-
-function endClipTextDrag(event) {
-  if (clipEditorState.drag?.pointerId !== event.pointerId) return;
-  clipEditorState.drag = null; clipElement("clipPreviewCanvas").style.cursor = "grab"; renderClipList();
-}
-
-function moveClipTextWithKeyboard(event) {
-  const clip = selectedClip(); if (!clip?.text || clipEditorState.exportJob || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
-  pauseClipPreview(); const step = event.shiftKey ? 0.05 : 0.01;
-  if (event.key === "ArrowLeft") clip.x = Math.max(0, clip.x - step);
-  if (event.key === "ArrowRight") clip.x = Math.min(1, clip.x + step);
-  if (event.key === "ArrowUp") clip.y = Math.max(0, clip.y - step);
-  if (event.key === "ArrowDown") clip.y = Math.min(1, clip.y + step);
-  clip.downloaded = false; updateClipEditorControls(); renderClipPreview(); renderClipList(); event.preventDefault();
-}
-
-function cancelClipExport(reason = "Exportación cancelada. Puedes volver a descargar el clip.") {
-  const job = clipEditorState.exportJob; if (!job) return;
-  job.reason = reason; stopClipAudio(job.nodes);
-  try {
-    if (job.recorder?.state === "recording") job.recorder.stop();
-    else if (job.reject) job.reject(new Error(reason));
-  } catch (_) { if (job.reject) job.reject(new Error(reason)); }
-}
-
-function cleanupClipExport(job) {
-  if (job.raf !== null) cancelAnimationFrame(job.raf);
-  stopClipAudio(job.nodes);
-  if (job.recorder) {
-    job.recorder.onstop = job.recorder.onerror = job.recorder.ondataavailable = null;
-    try { if (job.recorder.state === "recording") job.recorder.stop(); } catch (_) {}
-  }
-  const tracks = new Set(job.streams.flatMap(stream => stream.getTracks()));
-  tracks.forEach(track => { try { track.stop(); } catch (_) {} });
-}
-
-async function recordClipMp4(clip, job, onProgress) {
-  const types = getSupportedMp4RecordingTypes();
-  if (!types.length) throw new Error("Este navegador no permite grabar MP4. Utiliza una versión actualizada de Chrome, Edge o Safari con grabación MP4.");
-  const canvas = clipElement("clipPreviewCanvas");
-  if (typeof canvas.captureStream !== "function") throw new Error("El navegador no permite grabar el lienzo de vídeo.");
-  await loadSubFontAsset(getSubtitleFont());
-  if (audioCtx.state === "suspended") await audioCtx.resume();
-  if (job.reason) throw new Error(job.reason);
-  if (audioCtx.state !== "running") throw new Error("No se ha podido iniciar el audio. Vuelve a pulsar Descargar.");
-  renderClipFrame(canvas, clip, clip.start);
-  const videoStream = canvas.captureStream(30); job.streams.push(videoStream);
-  const destination = audioCtx.createMediaStreamDestination(); job.streams.push(destination.stream);
-  const stream = new MediaStream([...videoStream.getVideoTracks(), ...destination.stream.getAudioTracks()]); job.streams.push(stream);
-  let failure = null;
-  for (const mimeType of types) {
-    try {
-      const candidate = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 10000000, audioBitsPerSecond: 192000 });
-      if (!/^video\/mp4(?:\s*;|$)/i.test(candidate.mimeType || mimeType)) throw new Error("El navegador ha seleccionado un contenedor distinto de MP4.");
-      job.recorder = candidate; break;
-    } catch (error) { failure = error; }
-  }
-  if (!job.recorder) throw new Error("No se pudo iniciar la grabación MP4: " + (failure?.message || "Formato no disponible."));
-  const recorder = job.recorder, duration = clip.end - clip.start;
-  return await new Promise((resolve, reject) => {
-    job.reject = reject; const chunks = [];
-    recorder.ondataavailable = event => { if (event.data?.size > 0) chunks.push(event.data); };
-    recorder.onerror = event => { cancelClipExport("El navegador ha interrumpido la grabación: " + (event.error?.message || "error del codificador") + ". No se descargará un clip incompleto."); };
-    recorder.onstop = () => {
-      if (job.reason) { reject(new Error(job.reason)); return; }
-      if (job.when === null || audioCtx.currentTime - job.when < duration - 0.08) { reject(new Error("La grabación se detuvo antes del final. No se descargará un clip incompleto.")); return; }
-      const blob = new Blob(chunks, { type: recorder.mimeType || "video/mp4" });
-      if (!blob.size) { reject(new Error("La grabación quedó vacía. Vuelve a exportar con esta pestaña visible.")); return; }
-      resolve(blob);
-    };
-    // El lienzo contiene ya el primer fotograma. No añadimos silencio inicial
-    // al intervalo elegido: imagen y pistas comparten el mismo reloj de audio.
-    recorder.start(100); job.when = audioCtx.currentTime;
-    job.nodes = scheduleClipAudio(clipAudioPlan(clip.start, clip.end), job.when, destination, true);
-    const step = () => {
-      if (job.reason || clipEditorState.exportJob !== job) return;
-      try {
-        if (audioCtx.state !== "running") { cancelClipExport("El audio se ha pausado durante la exportación. No se descargará un clip incompleto."); return; }
-        const elapsed = Math.max(0, audioCtx.currentTime - job.when), time = clip.start + Math.min(elapsed, duration);
-        clipEditorState.cursor = time; renderClipFrame(canvas, clip, Math.min(time, clip.end - 1e-7)); updateClipTimeDisplay();
-        onProgress(Math.min(100, Math.round(elapsed / duration * 100)));
-        if (elapsed >= duration) {
-          stopClipAudio(job.nodes);
-          try { if (recorder.state === "recording") recorder.stop(); } catch (error) { reject(error); }
-        } else job.raf = requestAnimationFrame(step);
-      } catch (error) { cancelClipExport("No se pudo dibujar el vídeo: " + error.message + ". No se descargará un clip incompleto."); }
-    };
-    job.raf = requestAnimationFrame(step);
-  });
-}
-
-async function downloadSelectedClip() {
-  if (clipEditorState.exportJob) return false;
-  const original = selectedClip(), error = clipReadinessError(original);
-  if (error) { clipElement("clipError").textContent = error; return false; }
-  if (document.hidden) { clipElement("clipStatus").textContent = "Mantén esta pestaña visible mientras se exporta el clip."; return false; }
-  if (isExportingVideo || imageGenerationInProgress || syncInProgress) return false;
-  pauseClipPreview();
-  const clip = { ...original }, index = clipEditorState.items.indexOf(original) + 1;
-  const job = { reason: "", recorder: null, nodes: [], streams: [], raf: null, when: null, reject: null };
-  clipEditorState.exportJob = job; clipElement("clipProgress").hidden = false; clipElement("clipProgress").value = 0;
-  clipElement("clipStatus").textContent = "Preparando clip MP4…"; updateClipEditorControls();
-  try {
-    const blob = await recordClipMp4(clip, job, percent => {
-      clipElement("clipProgress").value = percent;
-      clipElement("clipStatus").textContent = `Exportando clip ${index}: ${percent}%. Mantén la pestaña visible (${clipSeconds(clip.end - clip.start)} s de vídeo).`;
-    });
-    if (job.reason) throw new Error(job.reason);
-    const url = URL.createObjectURL(blob), anchor = document.createElement("a");
-    anchor.href = url; anchor.download = `clip_${String(index).padStart(3, "0")}_${clipSeconds(clip.start)}-${clipSeconds(clip.end)}s_${clip.aspect.replace(":", "x")}.mp4`;
-    document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
-    original.downloaded = true; clipElement("clipProgress").value = 100;
-    clipElement("clipStatus").textContent = `✓ Clip ${index} exportado en MP4. Selecciona otro clip o añade uno nuevo para continuar.`;
-    return blob;
-  } catch (error) {
-    clipElement("clipStatus").textContent = "⚠ " + (error.message || String(error)); clipElement("clipProgress").hidden = true;
-    return false;
-  } finally {
-    cleanupClipExport(job); if (clipEditorState.exportJob === job) clipEditorState.exportJob = null;
-    renderClipList(); updateClipEditorControls(); renderClipPreview();
-  }
-}
-
-function initializeClipEditor() {
-  clipElement("clipCloseBtn").addEventListener("click", closeClipEditor);
-  clipElement("clipEditor").addEventListener("cancel", event => { event.preventDefault(); closeClipEditor(); });
-  clipElement("clipAddBtn").addEventListener("click", addClip);
-  clipElement("clipDuplicateBtn").addEventListener("click", duplicateClip);
-  clipElement("clipDeleteBtn").addEventListener("click", deleteClip);
-  clipElement("clipSplitBtn").addEventListener("click", splitProjectIntoClips);
-  clipElement("clipPlayBtn").addEventListener("click", toggleClipPreview);
-  clipElement("clipSeek").addEventListener("input", event => seekClipPreview(event.target.value));
-  ["clipStart", "clipEnd", "clipAspect", "clipFit", "clipText", "clipFontSize", "clipTextColor", "clipTextX", "clipTextY", "clipSubtitles"].forEach(id => clipElement(id).addEventListener("input", readClipFields));
-  clipElement("clipDownloadBtn").addEventListener("click", downloadSelectedClip);
-  clipElement("clipCancelExportBtn").addEventListener("click", () => cancelClipExport());
-  const canvas = clipElement("clipPreviewCanvas");
-  canvas.addEventListener("pointerdown", beginClipTextDrag); canvas.addEventListener("pointermove", moveClipTextDrag);
-  ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => canvas.addEventListener(type, endClipTextDrag));
-  canvas.addEventListener("keydown", moveClipTextWithKeyboard);
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) return;
-    pauseClipPreview();
-    cancelClipExport("La pestaña dejó de estar visible. No se descargará un clip incompleto. Repite la exportación sin cambiar de pestaña ni minimizar el navegador.");
-  });
-}
-initializeClipEditor();
-
 window.addEventListener("DOMContentLoaded", () => {
   const imageModelSelect = document.getElementById("aiImageModel");
   if (imageModelSelect) {
@@ -4195,6 +3519,212 @@ window.addEventListener("DOMContentLoaded", () => {
   renderCurrentFrame();
   updateScriptStatus();
 });
+
+// Interfaz y flujo de trabajo. La alineación acústica del editor base se conserva.
+const Studio = (() => {
+  const $=id=>document.getElementById(id), esc=escapeHtml;
+  const STYLES=[
+    ['doodle','Doodle','Tinta y papel','Hand-drawn doodle illustration on warm white paper, bold imperfect black outlines, very simple flat shapes, restrained yellow accents','#f3f0df','#25241e','#e9be48'],
+    ['minimal','Minimal','Claro y directo','Minimal flat vector editorial illustration, white background, precise thin outlines, simple geometric shapes, very limited sage and coral colors','#f1f5ec','#3d5140','#e5a07f'],
+    ['noir','Ink Noir','Luz y sombra','Black and white ink noir graphic novel illustration, high contrast chiaroscuro, heavy inky shadows, dramatic cinematic composition, sparse burgundy accents','#e6e0d3','#25252b','#9f4949'],
+    ['creepy','Creepy Comic','Misterio ilustrado','Eerie graphic novel illustration, distressed ink contours, ominous shadows, muted sickly greens, unsettling atmosphere, no gore','#b8b7a1','#252d22','#8c9c4a'],
+    ['classic','Classic','Cartoon esencial','Classic clean 2D cartoon illustration, thick crisp black outlines, simple flat colors, readable expressive poses, bright balanced palette','#f0e5ca','#303431','#e9ac4e'],
+    ['cinematic','Cinematic','Escenas con atmósfera','Cinematic digital illustration, dramatic atmospheric depth, warm rim lighting against deep teal shadows, detailed environments, compelling camera angle','#344f50','#d9d8b5','#dc9b5f'],
+    ['gritty','Gritty','Crudo y texturizado','Gritty editorial comic illustration, rough charcoal textures, grainy concrete, desaturated urban palette, distressed edges and dramatic silhouettes','#b6aea0','#38382e','#92795d'],
+    ['brush','Brushpen','Trazo expresivo','Expressive brush pen illustration, flowing black ink strokes, varied line weight, warm ivory paper, subtle terracotta watercolor washes','#f2e6d7','#3d3a32','#bc7960'],
+    ['vivid','Vivid','Color que destaca','Vibrant bold 2D illustration, saturated purple coral and yellow palette, playful strong shapes, crisp contours, energetic editorial composition','#e9c1d2','#53315b','#f7ac4b'],
+    ['cozy','Cozy','Cálido y cercano','Cozy storybook illustration, soft warm earthy colors, textured paper, rounded forms, gentle afternoon light, inviting calm atmosphere','#eaddc6','#77644e','#c88b62'],
+    ['glow','Glow','Neón sobre oscuro','Glowing neon illustration on a deep midnight background, luminous cyan and magenta outlines, restrained sci-fi lighting, bold clear silhouettes','#192a37','#78d0d8','#d28ac7']
+  ];
+  let chosen='doodle', capabilities=null, templates=[], clips=[], selectedClip=null, voiceFile=null,bgmFile=null,sfxFiles=[],ttsController=null,clipPreview=null;
+  let draftTimer=null, toastTimer=null, sampleUrl=null, exporting=null,projectRevision=0,initialized=false,preparingExport=false;
+  const SETTINGS=['characterDesc','studioFormat','scenePacing','cameraMode','voiceEngine','voiceChoice','dailyBudget','subsSelect','subColorText','subColorPicker','subFontSelect','subSize','subPosition','exportResolution','fitSelect','transSelect'];
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  function notify(message){$('studioToast').textContent=message;$('studioToast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('studioToast').hidden=true,7000);}
+  function guarded(fn){return async(...args)=>{try{return await fn(...args);}catch(e){const message=e.name==='AbortError'?'Proceso pausado. Se conservan los fragmentos terminados.':String(e.message||e);const id={writeScript:'scriptGenerationStatus',planPrompts:'promptsPlanningStatus',generateVoice:'voiceGenerationStatus'}[fn.name];if(id&&$(id))$(id).textContent='Proceso detenido: '+message;notify(message);return false;}};}
+  function safeJson(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}}
+  function day(){return new Date().toISOString().slice(0,10);}
+  function meter(){const v=safeJson('faceless_studio_daily',{});return v.day===day()?v:{day:day(),used:0};}
+  function budgetLimit(){return Math.min(10000,Math.max(500,Number($('dailyBudget')?.value)||9000));}
+  function charge(units){units=Math.max(0,Math.ceil(units));const m=meter();if(m.used+units>budgetLimit()){const e=cloudflareImageError('Tope preventivo diario alcanzado en este navegador. Guarda el proyecto y continúa después del reinicio de las 00:00 UTC. El contador es estimado; comprueba tu consumo en Cloudflare.',429,{quotaExceeded:true});e.permanent=true;throw e;}m.used+=units;try{localStorage.setItem('faceless_studio_daily',JSON.stringify(m));}catch{}refreshBudget();}
+  function estimate(){const lines=getScriptLines(),n=$('promptGenMode').value==='manual19'?parseManualList($('aiManualPrompts19').value).length:lines.length;const txt=lines.join(' '),minutes=txt.split(/\s+/).filter(Boolean).length/145;const mode=$('voiceEngine').value;const voice=voiceBuffer||mode==='upload'?0:mode==='aura'?txt.length*2.72727:minutes*18.63;return {n,minutes,chars:txt.length,images:n*60,voice,units:Math.ceil(n*60+voice+250)};}
+  function refreshBudget(){if(!$('planScenes'))return;const p=estimate(),m=meter();$('planScenes').textContent=p.n;$('planDuration').textContent=p.minutes.toFixed(1)+' min';$('planEstimate').textContent=p.units.toLocaleString('es-ES');$('usedToday').textContent=Math.ceil(m.used).toLocaleString('es-ES')+' / '+budgetLimit().toLocaleString('es-ES');$('budgetFill').style.width=Math.min(100,(m.used+p.units)/budgetLimit()*100)+'%';$('budgetFill').style.background=m.used+p.units>budgetLimit()?'#c26743':'#8b9c6b';$('budgetExplanation').textContent=`Proyecto completo desde cero: ≈ ${p.units.toLocaleString('es-ES')} neuronas (imágenes ${p.images}, voz ${Math.ceil(p.voice)}, reserva orientativa para texto 250). Usado estimado hoy: ${m.used}. ${m.used+p.units>budgetLimit()?'Puede necesitar más de un día: usa menos imágenes, voz propia o conserva los resultados y reanuda mañana.':'Podría entrar en el presupuesto si los consumos reales y los reintentos lo permiten.'}`;}
+  function style(){return STYLES.find(s=>s[0]===chosen)||STYLES[0];}
+  function styleArt(s){const [id,,,desc,bg,line,accent]=s;const heavy=['doodle','classic','vivid','creepy'].includes(id)?5:3;return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="360" height="244" viewBox="0 0 360 244"><rect width="360" height="244" fill="${bg}"/><circle cx="286" cy="50" r="31" fill="${accent}" opacity=".9"/><path d="M0 182 92 94 174 171 234 109 360 195V244H0" fill="${accent}" opacity=".2"/><path d="M0 208H360M46 208V148h65v60M72 147v-25M240 208v-40h72v40" fill="none" stroke="${line}" opacity=".35" stroke-width="2"/><g stroke="${line}" stroke-width="${heavy}" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="176" cy="96" r="26" fill="${bg}"/><path d="M176 123v51m0-34-35 21m35-21 34-31m-34 65-23 33m23-33 27 33"/><path d="m210 109 8-14m-48 2h1m12 0h1m-12 9q5 4 11 0"/></g>${id==='brush'?`<path d="M21 225q130-15 315 0" fill="none" stroke="${line}" stroke-width="9"/>`:''}</svg>`);}
+  function renderStyles(){$('styleGrid').innerHTML=STYLES.map(s=>`<button class="style-tile ${chosen===s[0]?'selected':''}" aria-pressed="${chosen===s[0]}" onclick="Studio.chooseStyle('${s[0]}')"><img src="${styleArt(s)}" alt="Boceto orientativo del estilo ${s[1]}"><strong>${s[1]}</strong><small>${s[2]}</small></button>`).join('');$('chosenStyle').textContent=style()[1];}
+  function chooseStyle(id){if(!STYLES.some(s=>s[0]===id))return;chosen=id;renderStyles();saveDraftSoon();}
+  function dimensions(r,quality='720'){const tall=r==='9:16',sq=r==='1:1',portrait=r==='4:5';if(quality==='1080')return tall?[1080,1920]:sq?[1080,1080]:portrait?[1080,1350]:[1920,1080];return tall?[720,1280]:sq?[720,720]:portrait?[720,900]:[1280,720];}
+  function setFormat(r){$('studioFormat').value=r;$('aspectSelect').value=r;const [w,h]=dimensions(r);$('previewCanvas').width=w;$('previewCanvas').height=h;renderCurrentFrame();saveDraftSoon();}
+  function applyMotion(){scenes.forEach((s,i)=>s.effect=$('cameraMode').value==='none'?EFFECTS[0]:['Zoom In Suave','Zoom Out Suave','Movimiento Ken Burns','Pan Derecha'][i%4]);renderSceneListUI();renderCurrentFrame();saveDraftSoon();}
+  function settings(){return Object.fromEntries(SETTINGS.filter(k=>$(k)).map(k=>[k,$(k).value]));}
+  function applySettings(v){for(const k of SETTINGS)if(v?.[k]!==undefined&&$(k))$(k).value=String(v[k]);setFormat($('studioFormat').value||'16:9');voiceEngineChanged();}
+  function renderTemplates(){$('templateList').innerHTML=templates.map((t,i)=>`<button class="btn" onclick="Studio.loadTemplate(${i})">${esc(t.name)}</button><button class="text-link" aria-label="Eliminar plantilla ${esc(t.name)}" onclick="Studio.deleteTemplate(${i})">×</button>`).join('');}
+  function saveTemplate(){const name=$('templateName').value.trim()||'Mi plantilla';const obj={name,style:chosen,settings:settings()};const idx=templates.findIndex(t=>t.name===name);if(idx<0)templates.push(obj);else templates[idx]=obj;localStorage.setItem('faceless_studio_templates',JSON.stringify(templates));renderTemplates();notify('Plantilla guardada en este navegador.');}
+  function loadTemplate(i){const t=templates[i];if(!t)return;chooseStyle(t.style);applySettings(t.settings);$('templateName').value=t.name;notify('Plantilla aplicada. Las imágenes ya creadas no cambian.');}
+  function deleteTemplate(i){templates.splice(i,1);localStorage.setItem('faceless_studio_templates',JSON.stringify(templates));renderTemplates();}
+  async function health(){const url=getCloudflareWorkerUrl();if(!url||!getCloudflareAccessKey())throw new Error('Abre Conexión IA y configura la URL del Worker y APP_SECRET.');const c=new AbortController(),timer=setTimeout(()=>c.abort(),15000);try{const r=await fetch(url+'/health',{headers:{'X-AutoVideo-Key':getCloudflareAccessKey()},signal:c.signal});const b=await r.json();if(!r.ok||!b.ok)throw new Error(b.error||'HTTP '+r.status);capabilities={url,...b};$('connectionStatus').textContent=b.studioVersion?'Conectado · imágenes, texto y voz':'Conectado · imágenes (servidor anterior)';$('connectionStatus').className='callout';return b;}finally{clearTimeout(timer);}}
+  async function requireCapability(name){if(capabilities?.url!==getCloudflareWorkerUrl())await health();if(!capabilities?.capabilities?.includes(name))throw new Error('Tu servidor solo permite imágenes. En Conexión IA tienes el código y los pasos para crear un Worker nuevo con texto y voz.');}
+  async function request(path,body,units=0,signal){if(!getCloudflareWorkerUrl()||!getCloudflareAccessKey())throw new Error('Configura tu conexión gratuita en «Conexión IA».');for(let attempt=0;attempt<3;attempt++){if(signal?.aborted)throw new DOMException('Pausado','AbortError');charge(units);const controller=new AbortController(),cancel=()=>controller.abort(),timeout=setTimeout(cancel,180000);signal?.addEventListener('abort',cancel,{once:true});let response;try{response=await fetch(getCloudflareWorkerUrl()+path,{method:'POST',headers:{'Content-Type':'application/json','X-AutoVideo-Key':getCloudflareAccessKey()},body:JSON.stringify(body),signal:controller.signal});if(response.ok){if(path==='/tts'){const blob=await response.blob();if(blob.size<44)throw new Error('El proveedor devolvió un audio vacío.');return blob;}return await response.json();}const raw=await response.text();let data;try{data=JSON.parse(raw);}catch{data={error:raw.slice(0,250)};}const e=new Error(data.error||'HTTP '+response.status);e.status=response.status;e.quota=!!data.quotaExceeded||/cupo|quota|daily|neurons.*exhaust/i.test(e.message);if(e.quota||![429,500,502,503,504].includes(e.status)||attempt===2)throw e;}catch(e){if(signal?.aborted)throw new DOMException('Pausado','AbortError');if(e.quota||e.status&&![429,500,502,503,504].includes(e.status)||attempt===2)throw e;if(e.name==='AbortError'&&attempt===2)throw new Error('El proveedor ha tardado demasiado. Puedes reanudarlo.');}finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}await wait(2000*2**attempt);}throw new Error('No se recibió una respuesta.');}
+  async function textTask(system,prompt,max=2048){await requireCapability('text');const cacheKey='studio-text:'+await hash(system+'|'+prompt+'|'+max);const cached=await recoveryStore('get',cacheKey);if(typeof cached==='string')return cached;const units=(prompt.length+system.length)/2*0.004119+max*.034868;const b=await request('/text',{system,prompt,max_tokens:max},units);if(!b.text)throw new Error('No llegó texto de la IA.');await recoveryStore('put',cacheKey,b.text);return b.text;}
+  function stripFences(v){return String(v).replace(/^```(?:json)?\s*|```$/gm,'').trim();}
+  function chunkText(text,max=950){const parts=[];let rest=text.trim();while(rest){if(rest.length<=max){parts.push(rest);break;}const head=rest.slice(0,max+1);const boundary=Math.max(head.lastIndexOf('\n'),head.lastIndexOf('. '),head.lastIndexOf('? '),head.lastIndexOf('! '));let cut=boundary>max*.35?boundary+1:head.lastIndexOf(' ');if(cut<1)cut=max;parts.push(rest.slice(0,cut).trim());rest=rest.slice(cut).trim();}return parts.filter(Boolean);}
+  async function hash(value){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return Array.from(new Uint8Array(d),v=>v.toString(16).padStart(2,'0')).join('');}
+  async function writeScript(){if($('scriptArea').value.trim()&&!confirm('¿Sustituir el guion actual por un nuevo borrador? Guarda el proyecto antes si quieres conservarlo.'))return;const idea=$('ideaInput').value.trim();if(!idea)throw new Error('Escribe primero una idea para el vídeo.');const b=$('writeScriptBtn');b.disabled=true;let pieces=[];try{const mins=Number($('targetMinutes').value),n=Math.ceil(mins/3),target=Math.round(mins*145/n);for(let i=0;i<n;i++){$('scriptGenerationStatus').textContent=`Escribiendo parte ${i+1} de ${n}…`;const piece=await textTask('Eres guionista de narración en español. Devuelve solamente el texto narrado, sin títulos, números de escena, explicaciones ni acotaciones. Una acción visual por párrafo. Evita inventar datos verificables; no tienes búsqueda web.',`Idea: ${idea}\nTono: ${$('scriptTone').value}.\nParte ${i+1} de ${n}, unas ${target} palabras. ${i===0?'Abre con un gancho.':'Continúa sin volver a presentar el tema.'} ${i===n-1?'Termina la historia con un cierre.':'Deja una transición para la siguiente parte, sin despedirte.'}\nContexto de lo ya narrado: ${pieces.join('\n').slice(-4200)}`,Math.min(4096,Math.ceil(target*2.3+200)));pieces.push(stripFences(piece));$('scriptArea').value=pieces.join('\n\n');$('aiTopicInput').value=$('scriptArea').value;updateScriptStatus();}paceScript(false);$('scriptGenerationStatus').textContent='Borrador listo. Revisa los hechos y el texto antes de generar voz e imágenes.';saveDraftSoon();}finally{b.disabled=false;}}
+  function paceScript(show=true){const raw=$('scriptArea').value.trim();if(!raw)throw new Error('Pega o genera primero un guion.');const sentences=raw.replace(/^\s*\d+[.)]\s*/gm,'').split(/(?<=[.!?])\s+|\n+/).map(s=>s.trim()).filter(Boolean);const max=Math.max(7,Math.round(Number($('scenePacing').value)*145/60));const groups=[];let line='';for(const s of sentences){const words=s.split(/\s+/);if(line&&line.split(/\s+/).length+words.length>max){groups.push(line);line='';}if(words.length>max*1.8){if(line){groups.push(line);line='';}for(let i=0;i<words.length;i+=max)groups.push(words.slice(i,i+max).join(' '));}else line+=(line?' ':'')+s;}if(line)groups.push(line);$('scriptArea').value=groups.join('\n\n');$('aiTopicInput').value=$('scriptArea').value;verifiedSyncScript=null;updateScriptStatus();saveDraftSoon();if(show)notify('Ritmo aplicado. Vuelve a sincronizar si ya habías cargado la voz.');}
+  function visualPrompt(scene){return `${style()[3]}. Main character: ${$('characterDesc').value.trim()}. Scene: ${String(scene).replace(/^\d+[.)]\s*/,'')}. No text, lettering, subtitles, logos or watermark. Keep all important action near the center for reframing.`;}
+  async function planPrompts(){const lines=getScriptLines();if(!lines.length)throw new Error('Pega primero el guion.');const btn=$('planPromptsBtn');btn.disabled=true;try{const prompts=[];for(let from=0;from<lines.length;from+=8){$('promptsPlanningStatus').textContent=`Planificando escenas ${from+1}–${Math.min(from+8,lines.length)} de ${lines.length}…`;const batch=lines.slice(from,from+8);const raw=await textTask('You are a visual director. Return ONLY a JSON array of English strings, exactly one image description per numbered Spanish narration line, in the same order. Describe the visible action and environment. Do not include style, text on images or commentary. Do not omit any line.',batch.map((t,i)=>`${i+1}. ${t}`).join('\n'),2300);let parsed;try{parsed=JSON.parse(stripFences(raw));}catch{throw new Error('El director visual no devolvió una lista válida. Puedes reintentar o usar los prompts directos sin IA.');}if(!Array.isArray(parsed)||parsed.length!==batch.length||parsed.some(x=>typeof x!=='string'||!x.trim()))throw new Error('La lista de prompts no coincide con las escenas; se conserva el guion. Reintenta o usa los prompts directos.');prompts.push(...parsed.map(visualPrompt));$('aiManualPrompts19').value=prompts.map((t,i)=>`${i+1}. ${t}`).join('\n\n');$('promptsArea').value=$('aiManualPrompts19').value;}if(prompts.some(t=>t.length>2048))throw new Error('Algún prompt supera 2.048 caracteres. Acórtalo en el modo de lista antes de generar imágenes.');$('promptGenMode').value='manual19';togglePromptMode('manual19');$('promptsPlanningStatus').textContent='Prompts preparados en modo lista. Puedes revisarlos en Conexión IA → Prompts manuales.';saveDraftSoon();}finally{btn.disabled=false;}}
+  async function generateImages(){if(imageGenerationInProgress)throw new Error('Ya hay una generación en marcha.');const manual=$('promptGenMode').value==='manual19';const list=manual?parseManualList($('aiManualPrompts19').value):getScriptLines().map(visualPrompt);if(!list.length)throw new Error('Pega el guion o una lista de prompts.');if(manual&&getScriptLines().length&&list.length!==getScriptLines().length)throw new Error(`Hay ${list.length} prompts y ${getScriptLines().length} escenas. Usa la misma cantidad para mantener la correspondencia.`);const bad=list.findIndex(p=>p.length>2048);if(bad>=0)throw new Error(`El prompt ${bad+1} supera 2.048 caracteres. Acórtalo; no se ha enviado nada.`);currentImagePrompts=list.slice();$('promptsArea').value=list.map((p,i)=>`${i+1}. ${p}`).join('\n\n');switchTab(3);await startImageGenerationQueue(list);renderSceneListUI();renderFilm();saveDraftSoon();}
+  function voiceEngineChanged(){const engine=$('voiceEngine').value;$('voiceChoice').disabled=engine!=='aura';$('sampleVoiceBtn').disabled=engine==='upload';$('generateVoiceBtn').disabled=engine==='upload';$('voiceBudgetNote').textContent=engine==='aura'?'Aura ofrece 10 voces, pero 1.000 caracteres consumen unas 2.727 neuronas del mismo cupo. Para narraciones largas, usa audio propio o MeloTTS.':engine==='upload'?'Carga tu MP3 o WAV debajo. Importar audio no consume el cupo de IA.':'MeloTTS es la opción de ahorro: una voz española del modelo. Prueba su naturalidad antes de generar todo.';refreshBudget();saveDraftSoon();}
+  async function synth(text,signal){const engine=$('voiceEngine').value;await requireCapability(engine==='aura'?'aura-es':'melo-es');const key='studio-tts:'+await hash(engine+'|'+$('voiceChoice').value+'|'+text);const cached=await recoveryStore('get',key);if(cached instanceof Blob)return cached;const units=engine==='aura'?Math.ceil(text.length*2.72727):Math.max(1,Math.ceil(text.split(/\s+/).length/145*18.63));const blob=await request('/tts',{text,engine,voice:$('voiceChoice').value},units,signal);await recoveryStore('put',key,blob);return blob;}
+  async function sampleVoice(){$('voiceGenerationStatus').textContent='Muestra breve de la voz elegida.';const b=$('sampleVoiceBtn');b.disabled=true;try{const text=getScriptLines().join(' ').slice(0,160)||'Cada historia empieza con una idea. Hoy vas a convertir esa idea en tu próximo vídeo.';const blob=await synth(text);if(sampleUrl)URL.revokeObjectURL(sampleUrl);sampleUrl=URL.createObjectURL(blob);$('voiceSamplePlayer').src=sampleUrl;$('voiceSamplePlayer').hidden=false;try{await $('voiceSamplePlayer').play();}catch{notify('Muestra lista. Pulsa reproducir en el audio.');}}finally{b.disabled=false;}}
+  function wav(buffer){const n=buffer.length,channels=buffer.numberOfChannels,ab=new ArrayBuffer(44+n*channels*2),v=new DataView(ab);const s=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i));};s(0,'RIFF');v.setUint32(4,ab.byteLength-8,true);s(8,'WAVE');s(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,channels,true);v.setUint32(24,buffer.sampleRate,true);v.setUint32(28,buffer.sampleRate*channels*2,true);v.setUint16(32,channels*2,true);v.setUint16(34,16,true);s(36,'data');v.setUint32(40,n*channels*2,true);let offset=44;for(let i=0;i<n;i++)for(let c=0;c<channels;c++){const f=Math.max(-1,Math.min(1,buffer.getChannelData(c)[i]));v.setInt16(offset,f<0?f*32768:f*32767,true);offset+=2;}return new Blob([ab],{type:'audio/wav'});}
+  async function installVoice(file,doSync=false){if(isExportingVideo)throw new Error('Espera a que termine la exportación.');++voiceUploadVersion;++syncRequestVersion;syncInProgress=false;verifiedSyncBuffer=verifiedSyncScript=verifiedSyncPlan=null;if(speechRecognitionTask||speechWorkerJobs.size)destroySpeechWorker('Audio nuevo');speechRecognitionTask=speechRecognitionBuffer=speechTranscript=speechTranscriptBuffer=null;pausePlayback();if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')await audioCtx.resume();voiceBuffer=await audioCtx.decodeAudioData(await file.arrayBuffer());voiceFile=file;if(sampleUrl)URL.revokeObjectURL(sampleUrl);sampleUrl=URL.createObjectURL(file);$('voiceSamplePlayer').src=sampleUrl;$('voiceSamplePlayer').hidden=false;isDemoSynthMode=false;totalDuration=voiceBuffer.duration;currentTime=0;speechActivityMap=buildSpeechActivityMap(voiceBuffer);$('voiceLabel').textContent='Audio listo · '+file.name+' · '+formatMMSS(totalDuration);$('st1').textContent='Listo';$('syncAllBtn').disabled=false;$('seekSlider').max=totalDuration;$('downloadVoiceBtn').disabled=false;buildEstimatedProject(false);updateSyncProgress('Audio cargado. Pulsa Sincronizar todo para reconocer la voz.');updateTimeUI();renderCurrentFrame();saveDraftSoon();if(doSync)await autoSyncProject(false);}
+  async function generateVoice(){if(ttsController)throw new Error('Ya se está generando la narración.');const script=getScriptLines().join('\n\n');if(!script)throw new Error('Pega o genera primero el guion.');if($('voiceEngine').value==='upload')throw new Error('Carga tu archivo de voz en el área inferior.');const engine=$('voiceEngine').value,sourceSettings=engine+'|'+$('voiceChoice').value;const chunks=chunkText(script,950),buffers=[];ttsController=new AbortController();$('generateVoiceBtn').disabled=true;$('cancelVoiceBtn').hidden=false;try{if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<chunks.length;i++){if(sourceSettings!==$('voiceEngine').value+'|'+$('voiceChoice').value)throw new Error('La voz elegida ha cambiado. Reanuda con una sola voz.');$('voiceGenerationStatus').textContent=`Generando voz: ${i+1} / ${chunks.length}. Los fragmentos terminados se conservan.`;const blob=await synth(chunks[i],ttsController.signal);buffers.push(await audioCtx.decodeAudioData(await blob.arrayBuffer()));}if(ttsController.signal.aborted)throw new DOMException('Pausado','AbortError');const total=buffers.reduce((n,b)=>n+b.length,0),rate=buffers[0].sampleRate;if(buffers.some(b=>b.sampleRate!==rate))throw new Error('Los fragmentos tienen frecuencias distintas. Recarga y reintenta.');const out=audioCtx.createBuffer(1,total,rate);let offset=0;for(const b of buffers){const dst=out.getChannelData(0);for(let i=0;i<b.length;i++){let f=0;for(let c=0;c<b.numberOfChannels;c++)f+=b.getChannelData(c)[i];dst[offset+i]=f/b.numberOfChannels;}offset+=b.length;}if(getScriptLines().join('\n\n')!==script)throw new Error('El guion ha cambiado durante la generación. Los fragmentos se conservan; reanuda con el guion definitivo.');const file=new File([wav(out)],'narracion_estudio.wav',{type:'audio/wav'});await installVoice(file);$('voiceGenerationStatus').textContent='Narración lista · '+formatMMSS(out.duration)+'. Escúchala y pulsa Sincronizar todo.';}finally{ttsController=null;$('generateVoiceBtn').disabled=false;$('cancelVoiceBtn').hidden=true;}}
+  function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+  function downloadVoice(){if(!voiceBuffer)throw new Error('No hay narración cargada.');download(wav(voiceBuffer),'narracion_estudio.wav');}
+  async function createVideo(){if(!getScriptLines().length){switchTab(2);throw new Error('Empieza escribiendo o generando un guion.');}if(!voiceBuffer){if($('voiceEngine').value==='upload'){switchTab(1);throw new Error('Carga tu audio antes de montar el vídeo.');}switchTab(1);await generateVoice();}if(!loadedImages.length){await generateImages();}if(loadedImages.some(i=>i.isPending))throw new Error('Hay imágenes pendientes. Reanuda su generación antes de montar.');const ok=await autoSyncProject();if(ok){applyMotion();notify('Vídeo preparado. Revisa la vista previa y pulsa Descargar MP4.');}return ok;}
+  function renderFilm(){$('filmstrip').innerHTML=scenes.map((s,i)=>`<button class="film-frame ${currentTime>=s.start&&currentTime<s.end?'active':''}" onclick="seekTo(${s.start});switchTab(4)"><img src="${loadedImages[s.imgIndex]?.url||styleArt(style())}" alt="Escena ${i+1}"><span>${String(i+1).padStart(2,'0')} · ${(s.end-s.start).toFixed(1)}s</span></button>`).join('');$('projectSummary').textContent=scenes.length?`${scenes.length} escenas · ${formatMMSS(totalDuration)}`:'Tu vídeo aparecerá aquí';}
+  function renderScenes(){const c=$('sceneList');if(!$('tab4').classList.contains('active')){c.dataset.dirty='true';renderFilm();return;}c.dataset.dirty='false';if(!scenes.length){c.innerHTML='<div class="empty-state">Todavía no hay escenas.<br>Carga el guion y el audio y pulsa Sincronizar todo.</div>';renderFilm();return;}c.innerHTML=scenes.map((s,i)=>`<article class="scene-editor"><div class="scene-head"><strong>ESCENA ${String(i+1).padStart(2,'0')}</strong><span>${formatMMSS(s.start)} → ${formatMMSS(s.end)}</span><button class="text-link" onclick="seekTo(${s.start})">Ver escena</button></div><div class="scene-content"><img src="${loadedImages[s.imgIndex]?.url||styleArt(style())}" alt="Imagen de la escena ${i+1}"><textarea aria-label="Texto de la escena ${i+1}" oninput="Studio.editSceneText(${i},this.value)">${esc(s.text)}</textarea></div><details class="scene-details"><summary>Imagen, prompt, duración y movimiento</summary><div class="settings-grid"><div class="field"><label>Inicio (segundos)</label><input type="number" step="0.01" min="0" value="${s.start}" onchange="Studio.editSceneTime(${i},'start',this.value)"></div><div class="field"><label>Fin (segundos)</label><input type="number" step="0.01" min="0" value="${s.end}" onchange="Studio.editSceneTime(${i},'end',this.value)"></div><div class="field"><label>Imagen</label><select onfocus="Studio.populateImages(this,${i})" onchange="scenes[${i}].imgIndex=Number(this.value);renderSceneListUI();renderCurrentFrame()"><option value="${s.imgIndex}">${s.imgIndex>=0?'Imagen '+(s.imgIndex+1):'Sin imagen'}</option></select></div><div class="field"><label>Movimiento</label><select onchange="scenes[${i}].effect=this.value;renderCurrentFrame();Studio.saveDraftSoon()">${EFFECTS.map(e=>`<option ${e===s.effect?'selected':''}>${e}</option>`).join('')}</select></div></div><label class="field" style="margin-top:13px">Prompt de esta imagen<textarea id="scenePrompt${i}" rows="3">${esc(loadedImages[s.imgIndex]?.prompt||visualPrompt(s.text))}</textarea></label><div class="button-row" style="margin-top:10px"><button class="btn" onclick="Studio.regenerateScene(${i})">↻ Regenerar esta imagen</button><button class="btn" onclick="Studio.replaceSceneImage(${i})">Subir otra imagen</button></div><div class="settings-grid" style="margin-top:12px"><div class="field"><label>Efecto de sonido</label><select onchange="scenes[${i}].sfxId=this.value">${'<option value="">Sin efecto</option>'+userSfxList.map(x=>`<option value="${esc(x.id)}" ${s.sfxId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div><div class="field"><label>Inicio SFX dentro de escena (s)</label><input type="number" min="0" step=".1" value="${s.sfxStart??2}" onchange="scenes[${i}].sfxStart=Number(this.value)"></div><div class="field"><label>Fin SFX dentro de escena (s)</label><input type="number" min="0.1" step=".1" value="${s.sfxEnd??3}" onchange="scenes[${i}].sfxEnd=Number(this.value)"></div></div></details></article>`).join('');renderFilm();}
+  function editSceneText(i,text){scenes[i].text=text;scenes[i].wordTimings=[];scenes[i].timingSource='estimated';refreshSceneWordTimings();renderCurrentFrame();saveDraftSoon();}
+  function editSceneTime(i,key,value){const s=scenes[i],v=Number(value);if(!Number.isFinite(v)||v<0||v>totalDuration||key==='start'&&v>=s.end||key==='end'&&v<=s.start){renderScenes();throw new Error('El inicio debe ser anterior al final y estar dentro del audio.');}s[key]=v;refreshSceneWordTimings();renderScenes();renderCurrentFrame();saveDraftSoon();}
+  async function regenerateScene(i){if(imageGenerationInProgress||isExportingVideo)throw new Error('Espera a que termine la operación actual.');const s=scenes[i],prompt=$('scenePrompt'+i).value.trim();if(!prompt||prompt.length>2048)throw new Error('El prompt debe tener entre 1 y 2.048 caracteres.');const img=await generateImageWithRetries(prompt,$('aspectSelect').value,i+1,scenes.length);const item={...loadedImages[s.imgIndex],name:`escena_${i+1}.jpg`,url:img.result.dataUrl,imgObj:img.result.imgObj,prompt,isPending:false};if(s.imgIndex<0){s.imgIndex=loadedImages.length;loadedImages.push(item);}else loadedImages[s.imgIndex]=item;renderMediaGrid();renderScenes();renderCurrentFrame();saveDraftSoon();}
+  let replaceTarget=-1;
+  function replaceSceneImage(i){replaceTarget=i;$('replaceImageInput').click();}
+  async function receiveReplacement(file){if(!file||replaceTarget<0)return;const url=await toDataUrl(file),img=await loadImageCrossOrigin(url);const s=scenes[replaceTarget],item={name:file.name,url:img.dataUrl,imgObj:img.imgObj,isPending:false,prompt:''};if(s.imgIndex<0){s.imgIndex=loadedImages.length;loadedImages.push(item);}else loadedImages[s.imgIndex]=item;renderMediaGrid();renderScenes();renderCurrentFrame();saveDraftSoon();}
+  function paintFrame(ctx,w,h,t,opts={}){ctx.save();ctx.fillStyle='#1d251c';ctx.fillRect(0,0,w,h);const i=findSceneIndexAtTime(t),s=scenes[i];if(!s){ctx.fillStyle='#dae0d1';ctx.font=`500 ${Math.round(w*.026)}px sans-serif`;ctx.textAlign='center';ctx.fillText('Tu próxima historia empieza aquí.',w/2,h/2);ctx.restore();return;}if(opts.crop!==undefined){const im=loadedImages[s.imgIndex]?.imgObj;if(im){const scale=Math.max(w/im.width,h/im.height);ctx.drawImage(im,(w-im.width*scale)*opts.crop/100,(h-im.height*scale)/2,im.width*scale,im.height*scale);}else drawSceneLayer(ctx,w,h,s,0);}else drawSceneLayer(ctx,w,h,s,(t-s.start)/Math.max(.01,s.end-s.start));if($('transSelect').value==='fade'&&i>0&&t>=s.start&&t<s.start+.22){ctx.save();ctx.globalAlpha=1-(t-s.start)/.22;drawSceneLayer(ctx,w,h,scenes[i-1],1);ctx.restore();}if(opts.subs!==false)drawSubtitlesOnCanvas(ctx,w,h,s,t);if(opts.text)paintTitle(ctx,w,h,opts);ctx.restore();}
+  function paintTitle(ctx,w,h,o){ctx.save();const size=h*(Number(o.size)||7)/100;ctx.font=`800 ${size}px ${getSubtitleFont().family}`;ctx.textAlign='center';ctx.textBaseline='middle';const words=String(o.text).split(/\s+/),lines=[];let line='';for(const wd of words){const n=line?line+' '+wd:wd;if(ctx.measureText(n).width>w*.88&&line){lines.push(line);line=wd;}else line=n;}if(line)lines.push(line);const lineHeight=size*1.18,x=w*(Number(o.x)||50)/100,y=h*(Number(o.y)||20)/100;lines.forEach((t,i)=>{const yy=y+(i-(lines.length-1)/2)*lineHeight;if(o.box){ctx.fillStyle='rgba(0,0,0,.72)';const tw=Math.min(w*.94,ctx.measureText(t).width+size*.65);ctx.fillRect(x-tw/2,yy-size*.62,tw,size*1.24);}ctx.strokeStyle='#000';ctx.lineWidth=Math.max(2,size*.08);ctx.strokeText(t,x,yy,w*.9);ctx.fillStyle=/^#[0-9a-f]{6}$/i.test(o.color)?o.color:'#ffffff';ctx.fillText(t,x,yy,w*.9);});ctx.restore();}
+  function subtitleDraw(ctx,w,h,s,t){const mode=$('subsSelect').value;if(mode==='none'||!s?.text)return;const cues=getSubtitleCues(s),cue=cues.find(c=>t>=c.start&&t<c.end);if(!cue)return;const font=Math.max(8,h*Math.min(12,Math.max(2,Number($('subSize').value)||5.2))/100),y=h*Math.min(95,Math.max(10,Number($('subPosition').value)||82))/100;ctx.save();ctx.font=`${getSubtitleFont().weight} ${font}px ${getSubtitleFont().family}`;ctx.textBaseline='middle';ctx.textAlign='left';const words=cue.words,active=Math.max(0,cue.timings.findLastIndex(a=>t>=a.start));let full=words.join(' '),scale=Math.min(1,w*.9/Math.max(1,ctx.measureText(full).width));ctx.font=`${getSubtitleFont().weight} ${font*scale}px ${getSubtitleFont().family}`;const width=ctx.measureText(full).width,x=(w-width)/2;if(mode==='box'||mode==='headline'){ctx.fillStyle=mode==='headline'?'#e96840':'rgba(0,0,0,.8)';ctx.beginPath();ctx.roundRect(x-font*.4,y-font*.7,width+font*.8,font*1.4,font*.13);ctx.fill();}let xx=x;words.forEach((word,i)=>{const tt=word+(i<words.length-1?' ':''),isActive=i===active;const pop=mode==='pop'&&isActive?1.08:1;ctx.save();if(pop!==1){ctx.translate(xx,y);ctx.scale(pop,pop);ctx.translate(-xx,-y);}ctx.lineWidth=font*.09;ctx.strokeStyle='#151b16';ctx.strokeText(tt,xx,y);ctx.fillStyle=(mode==='minimal'||mode==='headline')?'#ffffff':isActive?($('subColorText').value||'#ffffff'):'#dadfd6';ctx.fillText(tt,xx,y);if(mode==='karaoke'&&isActive){ctx.fillStyle=$('subColorText').value||'#e96840';ctx.fillRect(xx,y+font*.57,ctx.measureText(word).width,font*.08);}ctx.restore();xx+=ctx.measureText(tt).width;});ctx.restore();}
+  function newClip(start=0,end=Math.min(totalDuration,60)){return {id:crypto.randomUUID(),start,end,aspect:'9:16',text:'',size:7,color:'#ffffff',x:50,y:20,box:true,subs:true,crop:50};}
+  function validateClip(c){if(!Number.isFinite(c.start)||!Number.isFinite(c.end)||c.start<0||c.end<=c.start||c.end>totalDuration+.005)throw new Error(`El clip debe estar dentro del vídeo: de 0 a ${totalDuration.toFixed(2)} segundos, con final mayor que inicio.`);}
+  function addClip(){if(!scenes.length)throw new Error('Sincroniza el vídeo antes de crear clips.');const c=newClip(Math.min(currentTime,Math.max(0,totalDuration-.1)),Math.min(totalDuration,currentTime+60));clips.push(c);selectClip(c.id);renderClips();saveDraftSoon();}
+  function autoClips(){if(!scenes.length)throw new Error('Sincroniza el vídeo antes de crear clips.');const seconds=Number($('autoClipSeconds').value);if(!Number.isFinite(seconds)||seconds<1||seconds>3600)throw new Error('Usa intervalos entre 1 y 3.600 segundos.');const count=Math.ceil(totalDuration/seconds);if(count>1000)throw new Error('Elige un intervalo mayor para crear menos de 1.000 clips.');if(clips.length&&!confirm('¿Sustituir la lista de clips actual por los nuevos cortes?'))return;clips=[];for(let start=0;start<totalDuration-.01;start+=seconds)clips.push(newClip(start,Math.min(start+seconds,totalDuration)));selectedClip=clips[0]?.id;renderClips();selectClip(selectedClip);saveDraftSoon();}
+  function selected(){return clips.find(c=>c.id===selectedClip);}
+  function renderClips(){$('clipList').innerHTML=clips.length?clips.map((c,i)=>`<article class="clip-card ${c.id===selectedClip?'active':''}"><div class="button-row"><strong style="font-size:12px">Clip ${i+1} · ${esc(c.aspect)}</strong><span class="clip-meta">${c.start.toFixed(1)} → ${c.end.toFixed(1)} s · ${(c.end-c.start).toFixed(1)} s</span></div><span class="muted">${esc(c.text||'Sin título añadido')}</span><div class="button-row"><button class="btn" onclick="Studio.selectClip('${c.id}')">Editar y previsualizar</button><button class="btn btn-success" onclick="Studio.exportClip('${c.id}')">Descargar MP4</button><button class="text-link" onclick="Studio.removeClip('${c.id}')">Eliminar</button></div></article>`).join(''):'<div class="empty-state">No hay clips todavía.</div>';$('clipEditor').hidden=!selected();}
+  function selectClip(id){stopClip();selectedClip=id;const c=selected();if(!c)return;for(const [key,input]of Object.entries({text:'clipTitle',start:'clipStart',end:'clipEnd',aspect:'clipAspect',color:'clipColor',size:'clipSize',x:'clipX',y:'clipY',crop:'clipCrop'}))$(input).value=c[key];$('clipBox').checked=c.box;$('clipSubs').checked=c.subs;$('clipSeek').min=c.start;$('clipSeek').max=c.end;$('clipSeek').value=c.start;$('clipSizeValue').textContent=c.size+'%';renderClips();drawClip(c.start);}
+  function updateClip(key,value){stopClip();const c=selected();if(!c)return;const nums=['start','end','size','x','y','crop'];c[key]=nums.includes(key)?Number(value):value;$('clipSizeValue').textContent=c.size+'%';$('clipSeek').min=Math.max(0,c.start);$('clipSeek').max=Math.max(c.start+.01,c.end);drawClip(Math.max(c.start,Math.min(Number($('clipSeek').value),c.end)));renderClips();saveDraftSoon();}
+  function removeClip(id){stopClip();clips=clips.filter(c=>c.id!==id);if(selectedClip===id)selectedClip=clips[0]?.id;renderClips();if(selectedClip)selectClip(selectedClip);saveDraftSoon();}
+  function drawClip(t){const c=selected();if(!c)return;const canvas=$('clipCanvas'),[w,h]=dimensions(c.aspect);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}paintFrame(canvas.getContext('2d'),w,h,t,c);$('clipSeek').value=t;}
+  function stopClip(){if(clipPreview){cancelAnimationFrame(clipPreview.frame);clipPreview.nodes.forEach(n=>{try{n.stop();}catch{}});clipPreview=null;}$('previewClipBtn').textContent='▶ Previsualizar clip';}
+  function audioNodes(dest,start,end,startAt,monitor=true){const nodes=[];const connect=(node,gain)=>{if(gain){node.connect(gain);gain.connect(dest);if(monitor)gain.connect(audioCtx.destination);}else{node.connect(dest);if(monitor)node.connect(audioCtx.destination);}nodes.push(node);};if(voiceBuffer&&!isDemoSynthMode){const n=audioCtx.createBufferSource();n.buffer=voiceBuffer;connect(n);n.start(startAt,start,Math.min(end-start,voiceBuffer.duration-start));}if(bgmBuffer){const n=audioCtx.createBufferSource(),g=audioCtx.createGain();n.buffer=bgmBuffer;n.loop=true;g.gain.value=Number($('bgmVolSlider').value)/100;connect(n,g);n.start(startAt,(Math.max(0,Number($('bgmOffsetInput').value)||0)+start)%bgmBuffer.duration,end-start);}for(const s of scenes){const item=userSfxList.find(x=>x.id===s.sfxId);if(!item?.buffer)continue;const at=s.start+Math.max(0,Number(s.sfxStart)||0),dur=Math.min(item.buffer.duration,Math.max(.1,(s.sfxEnd??3)-(s.sfxStart??2))),a=Math.max(start,at),b=Math.min(end,at+dur);if(b<=a)continue;const n=audioCtx.createBufferSource();n.buffer=item.buffer;connect(n);n.start(startAt+a-start,a-at,b-a);}return nodes;}
+  async function previewClip(){if(clipPreview){stopClip();return;}if(isExportingVideo)throw new Error('Espera a que termine la exportación.');const c=selected();validateClip(c);pausePlayback();if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();await audioCtx.resume();const dest=audioCtx.createGain();dest.gain.value=0;dest.connect(audioCtx.destination);const at=audioCtx.currentTime+.03;clipPreview={nodes:audioNodes(dest,c.start,c.end,at),frame:null};$('previewClipBtn').textContent='■ Detener';const step=()=>{if(!clipPreview)return;const t=Math.min(c.end,c.start+Math.max(0,audioCtx.currentTime-at));drawClip(t);if(t>=c.end)stopClip();else clipPreview.frame=requestAnimationFrame(step);};step();}
+  async function record(opts={}){if(preparingExport)throw new Error('Ya se está preparando o exportando un vídeo.');preparingExport=true;try{return await recordInternal(opts);}finally{preparingExport=false;}}
+  async function recordInternal({start=0,end=totalDuration,clip=null,name='video_faceless.mp4'}={}){if(isExportingVideo||syncInProgress||imageGenerationInProgress)throw new Error('Espera a que termine la operación actual.');if(!hasVerifiedVoiceSync()){if(!await autoSyncProject(false)||!hasVerifiedVoiceSync())throw new Error('Revisa la sincronización antes de exportar.');}if(!scenes.length)throw new Error('Sincroniza el proyecto antes de exportar.');const needed=scenes.filter(s=>s.end>start&&s.start<end);if(needed.some(s=>s.imgIndex<0||!loadedImages[s.imgIndex]?.imgObj||loadedImages[s.imgIndex]?.isPending))throw new Error('Hay escenas del tramo sin imagen. Completa sus imágenes antes de exportar.');validateClip({start,end});if(document.hidden)throw new Error('Mantén esta página visible durante la exportación.');const types=getSupportedMp4RecordingTypes();if(!types.length)throw new Error('Tu navegador no puede grabar MP4. Prueba Chrome, Edge o Safari actualizados con H.264/AAC.');pausePlayback();stopClip();if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();await audioCtx.resume();await loadSubFontAsset(getSubtitleFont());const [w,h]=dimensions(clip?.aspect||$('aspectSelect').value,$('exportResolution').value);const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');paintFrame(ctx,w,h,start,clip||{});const stream=canvas.captureStream(30),dest=audioCtx.createMediaStreamDestination(),combined=new MediaStream([...stream.getVideoTracks(),...dest.stream.getAudioTracks()]);let rec;for(const mimeType of types){try{const candidate=new MediaRecorder(combined,{mimeType,videoBitsPerSecond:$('exportResolution').value==='1080'?12000000:6500000,audioBitsPerSecond:192000});if(!/^video\/mp4/i.test(candidate.mimeType))continue;rec=candidate;break;}catch{}}if(!rec){combined.getTracks().forEach(t=>t.stop());throw new Error('No se pudo iniciar el codificador MP4. El proyecto se conserva.');}isExportingVideo=true;const unfreeze=freezeControls();exportAbortReason='';$('exportVideoBtn').disabled=true;$('exportProgressOuter').style.display='block';const chunks=[];let nodes=[],frame=null,at=null;return await new Promise((resolve,reject)=>{const cleanup=()=>{if(frame)cancelAnimationFrame(frame);nodes.forEach(n=>{try{n.stop();}catch{}});combined.getTracks().forEach(t=>t.stop());isExportingVideo=false;activeExportRecorder=null;activeExportNodes=[];exporting=null;unfreeze();$('exportVideoBtn').disabled=false;};rec.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data);};rec.onerror=()=>{exportAbortReason='El navegador ha interrumpido la codificación. No se descarga un archivo incompleto.';try{rec.stop();}catch{cleanup();reject(new Error(exportAbortReason));}};rec.onstop=()=>{const duration=end-start;const error=exportAbortReason||(at!==null&&audioCtx.currentTime-at<duration-.08?'La grabación terminó antes de tiempo. Vuelve a exportar con la página visible.':'');cleanup();if(error){$('exportStatus').textContent='Exportación cancelada. '+error;reject(new Error(error));return;}const blob=new Blob(chunks,{type:rec.mimeType});if(!blob.size){reject(new Error('El archivo de vídeo quedó vacío.'));return;}download(blob,name);$('exportStatus').textContent=`MP4 listo · ${formatMMSS(duration)} · ${w} × ${h}.`;$('exportProgressInner').style.width='100%';resolve(blob);};try{rec.start(150);at=audioCtx.currentTime+.04;nodes=audioNodes(dest,start,end,at);activeExportRecorder=rec;activeExportNodes=nodes;exporting={rec};const step=()=>{if(!isExportingVideo||rec.state!=='recording')return;const t=start+Math.max(0,audioCtx.currentTime-at),clamped=Math.min(end,t);paintFrame(ctx,w,h,clamped,clip||{});currentTime=clamped;updateTimeUI();renderCurrentFrame();if(clip)drawClip(clamped);const pct=Math.min(100,Math.floor((clamped-start)/(end-start)*100));$('exportProgressInner').style.width=pct+'%';$('exportStatus').textContent=`Exportando ${clip?'clip':'vídeo'} · ${pct}% · Mantén esta pestaña visible.`;if(t<end)frame=requestAnimationFrame(step);else{nodes.forEach(n=>{try{n.stop();}catch{}});rec.stop();}};frame=requestAnimationFrame(step);}catch(e){cleanup();reject(e);}});}
+  async function exportClip(id){const c=clips.find(v=>v.id===id);if(!c)throw new Error('No se encuentra este clip.');selectClip(id);return record({start:c.start,end:c.end,clip:{...c},name:`clip_${clips.indexOf(c)+1}_${c.aspect.replace(':','x')}.mp4`});}
+  function freezeControls(){const old=Array.from(document.querySelectorAll('button,input,textarea,select'),el=>[el,el.disabled]);for(const [el]of old)if(el.id!=='cancelExportBtn')el.disabled=true;return()=>old.forEach(([el,disabled])=>el.disabled=disabled);}
+  function populateImages(select,i){select.innerHTML=loadedImages.map((_,n)=>`<option value="${n}" ${n===scenes[i].imgIndex?'selected':''}>Imagen ${n+1}</option>`).join('')||'<option value="-1">Sin imagen</option>';}
+  function stopExport(){if(exporting?.rec?.state==='recording'){exportAbortReason='Has cancelado la exportación. El proyecto se conserva.';exporting.rec.stop();}}
+  async function toDataUrl(blob){const bytes=new Uint8Array(await blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));return 'data:'+(blob.type||'application/octet-stream')+';base64,'+btoa(binary);}
+  async function fromDataUrl(value,name){if(typeof value!=='string'||!/^data:(?:audio\/[^;,]+|application\/octet-stream)[;,]/i.test(value))throw new Error('Audio del proyecto no válido.');return new File([await (await fetch(value)).blob()],name||'audio.wav');}
+  function snapshot(){return {type:'FacelessStudioProject',version:1,createdAt:new Date().toISOString(),title:$('projectName').value,style:chosen,settings:settings(),script:$('scriptArea').value,manualPrompts:$('aiManualPrompts19').value,promptMode:$('promptGenMode').value,prompts:$('promptsArea').value,scenes:scenes.map(s=>({...s})),duration:totalDuration,images:loadedImages.map(({name,url,prompt,isPending})=>({name,url,prompt,isPending})),clips:clips.map(c=>({...c})),selectedClip,verified:!!voiceBuffer&&hasVerifiedVoiceSync(),bgmVolume:$('bgmVolSlider').value,bgmOffset:$('bgmOffsetInput').value};}
+  function saveDraftSoon(){if(!initialized)return;clearTimeout(draftTimer);draftTimer=setTimeout(()=>saveDraft().catch(()=>{}),1500);refreshBudget();}
+  async function saveDraft(){if(isExportingVideo)return;const saved=await recoveryStore('put','faceless-studio-draft',{...snapshot(),voice:voiceFile,bgm:bgmFile,sfx:userSfxList.filter(s=>s._sourceFile).map(s=>({file:s._sourceFile,id:s.id,keywords:s.keywords}))});$('saveState').textContent=saved?'Borrador local guardado':'No se pudo guardar el borrador. Usa Guardar proyecto.';}
+  async function saveProject(){const b=$('saveProjectBtn');b.disabled=true;try{const data=snapshot();data.voice=voiceFile?{name:voiceFile.name,data:await toDataUrl(voiceFile)}:voiceBuffer?{name:'narracion.wav',data:await toDataUrl(wav(voiceBuffer))}:null;data.bgm=bgmFile?{name:bgmFile.name,data:await toDataUrl(bgmFile)}:null;data.sfx=[];for(const item of userSfxList.filter(s=>s._sourceFile))data.sfx.push({name:item._sourceFile.name,data:await toDataUrl(item._sourceFile),id:item.id,keywords:item.keywords||[]});download(new Blob([JSON.stringify(data)],{type:'application/json'}),($('projectName').value||'mi-video').replace(/[^\w\-áéíóúñ]/gi,'_')+'.avfproject');await saveDraft();notify('Proyecto guardado con imágenes, sonido, tiempos y clips.');}finally{b.disabled=false;}}
+  async function restore(data,isDraft=false){if(data?.type!=='FacelessStudioProject'||data.version!==1||!Array.isArray(data.images)||!Array.isArray(data.scenes))throw new Error('Este archivo no es un proyecto compatible.');if(data.images.length>3000||data.scenes.length>5000||typeof data.script!=='string')throw new Error('El proyecto tiene una estructura no válida.');if(isExportingVideo||imageGenerationInProgress||syncInProgress)throw new Error('Espera a que termine la operación actual antes de abrir otro proyecto.');pausePlayback();stopClip();++projectRevision;const images=[];for(const item of data.images){if(item.isPending){images.push({...item,imgObj:null});continue;}if(!/^data:image\/(png|jpeg|webp|gif);base64,/i.test(item.url||''))throw new Error('El proyecto contiene una imagen externa o no compatible.');const im=await loadImageCrossOrigin(item.url);images.push({...item,url:im.dataUrl,imgObj:im.imgObj});}let vf=null,bf=null;if(data.voice)vf=isDraft?data.voice:await fromDataUrl(data.voice.data,data.voice.name);if(data.bgm)bf=isDraft?data.bgm:await fromDataUrl(data.bgm.data,data.bgm.name);if(vf)await installVoice(vf);else{voiceBuffer=null;voiceFile=null;verifiedSyncBuffer=verifiedSyncScript=verifiedSyncPlan=null;totalDuration=Number(data.duration)||15;}$('scriptArea').value=data.script;$('aiTopicInput').value=data.script;loadedImages=images;$('aiManualPrompts19').value=data.manualPrompts||'';$('promptsArea').value=data.prompts||'';$('promptGenMode').value=data.promptMode==='manual19'?'manual19':'auto';togglePromptMode($('promptGenMode').value);const dur=voiceBuffer?.duration||Number(data.duration)||15;scenes=data.scenes.map(s=>{if(!Number.isFinite(s.start)||!Number.isFinite(s.end)||s.start<0||s.end<=s.start||s.end>dur+.1||!Number.isInteger(s.imgIndex)||s.imgIndex>=images.length||s.imgIndex< -1||typeof s.text!=='string')throw new Error('Una escena del proyecto no tiene tiempos válidos.');return {...s};});totalDuration=dur;chosen=STYLES.some(s=>s[0]===data.style)?data.style:'doodle';applySettings(data.settings);$('projectName').value=data.title||'Mi vídeo';clips=(data.clips||[]).filter(c=>Number.isFinite(c.start)&&Number.isFinite(c.end)&&c.start>=0&&c.end>c.start&&c.end<=dur+.01).map(c=>({...newClip(),...c}));selectedClip=data.selectedClip||clips[0]?.id;bgmBuffer=null;bgmFile=null;if(bf){bgmFile=bf;await handleBgmUpload(bf);}userSfxList=[];sfxFiles=[];for(const item of data.sfx||[]){const file=isDraft?(item.file||item):await fromDataUrl(item.data,item.name);await handleSfxUpload([file]);const restored=userSfxList.at(-1);if(restored&&item.id)restored.id=item.id;if(restored&&item.keywords)restored.keywords=item.keywords;}renderSfxLibraryUI();if(voiceBuffer&&data.verified){verifiedSyncBuffer=voiceBuffer;verifiedSyncScript=data.script.trim();verifiedSyncPlan=JSON.stringify(getProjectSceneLines());}else{verifiedSyncBuffer=verifiedSyncScript=verifiedSyncPlan=null;}$('bgmVolSlider').value=data.bgmVolume||14;$('bgmOffsetInput').value=data.bgmOffset||0;$('seekSlider').max=dur;currentTime=0;renderStyles();renderMediaGrid();renderScenes();renderClips();if(selectedClip)selectClip(selectedClip);updateScriptStatus();updateTimeUI();renderCurrentFrame();switchTab(4);notify('Proyecto abierto. Revisa la vista previa antes de exportar.');}
+  async function loadProject(file){if(!file)return;if(file.size>600*1024*1024)throw new Error('Este proyecto ocupa más de 600 MB. Ábrelo en un navegador con suficiente memoria.');const data=JSON.parse(await file.text());await restore(data);}
+  async function restoreDraft(){const d=await recoveryStore('get','faceless-studio-draft');if(!d)throw new Error('No hay un borrador guardado en este navegador.');await restore(d,true);}
+  async function copyWorker(){const text=$('freeWorkerSource').textContent;try{await navigator.clipboard.writeText(text);notify('Código copiado. Pégalo en Edit code de tu Worker nuevo.');}catch{downloadWorker();notify('No se pudo copiar. Se ha descargado el archivo de código para abrirlo y copiarlo.');}}
+  function downloadWorker(){download(new Blob([$('freeWorkerSource').textContent],{type:'text/javascript'}),'faceless-studio-worker.js');}
+  function initialize(){if(initialized)return; $('formatGate').classList.add('hidden');selectedVideoFormat='long';setFormat('16:9');templates=safeJson('faceless_studio_templates',[]);renderStyles();renderTemplates();renderScenes();renderClips();refreshBudget();for(const id of [...SETTINGS,'scriptArea','ideaInput','projectName','aiManualPrompts19','aiVisualStyle','promptGenMode'])$(id)?.addEventListener('input',()=>{projectRevision++;saveDraftSoon();});$('clipCanvas').addEventListener('pointerdown',e=>{const c=selected();if(!c||isExportingVideo)return;stopClip();const canvas=$('clipCanvas');canvas.setPointerCapture(e.pointerId);const move=ev=>{const r=canvas.getBoundingClientRect();const cssRatio=r.width/r.height,cr=canvas.width/canvas.height;let left=r.left,top=r.top,width=r.width,height=r.height;if(cssRatio>cr){width=height*cr;left+=(r.width-width)/2;}else{height=width/cr;top+=(r.height-height)/2;}c.x=Math.max(5,Math.min(95,(ev.clientX-left)/width*100));c.y=Math.max(5,Math.min(95,(ev.clientY-top)/height*100));$('clipX').value=c.x;$('clipY').value=c.y;drawClip(Number($('clipSeek').value));};move(e);canvas.onpointermove=move;canvas.onpointerup=()=>{canvas.onpointermove=null;saveDraftSoon();};canvas.onpointercancel=()=>{canvas.onpointermove=null;};});document.addEventListener('change',()=>{if(!imageGenerationInProgress&&!isExportingVideo)saveDraftSoon();});document.querySelectorAll('.dropzone').forEach(zone=>{zone.addEventListener('dragover',e=>{e.preventDefault();});zone.addEventListener('drop',e=>{e.preventDefault();const files=Array.from(e.dataTransfer?.files||[]);if(!files.length)return;if(zone.querySelector('#voiceInput'))handleVoiceUpload(files[0]);else if(zone.querySelector('#imgInput'))handleImagesUpload(files);});});window.addEventListener('beforeunload',e=>{if(imageGenerationInProgress||ttsController||isExportingVideo){e.preventDefault();e.returnValue='';}});switchTab(0);initialized=true;}
+
+  async function demo(){if(isExportingVideo||imageGenerationInProgress||syncInProgress||ttsController)throw new Error('Espera a que termine el proceso actual.');if(($('scriptArea').value.trim()||loadedImages.length)&&!confirm('La demo sustituye el proyecto actual. Guarda tu proyecto antes si quieres conservarlo. ¿Cargar la demo visual?'))return;pausePlayback();stopClip();$('voiceSamplePlayer').pause();++syncRequestVersion;voiceBuffer=null;voiceFile=null;verifiedSyncBuffer=verifiedSyncScript=verifiedSyncPlan=null;bgmBuffer=null;bgmFile=null;userSfxList=[];clips=[];selectedClip=null;isDemoSynthMode=true;speechActivityMap=null;totalDuration=15;currentTime=0;const texts=['Una idea se convierte en una historia.','Cada escena encuentra su imagen.','La voz marca el ritmo del vídeo.','Un mismo proyecto se transforma en muchos clips.'];$('scriptArea').value=texts.join('\n\n');$('promptGenMode').value='auto';togglePromptMode('auto');$('aiTopicInput').value=$('scriptArea').value;const colors=[['#293d2b','#6a8551','#d6c48b','✦'],['#31445b','#677f9b','#c9bbdc','◫'],['#5e493c','#b28161','#f3cb91','♫'],['#463b55','#917b9f','#e3b9c8','✂']];loadedImages=[];for(let i=0;i<texts.length;i++){const raw=createProceduralSceneImage('Escena '+(i+1),...colors[i]),im=await loadImageCrossOrigin(raw.url);loadedImages.push({name:raw.name,url:im.dataUrl,imgObj:im.imgObj,isPending:false,prompt:''});}$('voiceLabel').textContent='Demo visual · sin narración';$('downloadVoiceBtn').disabled=true;$('voiceSamplePlayer').hidden=true;renderMediaGrid();renderClips();updateScriptStatus();await autoSyncProject(true);$('exportStatus').textContent='Demo visual de 15 segundos · dibujos locales y subtítulos orientativos · sin narración ni consumo de IA.';notify('Demo visual lista. Puedes reproducirla, exportarla o probar los clips. No consume IA.');saveDraftSoon();}
+  // Adaptadores del motor original: misma alineación de voz y misma cola recuperable.
+  const originalFetchImage=fetchCloudflareImage;
+  fetchCloudflareImage=async(prompt,aspect,useReference,signal)=>{if(prompt.length>2048)throw cloudflareImageError('El prompt supera 2.048 caracteres. Acórtalo antes de reintentar.',413);charge(60);return originalFetchImage(prompt,aspect,false,signal);};
+  const originalQuota=isCloudflareImageQuotaError;
+  isCloudflareImageQuotaError=e=>originalQuota(e)||!!e?.details?.quotaExceeded||/cupo gratuito|tope preventivo|cuota diaria/i.test(e?.message||'');
+  loadBuiltInDemo=guarded(demo);
+  handleVoiceUpload=guarded(file=>file?installVoice(file):null);
+  const baseBgm=handleBgmUpload;handleBgmUpload=async file=>{if(!file)return;await baseBgm(file);bgmFile=file;saveDraftSoon();};
+  const baseSfx=handleSfxUpload;handleSfxUpload=async files=>{for(const file of Array.from(files||[])){const count=userSfxList.length;await baseSfx([file]);if(userSfxList.length>count){userSfxList.at(-1)._sourceFile=file;userSfxList.at(-1).id='sfx_'+crypto.randomUUID();}}renderSfxLibraryUI();renderScenes();saveDraftSoon();};
+  const baseScriptStatus=updateScriptStatus;updateScriptStatus=()=>{baseScriptStatus();refreshBudget();};
+  switchTab=num=>{document.querySelectorAll('.tab-View').forEach(el=>el.classList.toggle('active',el.id==='tab'+num));document.querySelectorAll('.step-btn').forEach(el=>el.classList.toggle('active',el.id==='nav'+num));if(num===4&&$('sceneList').dataset.dirty==='true')renderScenes();if(num===7)refreshBudget();if(num===5&&selected())drawClip(Number($('clipSeek').value));};
+  changeAspectRatio=ratio=>setFormat(ratio);
+  renderSceneListUI=renderScenes;drawSubtitlesOnCanvas=subtitleDraw;
+  const originalFrame=renderCurrentFrame;renderCurrentFrame=()=>{if(!scenes.length){const c=$('previewCanvas');paintFrame(c.getContext('2d'),c.width,c.height,currentTime);return;}originalFrame();const c=$('previewCanvas');paintFrame(c.getContext('2d'),c.width,c.height,currentTime);};
+  generateImagesFromPromptsAI=guarded(generateImages);
+  testCloudflareWorker=guarded(async()=>{try{await health();notify($('connectionStatus').textContent);}catch(e){$('connectionStatus').textContent=e.message;$('connectionStatus').className='callout warn';throw e;}});
+  exportVideoYouTubeMaster=guarded(()=>record());
+  downloadProjectJSON=guarded(saveProject);
+  const baseSync=autoSyncProject;autoSyncProject=async(...args)=>{const result=await baseSync(...args);if(result){if($('cameraMode').value==='none')scenes.forEach(s=>s.effect=EFFECTS[0]);renderFilm();saveDraftSoon();}return result;};
+  window.addEventListener('DOMContentLoaded',initialize);
+  return {chooseStyle,populateImages,setFormat,saveTemplate,loadTemplate,deleteTemplate,applyMotion,refreshBudget,voiceEngineChanged,saveDraftSoon,drawClip,selectClip,updateClip,removeClip,replaceSceneImage,stopExport,cancelVoice:()=>ttsController?.abort(),
+    writeScript:guarded(writeScript),paceScript:guarded(paceScript),planPrompts:guarded(planPrompts),createVideo:guarded(createVideo),sampleVoice:guarded(sampleVoice),generateVoice:guarded(generateVoice),downloadVoice:guarded(downloadVoice),editSceneText,editSceneTime:guarded(editSceneTime),regenerateScene:guarded(regenerateScene),receiveReplacement:guarded(receiveReplacement),addClip:guarded(addClip),autoClips:guarded(autoClips),previewClip:guarded(previewClip),exportClip:guarded(exportClip),exportSelectedClip:guarded(()=>exportClip(selectedClip)),saveProject:guarded(saveProject),loadProject:guarded(loadProject),restoreDraft:guarded(restoreDraft),copyWorker:guarded(copyWorker),downloadWorker,
+    _test:{STYLES,chunkText,visualPrompt,estimate,dimensions,validateClip,record,snapshot,restore,subtitleDraw,wav,health,synth,installVoice,request,charge,getClips:()=>clips,getSelected:()=>selected(),setVoiceFile:f=>voiceFile=f,renderScenes,initialize}
+  };
+})();
+window.Studio=Studio;
+
+</script>
+<script type="text/plain" id="freeWorkerSource">
+// Faceless Studio · servidor personal para Cloudflare Workers Free.
+// Enlaces: AI (Workers AI binding), APP_SECRET (variable de tipo Secret).
+// No añade servicios de pago ni permite seleccionar otros modelos.
+const TEXT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fp8-fast';
+const IMAGE_MODEL = '@cf/black-forest-labs/flux-1-schnell';
+const VOICES = ['sirio','nestor','carina','celeste','alvaro','diana','aquila','selena','estrella','javier'];
+const cors = { 'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Methods':'GET, POST, OPTIONS', 'Access-Control-Allow-Headers':'Content-Type, X-AutoVideo-Key', 'Access-Control-Expose-Headers':'X-Studio-Units, Retry-After', 'Cache-Control':'no-store' };
+function json(data,status=200,extra={}) { return new Response(JSON.stringify(data),{status,headers:{...cors,'Content-Type':'application/json;charset=utf-8',...extra}}); }
+function checkText(value,max,name='texto') { if(typeof value!=='string'||!value.trim()) throw Object.assign(new Error('Falta '+name),{status:400}); if(value.length>max) throw Object.assign(new Error('El '+name+' supera '+max+' caracteres. Divide este tramo.'),{status:413}); return value.trim(); }
+function audioResult(out,type,units) {
+  if(out instanceof Response) return new Response(out.body,{headers:{...cors,'Content-Type':type,'X-Studio-Units':String(units)}});
+  if(out instanceof ReadableStream || out instanceof ArrayBuffer || ArrayBuffer.isView(out)) return new Response(out,{headers:{...cors,'Content-Type':type,'X-Studio-Units':String(units)}});
+  const raw = out?.audio || out?.result?.audio;
+  if(typeof raw==='string') { const str=atob(raw.replace(/^data:.*?base64,/,'')); return new Response(Uint8Array.from(str,c=>c.charCodeAt(0)),{headers:{...cors,'Content-Type':type,'X-Studio-Units':String(units)}}); }
+  throw new Error('El modelo no devolvió un archivo de audio reconocible.');
+}
+export default {
+  async fetch(request,env) {
+    if(request.method==='OPTIONS') return new Response(null,{status:204,headers:cors});
+    try {
+      if(!env.APP_SECRET) return json({error:'Añade APP_SECRET en Settings → Variables and Secrets.'},503);
+      const supplied = request.headers.get('X-AutoVideo-Key') || '';
+      // El secreto de la aplicación no es un token de la cuenta Cloudflare.
+      if(supplied!==env.APP_SECRET) return json({error:'La clave del editor no coincide con APP_SECRET.'},401);
+      if(!env.AI?.run) return json({error:'Falta el enlace Workers AI con nombre AI en Bindings.'},503);
+      const path=new URL(request.url).pathname.replace(/\/+$/,'')||'/';
+      if(path==='/health'&&request.method==='GET') return json({ok:true,studioVersion:1,capabilities:['images','text','melo-es','aura-es'],freeAllocation:10000,imageModel:IMAGE_MODEL,textModel:TEXT_MODEL});
+      if(request.method!=='POST') return json({error:'Ruta no disponible.'},404);
+      if(Number(request.headers.get('Content-Length'))>160000) return json({error:'La petición es demasiado grande; envía un fragmento cada vez.'},413);
+      const bodyText=await request.text();
+      if(bodyText.length>160000) return json({error:'La petición es demasiado grande.'},413);
+      let b; try { b=JSON.parse(bodyText); } catch { return json({error:'Petición JSON no válida.'},400); }
+      if(path==='/generate') {
+        const prompt=checkText(b.prompt,2048,'prompt');
+        const result=await env.AI.run(IMAGE_MODEL,{prompt,steps:4});
+        if(typeof result?.image!=='string'||!result.image) throw new Error('No se recibió una imagen del proveedor.');
+        return json({ok:true,dataURI:'data:image/jpeg;base64,'+result.image,referenceSupported:false,estimatedNeurons:60},200,{'X-Studio-Units':'60'});
+      }
+      if(path==='/text') {
+        const prompt=checkText(b.prompt,24000,'encargo');
+        const system=checkText(b.system||'Eres un asistente de guion y dirección visual. Sigue el formato solicitado.',6000,'instrucción');
+        const max_tokens=Math.max(128,Math.min(4096,Number(b.max_tokens)||2048));
+        const result=await env.AI.run(TEXT_MODEL,{messages:[{role:'system',content:system},{role:'user',content:prompt}],max_tokens,temperature:.55});
+        const text=result?.response || result?.choices?.[0]?.message?.content;
+        if(!text) throw new Error('El proveedor no ha devuelto texto.');
+        return json({ok:true,text,usage:result.usage||null});
+      }
+      if(path==='/tts') {
+        const text=checkText(b.text,1400,'fragmento de voz');
+        if(b.engine==='aura') {
+          if(!VOICES.includes(b.voice)) return json({error:'Voz española no disponible.'},400);
+          const out=await env.AI.run('@cf/deepgram/aura-2-es',{text,speaker:b.voice,encoding:'linear16',container:'wav',sample_rate:24000});
+          return audioResult(out,'audio/wav',Math.ceil(text.length*2.72727));
+        }
+        const out=await env.AI.run('@cf/myshell-ai/melotts',{prompt:text,lang:'es'});
+        // MeloTTS devuelve MP3. No se cambian extensiones para fingir otro formato.
+        return audioResult(out,'audio/mpeg',Math.ceil(text.split(/\s+/).length/145*18.63));
+      }
+      return json({error:'Ruta no disponible.'},404);
+    } catch(error) {
+      const detail=String(error?.message||error);
+      const quota=/quota|neurons|daily|allocation|10000|10,000/i.test(detail);
+      const retry=/busy|overload|capacity|temporar|timeout|rate limit|429/i.test(detail);
+      const permanent=/model.*not found|unknown model|does not exist/i.test(detail)?404:/paid plan|billing|not enabled|forbidden|unauthorized/i.test(detail)?403:/invalid input|validation|unsupported|prompt.*long/i.test(detail)?422:null;
+      return json({ok:false,error:quota?'Se ha agotado el cupo gratuito de Cloudflare de esta cuenta. Conserva el proyecto y continúa después del reinicio diario. Detalle: '+detail:detail,quotaExceeded:quota},quota?429:permanent|| (retry?503:(error.status||502)),retry?{'Retry-After':'15'}:{});
+    }
+  }
+};
+
 </script>
 </body>
 </html>
