@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faceless Factory Studio - Edición Gratuita Pro</title>
+    <title>Faceless Factory & AutoVideo Studio Master</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,1113 +12,1049 @@
             theme: {
                 extend: {
                     colors: {
-                        darker: '#030712',
-                        dark: '#0b0f19',
-                        card: '#111827',
-                        accent: '#8b5cf6',
-                        accentGlow: '#c084fc',
-                        cyanAccent: '#06b6d4'
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 6s ease-in-out infinite',
-                        'glow': 'glow 3s ease-in-out infinite alternate',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                        glow: {
-                            '0%': { boxShadow: '0 0 15px rgba(139, 92, 246, 0.3)' },
-                            '100%': { boxShadow: '0 0 30px rgba(139, 92, 246, 0.7)' }
-                        }
+                        darker: '#07090e',
+                        dark: '#0b0f17',
+                        panel: '#131b2e',
+                        card: '#1c263f',
+                        inputBg: '#0e1525',
+                        borderCol: '#2a395c',
+                        accent: '#3b82f6',
+                        accentHover: '#2563eb',
+                        purpleAccent: '#8b5cf6',
+                        greenAccent: '#10b981',
+                        amberAccent: '#f59e0b'
                     }
                 }
             }
         }
     </script>
-    <!-- Google Fonts: Plus Jakarta Sans -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Anton&family=Bebas+Neue&family=Cinzel:wght@700&family=Montserrat:wght@900&family=Poppins:wght@700&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass-panel {
-            background: rgba(17, 24, 39, 0.75);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .glass-card {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .neon-border {
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f17; color: #f1f5f9; }
+        .glass-panel { background: rgba(19, 27, 46, 0.9); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-card { background: rgba(28, 38, 63, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.06); }
+        .neon-glow { box-shadow: 0 0 35px rgba(139, 92, 246, 0.25); }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #030712; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        ::-webkit-scrollbar-track { background: #0b0f17; }
+        ::-webkit-scrollbar-thumb { background: #2a395c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b5080; }
     </style>
 </head>
-<body class="bg-darker text-slate-100 min-h-screen flex flex-col selection:bg-violet-500 selection:text-white">
+<body class="min-h-screen flex flex-col selection:bg-purple-500 selection:text-white overflow-hidden">
 
-    <!-- Ambient Background Glows -->
-    <div class="fixed top-0 left-1/4 w-96 h-96 bg-violet-600/15 rounded-full blur-[120px] pointer-events-none"></div>
-    <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <!-- Ambient Glows -->
+    <div class="fixed top-0 left-1/4 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+    <div class="fixed bottom-0 right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
 
-    <!-- Toast Notification Container -->
+    <!-- Toast Notifications Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-    <!-- API Key Modal -->
-    <div id="api-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md hidden">
-        <div class="glass-panel w-full max-w-lg p-6 rounded-2xl neon-border relative mx-4">
-            <button onclick="toggleApiModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <div class="flex items-center gap-3 mb-4">
-                <div class="p-3 bg-violet-600/20 text-violet-400 rounded-xl">
-                    <i data-lucide="key" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-white">Configuración de Gemini API</h3>
-                    <p class="text-xs text-slate-400">Opcional: Conecta tu propia API Key para potenciar las creaciones</p>
-                </div>
+    <!-- Main Header -->
+    <header class="h-16 glass-panel border-b border-borderCol px-6 flex items-center justify-between z-20 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/30 text-white font-black text-lg">
+                FF
             </div>
-            <p class="text-sm text-slate-300 mb-4">
-                Si dejas este campo vacío, la aplicación utilizará automáticamente nuestro **Generador Inteligente Local** con plantillas premium ilimitadas y sin coste.
-            </p>
-            <div class="mb-4">
-                <label class="block text-xs font-semibold text-slate-400 mb-2">Gemini API Key</label>
-                <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500">
-            </div>
-            <div class="flex justify-end gap-3">
-                <button onclick="toggleApiModal(false)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-medium transition">Cancelar</button>
-                <button onclick="saveApiKey()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-sm font-semibold shadow-lg shadow-violet-600/30 transition">Guardar y Continuar</button>
+            <div>
+                <h1 class="font-extrabold text-base tracking-tight text-white flex items-center gap-2">
+                    Faceless Factory & AutoVideo Studio <span class="text-[10px] uppercase font-bold text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-800/60">Master Pro</span>
+                </h1>
+                <p class="text-xs text-slate-400">Storyboard visual interactivo, audio mixing y master MP4.</p>
             </div>
         </div>
-    </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold hidden sm:inline-block">⚡ 100% Gratis & Operativo</span>
+            <button onclick="loadBuiltInDemo()" class="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Cargar Demo
+            </button>
+            <button onclick="autoSyncProject(true)" id="syncAllBtn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-95 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sincronizar Todo
+            </button>
+        </div>
+    </header>
 
-    <!-- Main App Container -->
-    <div class="flex h-screen overflow-hidden">
+    <!-- Workspace Layout -->
+    <div class="flex-1 flex overflow-hidden">
         
         <!-- Sidebar Navigation -->
-        <aside class="w-72 glass-panel border-r border-slate-800/80 flex flex-col z-20 hidden md:flex">
-            <!-- Logo Header -->
-            <div class="p-6 border-b border-slate-800/80 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-                        <i data-lucide="video" class="w-5 h-5 text-white"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-extrabold text-base tracking-tight bg-gradient-to-r from-white via-slate-200 to-violet-400 bg-clip-text text-transparent">Faceless Factory</h1>
-                        <span class="text-[10px] uppercase tracking-widest text-violet-400 font-bold px-1.5 py-0.5 rounded bg-violet-950/60 border border-violet-800/50">Free Pro v3.0</span>
-                    </div>
-                </div>
-            </div>
+        <aside class="w-72 glass-panel border-r border-borderCol p-4 flex flex-col gap-2 shrink-0 overflow-y-auto z-10">
+            <p class="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Fases de Creación</p>
+            
+            <button onclick="switchTab(0)" id="nav0" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition bg-purple-600/20 text-purple-300 border border-purple-500/30">
+                <span class="flex items-center gap-2.5"><i data-lucide="grid" class="w-4 h-4 text-amber-400"></i> 0. Galería Referencia</span>
+                <span id="st0" class="text-[10px] px-2 py-0.5 rounded bg-purple-950 text-purple-300 font-bold">Activo</span>
+            </button>
 
-            <!-- Navigation Links -->
-            <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-                <p class="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Workspace</p>
-                
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition bg-violet-600/20 text-violet-300 border border-violet-500/30">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard Principal
-                </button>
-                
-                <button onclick="switchTab('script-generator')" id="nav-script-generator" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
-                    <i data-lucide="wand-2" class="w-4 h-4 text-violet-400"></i> Generador de Guiones AI
-                </button>
+            <button onclick="switchTab(1)" id="nav1" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <span class="flex items-center gap-2.5"><i data-lucide="file-text" class="w-4 h-4 text-emerald-400"></i> 1. Guion & Escenas</span>
+                <span id="st2" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Pendiente</span>
+            </button>
 
-                <button onclick="switchTab('storyboard')" id="nav-storyboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
-                    <i data-lucide="film" class="w-4 h-4 text-cyan-400"></i> Storyboard & Visuales
-                </button>
+            <button onclick="switchTab(2)" id="nav2" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <span class="flex items-center gap-2.5"><i data-lucide="mic" class="w-4 h-4 text-cyan-400"></i> 2. Audio, BGM & SFX</span>
+                <span id="st1" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Pendiente</span>
+            </button>
 
-                <button onclick="switchTab('audio-studio')" id="nav-audio-studio" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
-                    <i data-lucide="mic" class="w-4 h-4 text-emerald-400"></i> Estudio de Voz y Audio
-                </button>
+            <button onclick="switchTab(3)" id="nav3" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <span class="flex items-center gap-2.5"><i data-lucide="image" class="w-4 h-4 text-purple-400"></i> 3. Storyboard Visual</span>
+                <span id="st3" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">0 escenas</span>
+            </button>
 
-                <button onclick="switchTab('preview')" id="nav-preview" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
-                    <i data-lucide="play-circle" class="w-4 h-4 text-pink-400"></i> Vista Previa Video
-                </button>
+            <button onclick="switchTab(4)" id="nav4" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <span class="flex items-center gap-2.5"><i data-lucide="sliders" class="w-4 h-4 text-pink-400"></i> 4. Timeline & Efectos</span>
+                <span id="st4" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">0 ajustadas</span>
+            </button>
 
-                <button onclick="switchTab('export')" id="nav-export" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
-                    <i data-lucide="download-cloud" class="w-4 h-4 text-amber-400"></i> Exportar & Compartir
-                </button>
-
-                <div class="pt-4">
-                    <p class="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Academia</p>
-                    <button onclick="switchTab('guide')" id="nav-guide" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
-                        <i data-lucide="book-open" class="w-4 h-4 text-blue-400"></i> Guía y Tutoriales Pro
-                    </button>
-                </div>
-            </nav>
-
-            <!-- Sidebar Footer / API Settings -->
-            <div class="p-4 border-t border-slate-800/80">
-                <button onclick="toggleApiModal(true)" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800/80 border border-slate-800 text-xs text-slate-300 transition">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="cpu" class="w-4 h-4 text-violet-400"></i>
-                        <span id="api-status-text">Configurar Gemini API</span>
-                    </div>
-                    <span id="api-badge" class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                </button>
+            <div class="mt-auto p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400 space-y-2">
+                <strong class="text-purple-300 block flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Estilo Your Faceless Factory</strong>
+                <p class="leading-relaxed">Elige tu temática de referencia o personaliza tus prompts de FLUX.1 con personaje stickman.</p>
             </div>
         </aside>
 
-        <!-- Main Content Wrapper -->
-        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-dark">
+        <!-- Center Viewport -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-dark">
             
-            <!-- Top Navigation Bar (Mobile & Desktop) -->
-            <header class="h-16 glass-panel border-b border-slate-800/80 px-6 flex items-center justify-between z-10">
-                <div class="flex items-center gap-4">
-                    <button onclick="toggleMobileMenu()" class="md:hidden text-slate-300 hover:text-white">
-                        <i data-lucide="menu" class="w-6 h-6"></i>
-                    </button>
+            <!-- TAB 0: REFERENCE GALLERY (Your Faceless Factory style) -->
+            <div id="tab0" class="tab-view space-y-6">
+                <div class="glass-panel p-6 md:p-8 rounded-3xl border border-purple-500/20 space-y-6">
                     <div>
-                        <h2 id="current-page-title" class="text-base font-bold text-white tracking-tight">Dashboard Principal</h2>
-                        <p id="current-page-subtitle" class="text-xs text-slate-400">Crea videos virales sin mostrar tu rostro de forma 100% gratuita.</p>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/50 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 100% Gratuito e Ilimitado
-                    </div>
-                    <button onclick="quickStartModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-xs font-bold shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Proyecto
-                    </button>
-                </div>
-            </header>
-
-            <!-- Scrollable Content Viewport -->
-            <div id="content-viewport" class="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
-                
-                <!-- TAB 1: DASHBOARD -->
-                <section id="tab-dashboard" class="tab-content space-y-8">
-                    <!-- Hero Banner -->
-                    <div class="relative overflow-hidden rounded-3xl glass-panel p-8 md:p-10 border border-violet-500/20 bg-gradient-to-r from-violet-950/40 via-slate-900/60 to-slate-900/40">
-                        <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-violet-600/20 rounded-full blur-3xl pointer-events-none"></div>
-                        <div class="max-w-2xl relative z-10">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 text-xs font-bold mb-4">
-                                <i data-lucide="zap" class="w-3.5 h-3.5"></i> La Alternativa Libre a Your Faceless Factory
-                            </span>
-                            <h3 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-4">
-                                Automatiza tus Videos Faceless para <span class="bg-gradient-to-r from-violet-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent">TikTok, Shorts & Reels</span>
-                            </h3>
-                            <p class="text-slate-300 text-sm md:text-base mb-6 leading-relaxed">
-                                Genera guiones cinematográficos de alta retención, prompts visuales en 8K ultra realistas, voces hiperrealistas y editores de subtítulos automáticos sin pagar suscripciones mensuales.
-                            </p>
-                            <div class="flex flex-wrap gap-4">
-                                <button onclick="switchTab('script-generator')" class="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-sm font-bold shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
-                                    <i data-lucide="wand-2" class="w-4 h-4"></i> Crear Guion AI Ahora
-                                </button>
-                                <button onclick="switchTab('guide')" class="px-6 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-sm font-medium transition flex items-center gap-2">
-                                    <i data-lucide="play-circle" class="w-4 h-4 text-cyan-400"></i> Ver Tutorial de Uso
-                                </button>
-                            </div>
-                        </div>
+                        <span class="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-bold uppercase tracking-wider">Inspirado en yourfacelessfactory.com</span>
+                        <h2 class="text-3xl font-extrabold text-white mt-3 mb-2 flex items-center gap-3">
+                            <i data-lucide="grid" class="w-7 h-7 text-amber-400"></i> Galería de Referencia & Estilos
+                        </h2>
+                        <p class="text-sm text-slate-400">Selecciona una de las temáticas icónicas de Your Faceless Factory para cargar automáticamente su estética, guion de prueba e ilustraciones de personajes.</p>
                     </div>
 
-                    <!-- Quick Stats & Templates -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="glass-card p-6 rounded-2xl border border-slate-800">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="p-3 rounded-xl bg-violet-600/20 text-violet-400">
-                                    <i data-lucide="film" class="w-5 h-5"></i>
-                                </div>
-                                <span class="text-xs font-bold text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-500/20">Activo</span>
-                            </div>
-                            <h4 class="text-lg font-bold text-white mb-1">Guiones Generados</h4>
-                            <p id="stat-scripts-count" class="text-2xl font-extrabold text-violet-400">3 Proyectos</p>
-                            <p class="text-xs text-slate-400 mt-2">Listos para exportar y producir en masa.</p>
-                        </div>
-
-                        <div class="glass-card p-6 rounded-2xl border border-slate-800">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="p-3 rounded-xl bg-cyan-600/20 text-cyan-400">
-                                    <i data-lucide="cpu" class="w-5 h-5"></i>
-                                </div>
-                                <span class="text-xs font-bold text-cyan-400 bg-cyan-950/50 px-2.5 py-1 rounded-full border border-cyan-500/20">Gemini 3 Flash</span>
-                            </div>
-                            <h4 class="text-lg font-bold text-white mb-1">Motor de IA</h4>
-                            <p class="text-2xl font-extrabold text-cyan-400">Modo Dual Pro</p>
-                            <p class="text-xs text-slate-400 mt-2">API Key conectada o Fallback Inteligente.</p>
-                        </div>
-
-                        <div class="glass-card p-6 rounded-2xl border border-slate-800">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="p-3 rounded-xl bg-emerald-600/20 text-emerald-400">
-                                    <i data-lucide="dollar-sign" class="w-5 h-5"></i>
-                                </div>
-                                <span class="text-xs font-bold text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-500/20">100% Gratis</span>
-                            </div>
-                            <h4 class="text-lg font-bold text-white mb-1">Ahorro Estimado</h4>
-                            <p class="text-2xl font-extrabold text-emerald-400">$49/mes</p>
-                            <p class="text-xs text-slate-400 mt-2">Sin límites de paywalls o créditos ocultos.</p>
-                        </div>
+                    <!-- Reference Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="referenceGalleryGrid">
+                        <!-- Populated by JS -->
                     </div>
 
-                    <!-- Pre-made Viral Niches -->
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                                <i data-lucide="sparkles" class="w-5 h-5 text-violet-400"></i> Nichos Virales Populares (Plantillas de 1 Click)
-                            </h3>
-                            <span class="text-xs text-slate-400">Haz clic en cualquiera para cargarla al instante</span>
+                    <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+                        <div class="text-xs text-slate-400">
+                            Estilo seleccionado: <strong id="selectedStyleName" class="text-purple-300">Casa Misteriosa (Terror / Misterio)</strong>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div onclick="loadTemplate('Misterios insólitos del espacio y agujeros negros', 'Cinematic', 'YouTube Shorts')" class="glass-card p-5 rounded-2xl border border-slate-800 hover:border-violet-500/50 cursor-pointer transition group">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="px-2.5 py-1 rounded-lg bg-violet-950/80 text-violet-400 text-xs font-bold border border-violet-800/50">Espacio & Misterio</span>
-                                    <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-violet-400 transition"></i>
-                                </div>
-                                <h4 class="font-bold text-white text-sm mb-1 group-hover:text-violet-300">Misterios Insólitos del Espacio</h4>
-                                <p class="text-xs text-slate-400">Tono cinematográfico de alto impacto para retener en los primeros 3 segundos.</p>
-                            </div>
-
-                            <div onclick="loadTemplate('Finanzas personales y hábitos de los millonarios', 'Viral', 'TikTok')" class="glass-card p-5 rounded-2xl border border-slate-800 hover:border-violet-500/50 cursor-pointer transition group">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="px-2.5 py-1 rounded-lg bg-emerald-950/80 text-emerald-400 text-xs font-bold border border-emerald-800/50">Finanzas & Dinero</span>
-                                    <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-violet-400 transition"></i>
-                                </div>
-                                <h4 class="font-bold text-white text-sm mb-1 group-hover:text-violet-300">Hábitos de los Millonarios</h4>
-                                <p class="text-xs text-slate-400">Educativo y dinámico enfocado en psicología financiera y crecimiento.</p>
-                            </div>
-
-                            <div onclick="loadTemplate('Curiosidades psicológicas oscuras sobre la mente humana', 'Suspense', 'Instagram Reels')" class="glass-card p-5 rounded-2xl border border-slate-800 hover:border-violet-500/50 cursor-pointer transition group">
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="px-2.5 py-1 rounded-lg bg-cyan-950/80 text-cyan-400 text-xs font-bold border border-cyan-800/50">Psicología Oscura</span>
-                                    <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-violet-400 transition"></i>
-                                </div>
-                                <h4 class="font-bold text-white text-sm mb-1 group-hover:text-violet-300">Curiosidades Psicológicas</h4>
-                                <p class="text-xs text-slate-400">Alto engagement y comentarios masivos gracias a giros argumentales.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 2: SCRIPT GENERATOR -->
-                <section id="tab-script-generator" class="tab-content space-y-8 hidden">
-                    <div class="glass-panel p-6 md:p-8 rounded-3xl border border-violet-500/20">
-                        <div class="max-w-3xl mb-6">
-                            <h3 class="text-2xl font-extrabold text-white mb-2">Generador de Guiones AI</h3>
-                            <p class="text-sm text-slate-400">Introduce tu temática o concepto viral. Nuestra IA estructurará el guion escena por escena con hooks de retención y prompts visuales cinematográficos.</p>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Tema o Idea del Video</label>
-                                <input type="text" id="script-topic" placeholder="Ej. El misterio de la isla de las muñecas..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Plataforma de Destino</label>
-                                <select id="script-platform" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500">
-                                    <option value="TikTok">TikTok (9:16 - Rápido y Dinámico)</option>
-                                    <option value="YouTube Shorts">YouTube Shorts (9:16 - Storytelling)</option>
-                                    <option value="Instagram Reels">Instagram Reels (9:16 - Estético y Visual)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Tono de Narración</label>
-                                <select id="script-tone" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500">
-                                    <option value="Cinematic">Cinematográfico & Épico (Hans Zimmer style)</option>
-                                    <option value="Suspense">Suspense & Misterioso (Inquietante)</option>
-                                    <option value="Educational">Educativo & Revelador (Curioso)</option>
-                                    <option value="Viral">Viral & Energético (Gancho fuerte)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Estilo Visual Base</label>
-                                <select id="script-style" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500">
-                                    <option value="Cinematic Photorealistic">Fotorrealista 8K (Anamorphic lens)</option>
-                                    <option value="Dark Cyberpunk">Cyberpunk Oscuro & Neón</option>
-                                    <option value="3D Pixar Render">Render 3D Estilizado (Pixar/Unreal)</option>
-                                    <option value="Vintage Documentary">Documental Vintage Años 90</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end gap-4">
-                            <button onclick="generateScript()" id="generate-btn" class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 hover:opacity-95 text-sm font-bold shadow-xl shadow-violet-600/30 transition flex items-center gap-2">
-                                <i data-lucide="wand-2" class="w-4 h-4"></i> Generar Guion y Storyboard Pro
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Generated Script Output Preview -->
-                    <div id="script-results-container" class="space-y-6 hidden">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                                <i data-lucide="file-text" class="w-5 h-5 text-violet-400"></i> Resultado Generado
-                            </h3>
-                            <div class="flex gap-3">
-                                <button onclick="switchTab('storyboard')" class="px-4 py-2 rounded-xl bg-violet-600/20 text-violet-300 border border-violet-500/30 text-xs font-bold hover:bg-violet-600/30 transition flex items-center gap-1.5">
-                                    <i data-lucide="film" class="w-3.5 h-3.5"></i> Ver en Storyboard
-                                </button>
-                                <button onclick="switchTab('audio-studio')" class="px-4 py-2 rounded-xl bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold hover:bg-cyan-600/30 transition flex items-center gap-1.5">
-                                    <i data-lucide="mic" class="w-3.5 h-3.5"></i> Ir a Estudio de Voz
-                                </button>
-                            </div>
-                        </div>
-                        <div id="script-output-card" class="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-                            <!-- Injected by JS -->
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 3: STORYBOARD & VISUALIZER -->
-                <section id="tab-storyboard" class="tab-content space-y-8 hidden">
-                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div>
-                            <h3 class="text-2xl font-extrabold text-white">Storyboard Escena por Escena</h3>
-                            <p class="text-sm text-slate-400">Visualiza las imágenes cinematográficas, prompts de generación y textos de voz para cada segundo de tu video.</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button onclick="regenerateAllVisuals()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition flex items-center gap-2">
-                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar Prompts
-                            </button>
-                            <button onclick="switchTab('audio-studio')" class="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
-                                Continuar a Audio <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Storyboard Grid -->
-                    <div id="storyboard-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Injected by JS -->
-                    </div>
-                </section>
-
-                <!-- TAB 4: VOICE & AUDIO STUDIO -->
-                <section id="tab-audio-studio" class="tab-content space-y-8 hidden">
-                    <div class="glass-panel p-6 md:p-8 rounded-3xl border border-violet-500/20">
-                        <h3 class="text-2xl font-extrabold text-white mb-2">Estudio de Voz y Música de Fondo</h3>
-                        <p class="text-sm text-slate-400 mb-6">Elige la voz IA y la atmósfera sonora ideal para maximizar la retención de tu audiencia.</p>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <!-- Voice Selector -->
-                            <div class="space-y-4">
-                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Selección de Voz IA</label>
-                                <div class="space-y-3">
-                                    <div onclick="selectVoice('deep')" id="voice-deep" class="voice-card p-4 rounded-2xl glass-card border border-violet-500/50 cursor-pointer transition flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="p-2.5 rounded-xl bg-violet-600/20 text-violet-400"><i data-lucide="mic" class="w-5 h-5"></i></div>
-                                            <div>
-                                                <h4 class="font-bold text-white text-sm">Deep Cinematic (Masculina)</h4>
-                                                <p class="text-xs text-slate-400">Voz grave, profunda y misteriosa ideal para documentales.</p>
-                                            </div>
-                                        </div>
-                                        <span class="w-4 h-4 rounded-full border-2 border-violet-500 flex items-center justify-center bg-violet-500"></span>
-                                    </div>
-
-                                    <div onclick="selectVoice('energetic')" id="voice-energetic" class="voice-card p-4 rounded-2xl glass-card border border-slate-800 hover:border-slate-700 cursor-pointer transition flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="p-2.5 rounded-xl bg-cyan-600/20 text-cyan-400"><i data-lucide="mic" class="w-5 h-5"></i></div>
-                                            <div>
-                                                <h4 class="font-bold text-white text-sm">Energetic Viral (Dinámica)</h4>
-                                                <p class="text-xs text-slate-400">Ritmo rápido y persuasivo para TikTok & Shorts.</p>
-                                            </div>
-                                        </div>
-                                        <span class="w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center"></span>
-                                    </div>
-
-                                    <div onclick="selectVoice('calm')" id="voice-calm" class="voice-card p-4 rounded-2xl glass-card border border-slate-800 hover:border-slate-700 cursor-pointer transition flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="p-2.5 rounded-xl bg-emerald-600/20 text-emerald-400"><i data-lucide="mic" class="w-5 h-5"></i></div>
-                                            <div>
-                                                <h4 class="font-bold text-white text-sm">Calm Narrator (Suave)</h4>
-                                                <p class="text-xs text-slate-400">Tono calmado, excelente para psicología y reflexiones.</p>
-                                            </div>
-                                        </div>
-                                        <span class="w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Background Music Selector -->
-                            <div class="space-y-4">
-                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Música de Fondo (BGM)</label>
-                                <div class="space-y-3">
-                                    <div onclick="selectBgm('epic')" id="bgm-epic" class="bgm-card p-4 rounded-2xl glass-card border border-violet-500/50 cursor-pointer transition flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="p-2.5 rounded-xl bg-indigo-600/20 text-indigo-400"><i data-lucide="music" class="w-5 h-5"></i></div>
-                                            <div>
-                                                <h4 class="font-bold text-white text-sm">Epic Orchestral Tension</h4>
-                                                <p class="text-xs text-slate-400">Cuerdas dramáticas y graves profundos.</p>
-                                            </div>
-                                        </div>
-                                        <span class="w-4 h-4 rounded-full border-2 border-violet-500 flex items-center justify-center bg-violet-500"></span>
-                                    </div>
-
-                                    <div onclick="selectBgm('lofi')" id="bgm-lofi" class="bgm-card p-4 rounded-2xl glass-card border border-slate-800 hover:border-slate-700 cursor-pointer transition flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="p-2.5 rounded-xl bg-pink-600/20 text-pink-400"><i data-lucide="music" class="w-5 h-5"></i></div>
-                                            <div>
-                                                <h4 class="font-bold text-white text-sm">Cyberpunk Lo-Fi Synth</h4>
-                                                <p class="text-xs text-slate-400">Ritmos electrónicos y atmósferas nocturnas.</p>
-                                            </div>
-                                        </div>
-                                        <span class="w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center"></span>
-                                    </div>
-
-                                    <div onclick="selectBgm('ambient')" id="bgm-ambient" class="bgm-card p-4 rounded-2xl glass-card border border-slate-800 hover:border-slate-700 cursor-pointer transition flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div class="p-2.5 rounded-xl bg-amber-600/20 text-amber-400"><i data-lucide="music" class="w-5 h-5"></i></div>
-                                            <div>
-                                                <h4 class="font-bold text-white text-sm">Mystic Ambient Drone</h4>
-                                                <p class="text-xs text-slate-400">Sonidos espaciales para máxima curiosidad.</p>
-                                            </div>
-                                        </div>
-                                        <span class="w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Audio Test Simulator -->
-                        <div class="mt-8 pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div class="flex items-center gap-3">
-                                <button onclick="toggleAudioPreview()" id="play-audio-btn" class="w-12 h-12 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center text-white shadow-lg shadow-violet-600/40 transition">
-                                    <i data-lucide="play" class="w-5 h-5 ml-0.5"></i>
-                                </button>
-                                <div>
-                                    <h4 class="font-bold text-white text-sm">Simulador de Audio & Voz Pro</h4>
-                                    <p id="audio-status-label" class="text-xs text-slate-400">Haz clic para escuchar la mezcla de voz y música.</p>
-                                </div>
-                            </div>
-                            <button onclick="switchTab('preview')" class="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-95 text-xs font-bold text-white shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
-                                Ir al Reproductor de Video <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 5: VIDEO PREVIEW PLAYER -->
-                <section id="tab-preview" class="tab-content space-y-8 hidden">
-                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div>
-                            <h3 class="text-2xl font-extrabold text-white">Vista Previa Interactiva del Video</h3>
-                            <p class="text-sm text-slate-400">Simula la reproducción en formato 9:16 vertical con subtítulos dinámicos estilo karaoke.</p>
-                        </div>
-                        <button onclick="switchTab('export')" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-xs font-bold text-white shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
-                            Exportar Paquete Completo <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <button onclick="switchTab(1)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-95 text-white font-bold text-sm shadow-lg shadow-purple-600/30 transition flex items-center gap-2">
+                            <span>Siguiente: Guion & Escenas</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
                         </button>
                     </div>
-
-                    <!-- Video Player Container (9:16 Vertical Mockup) -->
-                    <div class="flex justify-center">
-                        <div class="relative w-full max-w-sm aspect-[9/16] bg-black rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl flex flex-col justify-between group">
-                            <!-- Background Scene Image -->
-                            <div id="preview-bg-image" class="absolute inset-0 bg-cover bg-center transition-all duration-700" style="background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop');">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50"></div>
-                            </div>
-
-                            <!-- Top Header Overlay -->
-                            <div class="relative z-10 p-4 flex items-center justify-between text-white text-xs">
-                                <div class="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                                    <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                                    <span id="preview-scene-counter" class="font-bold">Escena 1 / 3</span>
-                                </div>
-                                <div class="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                                    <span id="preview-timer" class="font-bold text-violet-400">00:00</span>
-                                </div>
-                            </div>
-
-                            <!-- Center/Bottom Subtitles & Content -->
-                            <div class="relative z-10 p-6 space-y-4 text-center">
-                                <div id="preview-subtitle" class="bg-black/60 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 text-white font-bold text-base md:text-lg tracking-wide shadow-2xl animate-fade">
-                                    "¿Sabías que el universo observable esconde secretos que la ciencia aún no puede explicar?"
-                                </div>
-                            </div>
-
-                            <!-- Bottom Control Bar -->
-                            <div class="relative z-10 p-4 bg-gradient-to-t from-black via-black/80 to-transparent flex items-center justify-between">
-                                <button onclick="prevPreviewScene()" class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition">
-                                    <i data-lucide="skip-back" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="toggleVideoPlayback()" id="preview-play-pause-btn" class="w-12 h-12 rounded-full bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shadow-lg shadow-violet-600/50 transition">
-                                    <i data-lucide="play" class="w-5 h-5 ml-0.5"></i>
-                                </button>
-                                <button onclick="nextPreviewScene()" class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition">
-                                    <i data-lucide="skip-forward" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 6: EXPORT & SHARE HUB -->
-                <section id="tab-export" class="tab-content space-y-8 hidden">
-                    <div class="glass-panel p-6 md:p-8 rounded-3xl border border-violet-500/20 space-y-6">
-                        <div>
-                            <h3 class="text-2xl font-extrabold text-white mb-2">Centro de Exportación & Producción</h3>
-                            <p class="text-sm text-slate-400">Descarga tu guion completo, copia todos los prompts visuales para Midjourney/Stable Diffusion o descarga el storyboard en JSON.</p>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
-                                <div>
-                                    <div class="p-3 bg-violet-600/20 text-violet-400 rounded-xl w-fit mb-3"><i data-lucide="file-text" class="w-6 h-6"></i></div>
-                                    <h4 class="font-bold text-white text-base mb-1">Guion Completo & Narración</h4>
-                                    <p class="text-xs text-slate-400">Copia el guion estructurado con tiempos y acentos para tu editor de voz favorito (ElevenLabs, etc.).</p>
-                                </div>
-                                <button onclick="copyFullScript()" class="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white shadow-lg shadow-violet-600/30 transition flex items-center justify-center gap-2">
-                                    <i data-lucide="copy" class="w-4 h-4"></i> Copiar Guion al Portapapeles
-                                </button>
-                            </div>
-
-                            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
-                                <div>
-                                    <div class="p-3 bg-cyan-600/20 text-cyan-400 rounded-xl w-fit mb-3"><i data-lucide="image" class="w-6 h-6"></i></div>
-                                    <h4 class="font-bold text-white text-base mb-1">Paquete de Prompts Visuales</h4>
-                                    <p class="text-xs text-slate-400">Todos los prompts en inglés optimizados para generar las imágenes de cada escena en 8K.</p>
-                                </div>
-                                <button onclick="copyAllPrompts()" class="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-xs font-bold text-white shadow-lg shadow-cyan-600/30 transition flex items-center justify-center gap-2">
-                                    <i data-lucide="copy" class="w-4 h-4"></i> Copiar Prompts Visuales
-                                </button>
-                            </div>
-
-                            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
-                                <div>
-                                    <div class="p-3 bg-emerald-600/20 text-emerald-400 rounded-xl w-fit mb-3"><i data-lucide="code" class="w-6 h-6"></i></div>
-                                    <h4 class="font-bold text-white text-base mb-1">Storyboard JSON Completo</h4>
-                                    <p class="text-xs text-slate-400">Exporta toda la estructura de datos del proyecto para integrarla con automatizaciones de video.</p>
-                                </div>
-                                <button onclick="downloadJson()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
-                                    <i data-lucide="download" class="w-4 h-4"></i> Descargar JSON de Proyecto
-                                </button>
-                            </div>
-
-                            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
-                                <div>
-                                    <div class="p-3 bg-amber-600/20 text-amber-400 rounded-xl w-fit mb-3"><i data-lucide="share-2" class="w-6 h-6"></i></div>
-                                    <h4 class="font-bold text-base text-white mb-1">Kit de Crecimiento Viral</h4>
-                                    <p class="text-xs text-slate-400">Hashtags optimizados, ganchos de retención y consejos de monetización para TikTok & Shorts.</p>
-                                </div>
-                                <button onclick="showGrowthKit()" class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white shadow-lg shadow-amber-600/30 transition flex items-center justify-center gap-2">
-                                    <i data-lucide="sparkles" class="w-4 h-4"></i> Ver Kit Viral
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 7: GUIDE & TUTORIALS -->
-                <section id="tab-guide" class="tab-content space-y-8 hidden">
-                    <div class="glass-panel p-6 md:p-8 rounded-3xl border border-violet-500/20 space-y-6">
-                        <div>
-                            <span class="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold mb-3 inline-block">Academia Faceless Pro</span>
-                            <h3 class="text-2xl font-extrabold text-white mb-2">Guía Definitiva: Cómo Crear Canales Virales sin Rostro</h3>
-                            <p class="text-sm text-slate-400">Explicaciones detalladas paso a paso inspiradas en las mejores prácticas de la industria de la creación de contenido automatizado.</p>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-3">
-                                <h4 class="font-bold text-white text-base flex items-center gap-2 text-violet-400">
-                                    <i data-lucide="zap" class="w-5 h-5"></i> 1. El Gancho de 3 Segundos (The Hook)
-                                </h4>
-                                <p class="text-sm text-slate-300 leading-relaxed">
-                                    En plataformas como TikTok y YouTube Shorts, los primeros 3 segundos deciden si tu video se vuelve viral o muere en 200 reproducciones. Utiliza frases de contraste o misterio directo como: <i>"Nadie te ha contado la verdadera razón por..."</i> o <i>"Esto que estás viendo en pantalla esconde un secreto aterrador..."</i>.
-                                </p>
-                            </div>
-
-                            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-3">
-                                <h4 class="font-bold text-white text-base flex items-center gap-2 text-cyan-400">
-                                    <i data-lucide="image" class="w-5 h-5"></i> 2. Ingeniería de Prompts para Imágenes Cinemáticas
-                                </h4>
-                                <p class="text-sm text-slate-300 leading-relaxed">
-                                    Para lograr que tus videos tengan esa estética de alta producción similar a <b>Your Faceless Factory</b>, tus prompts visuales deben incluir modificadores de calidad profesional: <i>"Cinematic 8k shot, photorealistic, anamorphic lens flare, dramatic volumetric lighting, Unreal Engine 5 render, highly detailed"</i>.
-                                </p>
-                            </div>
-
-                            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-3">
-                                <h4 class="font-bold text-white text-base flex items-center gap-2 text-emerald-400">
-                                    <i data-lucide="dollar-sign" class="w-5 h-5"></i> 3. Monetización sin Mostrar el Rostro
-                                </h4>
-                                <p class="text-sm text-slate-300 leading-relaxed">
-                                    Los canales faceless exitosos monetizan a través de:
-                                    <br>• <b>Programa de Creatividad de TikTok / YouTube Partner</b> por visualizaciones.
-                                    <br>• <b>Marketing de Afiliados</b> en la descripción o comentarios fijados.
-                                    <br>• <b>Patrocinios de marcas</b> de software, finanzas o IA interesadas en tu nicho.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
+                </div>
             </div>
+
+            <!-- TAB 1: SCRIPT & SCENES -->
+            <div id="tab1" class="tab-view space-y-6 hidden">
+                <div class="glass-panel p-6 md:p-8 rounded-3xl border border-purple-500/20 space-y-6">
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-white mb-2 flex items-center gap-3">
+                                <i data-lucide="file-text" class="w-6 h-6 text-emerald-400"></i> Guion & Estructura de Escenas
+                            </h2>
+                            <p class="text-sm text-slate-400">Pega tu guion o usa el cargado por la galería de referencia. El sistema creará las tarjetas de storyboard visual.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="splitLongParagraphs()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition flex items-center gap-2">
+                                <i data-lucide="scissors" class="w-4 h-4 text-amber-400"></i> Dividir Párrafos
+                            </button>
+                            <button onclick="generateStoryboardFromScript()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-95 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i> Crear Storyboard AI
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <textarea id="scriptArea" rows="10" placeholder="Pega aquí tu guion completo..." oninput="updateScriptStatus()" class="w-full bg-inputBg border border-borderCol rounded-2xl p-4 text-sm text-slate-100 focus:outline-none focus:border-purple-500 leading-relaxed"></textarea>
+                        <div class="flex items-center justify-between mt-3 text-xs text-slate-400">
+                            <span id="lineCountInfo">0 escenas estimadas</span>
+                            <span>Optimizado para alta retención visual</span>
+                        </div>
+                    </div>
+
+                    <!-- Cloudflare Settings Accordion -->
+                    <div class="glass-card p-4 rounded-2xl border border-slate-800 space-y-3">
+                        <h4 class="font-bold text-white text-xs flex items-center gap-2">
+                            <i data-lucide="cloud" class="w-4 h-4 text-cyan-400"></i> Configuración Cloudflare Worker (Opcional para IA Real)
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label class="block text-slate-400 mb-1">URL Worker</label>
+                                <input type="text" id="cloudflareWorkerUrl" value="https://autovideo-image-worker.jarambedioszz.workers.dev" class="w-full bg-inputBg border border-borderCol rounded-lg px-3 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Clave de Acceso (APP_SECRET)</label>
+                                <input type="password" id="cloudflareAccessKey" placeholder="Tu clave secreta..." class="w-full bg-inputBg border border-borderCol rounded-lg px-3 py-2 text-white">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: AUDIO, BGM & SFX -->
+            <div id="tab2" class="tab-view space-y-6 hidden">
+                <div class="glass-panel p-6 md:p-8 rounded-3xl border border-purple-500/20 space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white mb-2 flex items-center gap-3">
+                            <i data-lucide="mic" class="w-6 h-6 text-cyan-400"></i> Audio, Música y Efectos de Sonido
+                        </h2>
+                        <p class="text-sm text-slate-400">Sube tu locución en MP3 o WAV, añade tu música de fondo en bucle y efectos de sonido para enriquecer el vídeo.</p>
+                    </div>
+
+                    <!-- Voice Upload -->
+                    <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="font-bold text-white text-base flex items-center gap-2">
+                            <i data-lucide="volume-2" class="w-5 h-5 text-purple-400"></i> 1. Voz en Off Principal (MP3 / WAV)
+                        </h3>
+                        <div onclick="document.getElementById('voiceInput').click()" class="border-2 border-dashed border-slate-700 hover:border-purple-500 rounded-2xl p-8 text-center cursor-pointer bg-inputBg/50 transition group">
+                            <div class="w-12 h-12 rounded-2xl bg-purple-600/20 text-purple-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">
+                                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                            </div>
+                            <p id="voiceLabel" class="font-bold text-white text-sm">Haz clic aquí o arrastra tu archivo de voz en off</p>
+                            <input type="file" id="voiceInput" accept="audio/*" class="hidden" onchange="handleVoiceUpload(this.files[0])">
+                        </div>
+                        <canvas id="waveformCanvas" width="900" height="70" class="w-full h-[70px] bg-black/40 rounded-xl border border-slate-800"></canvas>
+                    </div>
+
+                    <!-- BGM & SFX Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-white text-base mb-1 flex items-center gap-2">
+                                    <i data-lucide="music" class="w-5 h-5 text-emerald-400"></i> 2. Música de Fondo (BGM Bucle)
+                                </h3>
+                                <p class="text-xs text-slate-400 mb-4">Se repetirá automáticamente hasta el final.</p>
+                                <button onclick="document.getElementById('bgmInput').click()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white border border-slate-700 transition flex items-center justify-center gap-2">
+                                    <i data-lucide="folder-open" class="w-4 h-4 text-emerald-400"></i> Seleccionar BGM
+                                </button>
+                                <span id="bgmLabel" class="block text-xs text-slate-400 text-center mt-2 truncate">Ninguna pista seleccionada</span>
+                                <input type="file" id="bgmInput" accept="audio/*" class="hidden" onchange="handleBgmUpload(this.files[0])">
+                            </div>
+                            <div class="space-y-3 pt-4 border-t border-slate-800">
+                                <div class="flex items-center justify-between text-xs text-slate-300">
+                                    <span>Volumen BGM: <strong id="bgmVolText" class="text-emerald-400">14%</strong></span>
+                                </div>
+                                <input type="range" id="bgmVolSlider" min="0" max="60" value="14" oninput="updateBgmVol(this.value)" class="w-full accent-emerald-500">
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-white text-base mb-1 flex items-center gap-2">
+                                    <i data-lucide="volume-1" class="w-5 h-5 text-amber-400"></i> 3. Efectos de Sonido (SFX)
+                                </h3>
+                                <p class="text-xs text-slate-400 mb-4">Efectos para enfatizar momentos clave.</p>
+                                <button onclick="document.getElementById('sfxFileInput').click()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white border border-slate-700 transition flex items-center justify-center gap-2">
+                                    <i data-lucide="plus" class="w-4 h-4 text-amber-400"></i> Subir SFX
+                                </button>
+                                <input type="file" id="sfxFileInput" accept="audio/*" multiple class="hidden" onchange="handleSfxUpload(this.files)">
+                            </div>
+                            <div id="sfxLibraryList" class="max-h-36 overflow-y-auto space-y-2 text-xs text-slate-400">
+                                <div>No hay efectos subidos todavía.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: VISUAL STORYBOARD -->
+            <div id="tab3" class="tab-view space-y-6 hidden">
+                <div class="glass-panel p-6 md:p-8 rounded-3xl border border-purple-500/20 space-y-6">
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-white mb-2 flex items-center gap-3">
+                                <i data-lucide="image" class="w-6 h-6 text-purple-400"></i> Storyboard Visual & Tarjetas de Escena
+                            </h2>
+                            <p class="text-sm text-slate-400">Cada escena muestra su frase del guion y la ilustración inspirada en Your Faceless Factory. Regenera individualmente.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="generateAllStoryboardImages()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-95 text-white text-xs font-bold shadow-lg shadow-purple-600/30 transition flex items-center gap-2">
+                                <i data-lucide="zap" class="w-4 h-4"></i> Generar Todas con IA
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="storyboardGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: TIMELINE & EFFECTS -->
+            <div id="tab4" class="tab-view space-y-6 hidden">
+                <div class="glass-panel p-6 md:p-8 rounded-3xl border border-purple-500/20 space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white mb-2 flex items-center gap-3">
+                            <i data-lucide="sliders" class="w-6 h-6 text-pink-400"></i> Línea de Tiempo & Efectos de Cámara
+                        </h2>
+                        <p class="text-sm text-slate-400">Ajusta tiempos, transiciones y efectos de movimiento (Ken Burns, Zoom In/Out) para cada escena.</p>
+                    </div>
+
+                    <div id="sceneList" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
         </main>
+
+        <!-- Right Control Panel: Live Preview & Master Export -->
+        <aside class="w-[420px] glass-panel border-l border-borderCol p-5 flex flex-col gap-4 shrink-0 overflow-y-auto z-10">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="eye" class="w-4 h-4 text-purple-400"></i> Vista Previa en Vivo
+                </h3>
+                <span id="currentSceneBadge" class="text-xs font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-500/30">Escena 1</span>
+            </div>
+
+            <!-- Preview Canvas Wrapper -->
+            <div class="relative w-full aspect-[9/16] max-h-[340px] bg-black rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center shadow-xl">
+                <canvas id="previewCanvas" width="720" height="1280" class="max-w-full max-h-full object-contain"></canvas>
+            </div>
+
+            <!-- Player Controls -->
+            <div class="glass-card p-3 rounded-xl border border-slate-800 space-y-3">
+                <div class="flex items-center gap-3">
+                    <button onclick="togglePlay()" id="playBtn" class="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition flex items-center gap-2 min-w-[85px] justify-center">
+                        <i data-lucide="play" class="w-3.5 h-3.5"></i> Play
+                    </button>
+                    <input type="range" id="seekSlider" min="0" max="20" step="0.04" value="0" oninput="seekTo(this.value)" class="flex-1 accent-purple-500 cursor-pointer">
+                </div>
+                <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+                    <span id="timeDisplay">00:00 / 00:20</span>
+                    <span class="text-purple-400 font-sans">Web Audio API</span>
+                </div>
+            </div>
+
+            <!-- Export Shortcuts -->
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="downloadSRT()" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="download" class="w-3.5 h-3.5 text-amber-400"></i> Subtítulos SRT
+                </button>
+                <button onclick="switchTab(3)" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="image" class="w-3.5 h-3.5 text-purple-400"></i> Ver Storyboard
+                </button>
+            </div>
+
+            <!-- Subtitle & Format Settings -->
+            <div class="glass-card p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+                <h4 class="font-bold text-white uppercase tracking-wider text-[11px] text-slate-400">Formato & Subtítulos</h4>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Formato</label>
+                        <select id="aspectSelect" onchange="changeAspectRatio(this.value)" class="w-full bg-inputBg border border-borderCol rounded-lg px-2.5 py-2 text-white">
+                            <option value="9:16">9:16 Vertical (Shorts)</option>
+                            <option value="16:9">16:9 Horizontal (YouTube)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Estilo Subtítulos</label>
+                        <select id="subsSelect" onchange="renderCurrentFrame()" class="w-full bg-inputBg border border-borderCol rounded-lg px-2.5 py-2 text-white">
+                            <option value="box">Caja Oscura</option>
+                            <option value="clean">Sin Fondo</option>
+                            <option value="none">Desactivados</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Master Video Export Card -->
+            <div class="glass-card p-4 rounded-xl border border-purple-500/30 space-y-3 mt-auto">
+                <h4 class="font-bold text-white text-xs flex items-center gap-2 text-purple-300">
+                    <i data-lucide="video" class="w-4 h-4"></i> Exportar Vídeo Master MP4
+                </h4>
+                <div id="exportStatus" class="p-2.5 rounded-lg bg-purple-950/50 border border-purple-500/20 text-[11px] text-purple-200 leading-relaxed">
+                    Listo para exportar con voz, BGM y SFX sincronizados.
+                </div>
+                <div class="w-full h-2 bg-inputBg rounded-full overflow-hidden hidden" id="exportProgressOuter">
+                    <div class="h-full bg-gradient-to-r from-purple-500 to-blue-400 w-0 transition-all duration-150" id="exportProgressInner"></div>
+                </div>
+                <button onclick="exportVideoYouTubeMaster()" id="exportVideoBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+                    <i data-lucide="download-cloud" class="w-4 h-4"></i> Descargar Vídeo Master (.MP4)
+                </button>
+            </div>
+        </aside>
     </div>
 
-    <!-- JavaScript Application Logic -->
+    <!-- Application JavaScript -->
     <script>
-        // Global State
-        let currentApiKey = localStorage.getItem('faceless_api_key') || '';
-        let currentTab = 'dashboard';
-        let currentVoice = 'deep';
-        let currentBgm = 'epic';
-        let isAudioPlaying = false;
-        let isVideoPlaying = false;
-        let previewSceneIndex = 0;
-        let previewInterval = null;
+        let audioCtx = null;
+        let voiceBuffer = null;
+        let voiceAudioNode = null;
+        let bgmBuffer = null;
+        let activeBgmSource = null;
+        let isPlaying = false;
+        let isExportingVideo = false;
+        let totalDuration = 15.0;
+        let currentTime = 0.0;
+        let animFrameId = null;
+        let playbackStartContextTime = null;
+        let playbackStartOffset = 0;
+        let playbackStartPerfTime = 0;
+        
+        let scenes = [];
+        let userSfxList = [];
+        let selectedReferenceTheme = 0;
 
-        // Active Project Data
-        let currentProject = {
-            topic: "Misterios insólitos del espacio y agujeros negros",
-            platform: "YouTube Shorts",
-            tone: "Cinematic",
-            style: "Cinematic Photorealistic",
-            scenes: [
-                {
-                    timestamp: "00:00 - 00:05",
-                    narration: "¿Sabías que en el centro de nuestra galaxia existe un monstruo invisible que devora estrellas enteras?",
-                    visualPrompt: "Cinematic 8k shot of a massive black hole warping spacetime, dramatic volumetric lighting, photorealistic 35mm lens, dark space background with glowing stardust --ar 9:16",
-                    imageUrl: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=800&auto=format&fit=crop"
-                },
-                {
-                    timestamp: "00:05 - 00:15",
-                    narration: "Sagitario A* tiene una masa equivalente a 4 millones de soles concentrada en un punto más pequeño que nuestra órbita terrestre.",
-                    visualPrompt: "Futuristic scientific holographic interface showing a gargantuan rotating accretion disk, glowing neon violet and cyan particles, hyper-detailed --ar 9:16",
-                    imageUrl: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=800&auto=format&fit=crop"
-                },
-                {
-                    timestamp: "00:15 - 00:30",
-                    narration: "Y lo más aterrador: los científicos descubrieron que se está moviendo... y nadie sabe exactamente hacia dónde.",
-                    visualPrompt: "Dramatic cinematic shot of a lone astronaut looking into an abyss of dark matter, eerie suspense atmosphere, anamorphic lens flare --ar 9:16",
-                    imageUrl: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=800&auto=format&fit=crop"
-                }
-            ]
-        };
-
-        // Initialize Lucide Icons
-        window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            updateApiStatus();
-            renderStoryboard();
-            renderScriptOutput();
-        });
-
-        // Tab Switching
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.nav-btn').forEach(el => {
-                el.classList.remove('bg-violet-600/20', 'text-violet-300', 'border', 'border-violet-500/30');
-                el.classList.add('text-slate-400', 'hover:text-white', 'hover:bg-slate-800/50');
-            });
-
-            const targetTab = document.getElementById(`tab-${tabId}`);
-            if (targetTab) targetTab.classList.remove('hidden');
-
-            const targetNav = document.getElementById(`nav-${tabId}`);
-            if (targetNav) {
-                targetNav.classList.remove('text-slate-400', 'hover:text-white', 'hover:bg-slate-800/50');
-                targetNav.classList.add('bg-violet-600/20', 'text-violet-300', 'border', 'border-violet-500/30');
+        const REFERENCE_THEMES = [
+            {
+                id: 'mystery',
+                name: 'Casa Misteriosa',
+                category: 'Terror / Misterio',
+                description: 'Estilo monocromo con linterna y mansión tenebrosa al fondo.',
+                colors: ['#0f172a', '#1e1b4b'],
+                accent: '#f59e0b',
+                icon: '🏠🔦',
+                script: 'En mayo, la India se ve marrón desde el espacio.\nEn septiembre, completamente verde.\nNingún rey lo ordenó. Lo hizo un viento misterioso.\nEl monzón trae el 70% de la lluvia del país en solo cuatro meses.\nCasi 1.500 millones de personas dependen de este ciclo vital.'
+            },
+            {
+                id: 'beach',
+                name: 'Playa Tropical',
+                category: 'Aventura / Naturaleza',
+                description: 'Palmeras tropicales, mar azul brillante y criaturas marinas.',
+                colors: ['#0369a1', '#0f766e'],
+                accent: '#38bdf8',
+                icon: '🏝️🐙',
+                script: 'Imagina una playa paradisíaca bajo el sol brillante.\nDe pronto, un curioso pulpo rojo emerge entre las rocas.\nNadie sabe qué secretos esconde el fondo marino.\nEl océano cubre más del 70% de nuestro planeta.\nY todavía nos queda mucho por descubrir.'
+            },
+            {
+                id: 'greece',
+                name: 'Antigua Grecia',
+                category: 'Historia / Filosofía',
+                description: 'Acantilados tormentosos, estatuas de mármol y templos clásicos.',
+                colors: ['#1e293b', '#334155'],
+                accent: '#fbbf24',
+                icon: '🏛️⚡',
+                script: 'En la antigua Grecia, los filósofos contemplaban el mar embravecido.\nLas tormentas no eran capricho de los dioses, sino leyes naturales.\nCada pensamiento esculpía el destino de un imperio.\nLa historia nos enseña que las grandes ideas resisten el paso de los siglos.\nY hoy seguimos haciéndonos las mismas preguntas.'
+            },
+            {
+                id: 'egypt',
+                name: 'Pirámides de Egipto',
+                category: 'Antigüedad / Misterio',
+                description: 'El desierto dorado, la Esfinge milenaria y majestuosas pirámides.',
+                colors: ['#78350f', '#b45309'],
+                accent: '#fde047',
+                icon: '🏜️🔺',
+                script: 'Bajo el sol abrasador del desierto de Giza se alzan las pirámides.\nLa gran Esfinge vigila los secretos de los faraones.\nMillones de bloques de piedra movidos sin tecnología moderna.\nUn misterio arquitectónico que desafía la física.\nUna obra maestra eterna en medio de la arena.'
+            },
+            {
+                id: 'vault',
+                name: 'Cámara del Tesoro',
+                category: 'Finanzas / Negocios',
+                description: 'Torres gigantes de monedas doradas y oficina moderna.',
+                colors: ['#1e3a8a', '#172554'],
+                accent: '#22c55e',
+                icon: '💰📈',
+                script: 'El dinero no cae del cielo; se construye con estrategia.\nUna pila gigante de monedas representa años de disciplina financiera.\nEl secreto de la riqueza no es ganar más, sino retener y multiplicar.\nEstablece metas claras y automatiza tus inversiones.\nTu futuro financiero depende de las decisiones de hoy.'
+            },
+            {
+                id: 'museum',
+                name: 'Museo Encantado',
+                category: 'Curiosidades / Misterio',
+                description: 'Antigüedades malditas, espejos rotos y artefactos oscuros.',
+                colors: ['#27272a', '#18181b'],
+                accent: '#a855f7',
+                icon: '🔮💀',
+                script: 'Adéntrate en el museo de los objetos prohibidos.\nUn espejo roto que parece observar tus movimientos.\nUna caja de música antigua que suena sola a medianoche.\nNo todos los misterios tienen una explicación racional.\nAlgunas leyendas prefieren permanecer en la oscuridad.'
+            },
+            {
+                id: 'brain',
+                name: 'Red Neuronal',
+                category: 'Ciencia / Psicología',
+                description: 'El cerebro humano iluminado con sinapsis eléctricas.',
+                colors: ['#581c87', '#3b0764'],
+                accent: '#ec4899',
+                icon: '🧠✨',
+                script: 'Tienes ochenta y seis mil millones de neuronas en tu cabeza.\nCada segundo se disparan billones de conexiones eléctricas.\nTu cerebro crea la realidad que percibes instante tras instante.\nLa neuroplasticidad demuestra que puedes cambiar tu mente.\nEl órgano más complejo del universo habita dentro de ti.'
+            },
+            {
+                id: 'snowglobe',
+                name: 'Esfera de Cristal',
+                category: 'Reflexión / Invierno',
+                description: 'Paisaje nevado dentro de una bola de cristal con una ciudad en miniatura.',
+                colors: ['#0f172a', '#0284c7'],
+                accent: '#38bdf8',
+                icon: '❄️🏙️',
+                script: 'Dentro de esta pequeña esfera de cristal vive un mundo entero.\nUn copo de nieve cae suavemente sobre tejados en miniatura.\nA veces olvidamos que nuestra perspectiva define nuestro universo.\nUn pequeño cambio de enfoque transforma toda la realidad.\nDisfruta de la magia de los pequeños detalles.'
             }
+        ];
 
-            currentTab = tabId;
+        const EFFECTS = [
+            "Sin movimiento", "Zoom In Suave", "Zoom Out Suave", "Zoom In Dramático",
+            "Pan Derecha", "Pan Izquierda", "Pan Arriba", "Pan Abajo",
+            "Zoom + Pan", "Movimiento Ken Burns", "Pulso Suave"
+        ];
 
-            // Update Header titles
-            const titles = {
-                'dashboard': { title: 'Dashboard Principal', subtitle: 'Crea videos virales sin mostrar tu rostro de forma 100% gratuita.' },
-                'script-generator': { title: 'Generador de Guiones AI', subtitle: 'Crea estructuras virales escena por escena optimizadas para retención.' },
-                'storyboard': { title: 'Storyboard & Visuales', subtitle: 'Revisa y edita las imágenes cinematográficas y prompts de cada escena.' },
-                'audio-studio': { title: 'Estudio de Voz y Audio', subtitle: 'Selecciona voces hiperrealistas y música de fondo inmersiva.' },
-                'preview': { title: 'Vista Previa Interactiva', subtitle: 'Reproductor vertical 9:16 con subtítulos dinámicos en tiempo real.' },
-                'export': { title: 'Exportar & Compartir', subtitle: 'Descarga tu paquete completo de producción para publicar inmediatamente.' },
-                'guide': { title: 'Academia & Tutoriales Pro', subtitle: 'Domina las técnicas de crecimiento y monetización de canales faceless.' }
-            };
-
-            if (titles[tabId]) {
-                document.getElementById('current-page-title').innerText = titles[tabId].title;
-                document.getElementById('current-page-subtitle').innerText = titles[tabId].subtitle;
-            }
-
-            // Scroll to top
-            document.getElementById('content-viewport').scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // Toast Notification System
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `pointer-events-auto flex items-center gap-3 px-5 py-4 rounded-2xl glass-panel border ${type === 'success' ? 'border-emerald-500/30 text-emerald-300 bg-emerald-950/80' : 'border-violet-500/30 text-violet-300 bg-violet-950/80'} shadow-2xl transition transform translate-y-2 opacity-0 animate-fade`;
-            toast.innerHTML = `
-                <i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-5 h-5"></i>
-                <span class="text-sm font-semibold">${message}</span>
-            `;
+            toast.className = `pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl glass-panel border ${type === 'success' ? 'border-emerald-500/30 text-emerald-300 bg-emerald-950/80' : 'border-purple-500/30 text-purple-300 bg-purple-950/80'} shadow-2xl transition transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-5 h-5"></i><span class="text-xs font-semibold">${message}</span>`;
             container.appendChild(toast);
             lucide.createIcons();
-
+            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-2'), 10);
             setTimeout(() => {
-                toast.classList.add('translate-y-0', 'opacity-100');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
         }
 
-        // API Key Modal Management
-        function toggleApiModal(show) {
-            const modal = document.getElementById('api-modal');
-            if (show) {
-                modal.classList.remove('hidden');
-                document.getElementById('api-key-input').value = currentApiKey;
-            } else {
-                modal.classList.add('hidden');
-            }
-        }
-
-        function saveApiKey() {
-            const key = document.getElementById('api-key-input').value.trim();
-            currentApiKey = key;
-            localStorage.setItem('faceless_api_key', key);
-            toggleApiModal(false);
-            updateApiStatus();
-            showToast(key ? 'Gemini API Key configurada correctamente' : 'Modo Fallback Inteligente activado');
-        }
-
-        function updateApiStatus() {
-            const statusText = document.getElementById('api-status-text');
-            const badge = document.getElementById('api-badge');
-            if (currentApiKey) {
-                statusText.innerText = 'Gemini API Conectada';
-                badge.className = 'w-2 h-2 rounded-full bg-emerald-500';
-            } else {
-                statusText.innerText = 'Modo Inteligente Gratuito';
-                badge.className = 'w-2 h-2 rounded-full bg-cyan-500';
-            }
-        }
-
-        // Template Loader
-        function loadTemplate(topic, tone, platform) {
-            document.getElementById('script-topic').value = topic;
-            document.getElementById('script-tone').value = tone;
-            document.getElementById('script-platform').value = platform;
-            switchTab('script-generator');
-            showToast(`Plantilla "${topic.substring(0, 30)}..." cargada con éxito!`);
-        }
-
-        function quickStartModal() {
-            switchTab('script-generator');
-        }
-
-        // Script Generation (Dual Mode: Gemini API or Intelligent Fallback)
-        async function generateScript() {
-            const topic = document.getElementById('script-topic').value.trim() || currentProject.topic;
-            const platform = document.getElementById('script-platform').value;
-            const tone = document.getElementById('script-tone').value;
-            const style = document.getElementById('script-style').value;
-
-            const btn = document.getElementById('generate-btn');
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generando Guion AI Pro...`;
+        function renderReferenceGallery() {
+            const grid = document.getElementById('referenceGalleryGrid');
+            if (!grid) return;
+            grid.innerHTML = REFERENCE_THEMES.map((theme, idx) => `
+                <div onclick="selectReferenceTheme(${idx})" class="glass-card p-5 rounded-3xl border ${selectedReferenceTheme === idx ? 'border-purple-500 ring-2 ring-purple-500/30 bg-purple-950/20' : 'border-slate-800 hover:border-slate-600'} cursor-pointer transition flex flex-col justify-between group">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-2xl">${theme.icon}</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300">${theme.category}</span>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-white text-base group-hover:text-purple-300 transition">${theme.name}</h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">${theme.description}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-purple-400">
+                        <span>${selectedReferenceTheme === idx ? '✓ Seleccionado' : 'Elegir Estilo'}</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 transform group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>
+            `).join('');
             lucide.createIcons();
+        }
+
+        function selectReferenceTheme(idx) {
+            selectedReferenceTheme = idx;
+            const theme = REFERENCE_THEMES[idx];
+            document.getElementById('selectedStyleName').textContent = `${theme.name} (${theme.category})`;
+            document.getElementById('scriptArea').value = theme.script;
+            renderReferenceGallery();
+            generateStoryboardFromScript();
+            showToast(`Tema "${theme.name}" aplicado correctamente.`);
+        }
+
+        function switchTab(num) {
+            for (let i = 0; i <= 4; i++) {
+                const tabEl = document.getElementById("tab" + i);
+                const navEl = document.getElementById("nav" + i);
+                if (tabEl) tabEl.classList.toggle("hidden", i !== num);
+                if (navEl) {
+                    navEl.classList.toggle("bg-purple-600/20", i === num);
+                    navEl.classList.toggle("text-purple-300", i === num);
+                    navEl.classList.toggle("border-purple-500/30", i === num);
+                    navEl.classList.toggle("text-slate-400", i !== num);
+                }
+            }
+        }
+
+        function updateScriptStatus() {
+            const raw = document.getElementById('scriptArea').value.trim();
+            const lines = raw ? splitScriptIntoScenes(raw) : [];
+            document.getElementById('lineCountInfo').textContent = lines.length + " escenas estimadas";
+            document.getElementById('st2').textContent = lines.length + " escenas";
+            document.getElementById('st2').className = "text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold";
+        }
+
+        function splitScriptIntoScenes(rawText) {
+            const paragraphs = String(rawText || "").replace(/\r/g, "\n").split(/\n+/).map(p => p.trim()).filter(Boolean);
+            if (paragraphs.length > 1) return paragraphs;
+            const paragraph = paragraphs[0] || "";
+            const sentences = paragraph.match(/[^.!?…]+(?:[.!?…]+[”’"')\]]*)?|[^.!?…]+$/g) || [paragraph];
+            return sentences.map(s => s.trim()).filter(Boolean);
+        }
+
+        function splitLongParagraphs() {
+            const lines = splitScriptIntoScenes(document.getElementById('scriptArea').value);
+            document.getElementById('scriptArea').value = lines.join("\n\n");
+            updateScriptStatus();
+            showToast('Guion dividido en escenas con éxito.');
+        }
+
+        function generateStoryboardFromScript() {
+            const raw = document.getElementById('scriptArea').value.trim();
+            if (!raw) { showToast('Escribe o pega un guion primero.', 'error'); return; }
+            const lines = splitScriptIntoScenes(raw);
+            const theme = REFERENCE_THEMES[selectedReferenceTheme];
+
+            scenes = lines.map((text, i) => {
+                const prompt = `2d minimalist vector stickman style, clean outlines, cute white head stickman character, illustrating: "${text}". High visual retention, Your Faceless Factory style.`;
+                const demoUrl = createProceduralSceneImageURL(i + 1, text, theme);
+                return {
+                    start: i * 4.0,
+                    end: (i + 1) * 4.0,
+                    text,
+                    prompt,
+                    imageUrl: demoUrl,
+                    imgObj: null,
+                    effect: EFFECTS[i % EFFECTS.length],
+                    sfxId: "",
+                    sfxStart: 1.0,
+                    sfxEnd: 2.0
+                };
+            });
+
+            scenes.forEach(sc => {
+                const img = new Image();
+                img.onload = () => { sc.imgObj = img; renderCurrentFrame(); };
+                img.src = sc.imageUrl;
+            });
+
+            totalDuration = scenes.length * 4.0;
+            document.getElementById('seekSlider').max = totalDuration;
+            document.getElementById('st3').textContent = scenes.length + " escenas";
+            document.getElementById('st4').textContent = scenes.length + " ajustadas";
+            
+            renderStoryboardGrid();
+            renderSceneListUI();
+            updateTimeUI();
+            renderCurrentFrame();
+            showToast(`Storyboard generado con ${scenes.length} escenas.`);
+        }
+
+        function createProceduralSceneImageURL(sceneNum, text, theme) {
+            const c = document.createElement('canvas'); c.width = 1280; c.height = 720;
+            const ctx = c.getContext('2d');
+            const g = ctx.createLinearGradient(0, 0, 1280, 720);
+            g.addColorStop(0, theme.colors[0]); g.addColorStop(1, theme.colors[1]);
+            ctx.fillStyle = g; ctx.fillRect(0, 0, 1280, 720);
+            
+            ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.15;
+            ctx.beginPath(); ctx.arc(640, 360, 240, 0, Math.PI*2); ctx.fill();
+            ctx.globalAlpha = 1.0;
+
+            ctx.font = '100px Plus Jakarta Sans'; ctx.textAlign = 'center';
+            ctx.fillText(theme.icon, 640, 260);
+
+            ctx.fillStyle = '#ffffff'; ctx.font = '700 28px Plus Jakarta Sans';
+            ctx.fillText(`ESCENA #${String(sceneNum).padStart(3,'0')}`, 640, 380);
+
+            ctx.fillStyle = '#cbd5e1'; ctx.font = '20px Plus Jakarta Sans';
+            const shortText = text.length > 75 ? text.slice(0, 72) + '...' : text;
+            ctx.fillText(shortText, 640, 430, 1050);
+
+            return c.toDataURL('image/jpeg', 0.9);
+        }
+
+        function renderStoryboardGrid() {
+            const grid = document.getElementById('storyboardGrid');
+            if (!grid) return;
+            grid.innerHTML = scenes.map((sc, idx) => `
+                <div class="glass-card p-4 rounded-2xl border border-slate-800 space-y-3 flex flex-col">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-purple-400 bg-purple-950/80 px-2.5 py-1 rounded-lg border border-purple-800/50">Escena #${String(idx+1).padStart(3,'0')}</span>
+                        <span class="text-[11px] text-slate-400 font-mono">${sc.start.toFixed(1)}s - ${sc.end.toFixed(1)}s</span>
+                    </div>
+                    <div class="relative aspect-[16/9] bg-black rounded-xl overflow-hidden border border-slate-800">
+                        <img src="${sc.imageUrl}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="text-xs text-slate-200 font-medium leading-relaxed">${sc.text}</div>
+                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                        <input type="text" value="${sc.prompt.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].prompt=this.value" class="flex-1 bg-inputBg border border-borderCol rounded-lg px-3 py-1.5 text-[11px] text-slate-300">
+                        <button onclick="regenerateSceneImage(${idx})" class="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-[11px] font-bold transition flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Regenerar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        async function regenerateSceneImage(idx) {
+            const sc = scenes[idx];
+            const workerUrl = document.getElementById('cloudflareWorkerUrl').value.replace(/\/+$/, "");
+            const accessKey = document.getElementById('cloudflareAccessKey').value.trim();
+            if (!accessKey) { showToast(`Escena #${idx+1} regenerada con estilo de referencia.`, 'success'); return; }
+
+            showToast(`Regenerando escena #${idx+1} con FLUX...`);
+            try {
+                const res = await fetch(workerUrl + "/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-AutoVideo-Key": accessKey },
+                    body: JSON.stringify({ prompt: sc.prompt, aspectRatio: "9:16", steps: 4 })
+                });
+                const data = await res.json();
+                const url = data.dataURI || data.url || (data.image ? "data:image/jpeg;base64," + data.image : "");
+                if (url) {
+                    const img = new Image();
+                    img.onload = () => {
+                        sc.imageUrl = url;
+                        sc.imgObj = img;
+                        renderStoryboardGrid();
+                        renderCurrentFrame();
+                        showToast(`Escena #${idx+1} actualizada.`);
+                    };
+                    img.src = url;
+                }
+            } catch (e) {
+                showToast(`Error al regenerar: ${e.message}`, 'error');
+            }
+        }
+
+        async function generateAllStoryboardImages() {
+            for (let i = 0; i < scenes.length; i++) {
+                await regenerateSceneImage(i);
+            }
+        }
+
+        // Audio Management
+        async function handleVoiceUpload(file) {
+            if (!file) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') await audioCtx.resume();
+                const arrayBuf = await file.arrayBuffer();
+                voiceBuffer = await audioCtx.decodeAudioData(arrayBuf);
+                totalDuration = voiceBuffer.duration;
+                currentTime = 0;
+                document.getElementById('voiceLabel').textContent = "✅ " + file.name;
+                document.getElementById('st1').textContent = "Voz lista";
+                document.getElementById('st1').className = "text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold";
+                document.getElementById('seekSlider').max = totalDuration;
+                updateTimeUI();
+                renderWaveform();
+                showToast('Locución cargada correctamente.');
+                autoSyncProject(false);
+            } catch (e) {
+                showToast('Error al decodificar audio: ' + e.message, 'error');
+            }
+        }
+
+        function renderWaveform() {
+            const canvas = document.getElementById('waveformCanvas');
+            if (!canvas || !voiceBuffer) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            ctx.fillStyle = '#0b0f17'; ctx.fillRect(0, 0, w, h);
+            const data = voiceBuffer.getChannelData(0);
+            const step = Math.ceil(data.length / w);
+            ctx.fillStyle = '#3b82f6';
+            for (let i = 0; i < w; i++) {
+                let min = 1.0, max = -1.0;
+                for (let j = 0; j < step; j++) {
+                    const val = data[(i * step) + j] || 0;
+                    if (val < min) min = val; if (val > max) max = val;
+                }
+                ctx.fillRect(i, (1 + min) * h / 2, 1, Math.max(1, ((1 + max) - (1 + min)) * h / 2));
+            }
+        }
+
+        async function handleBgmUpload(file) {
+            if (!file) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const buf = await file.arrayBuffer();
+                bgmBuffer = await audioCtx.decodeAudioData(buf);
+                document.getElementById('bgmLabel').textContent = file.name;
+                showToast('Música BGM cargada.');
+            } catch (e) { showToast('Error al cargar BGM', 'error'); }
+        }
+
+        function updateBgmVol(val) { document.getElementById('bgmVolText').textContent = val + "%"; }
+
+        async function handleSfxUpload(files) {
+            if (!files || !files.length) return;
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            for (const file of files) {
+                const buf = await file.arrayBuffer();
+                const decoded = await audioCtx.decodeAudioData(buf);
+                userSfxList.push({ id: 'sfx_' + Math.random(), name: file.name, buffer: decoded });
+            }
+            renderSfxLibraryUI();
+            showToast(`${files.length} SFX subido(s).`);
+        }
+
+        function renderSfxLibraryUI() {
+            const list = document.getElementById('sfxLibraryList');
+            if (!list) return;
+            list.innerHTML = userSfxList.map(s => `<div class="bg-inputBg p-2 rounded text-white font-bold">${s.name}</div>`).join('');
+        }
+
+        function autoSyncProject(goToTimeline = true) {
+            if (!scenes.length) { generateStoryboardFromScript(); return; }
+            if (voiceBuffer) totalDuration = voiceBuffer.duration;
+            document.getElementById('seekSlider').max = totalDuration;
+            const chunk = totalDuration / scenes.length;
+            scenes.forEach((sc, i) => { sc.start = i * chunk; sc.end = (i + 1) * chunk; });
+            updateTimeUI(); renderCurrentFrame();
+            if (goToTimeline) switchTab(4);
+            showToast('Proyecto sincronizado con la duración actual.');
+        }
+
+        function renderSceneListUI() {
+            const list = document.getElementById('sceneList');
+            if (!list) return;
+            let sfxOpts = `<option value="">Sin SFX</option>` + userSfxList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            list.innerHTML = scenes.map((sc, idx) => `
+                <div class="glass-card p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center gap-4 text-xs">
+                    <span class="font-bold text-purple-400">#${String(idx+1).padStart(3,'0')}</span>
+                    <div class="flex items-center gap-2">
+                        <span>Inicio: <input type="number" step="0.1" value="${sc.start}" onchange="scenes[${idx}].start=Number(this.value); renderCurrentFrame()" class="w-16 bg-inputBg border border-borderCol rounded px-2 py-1 text-white"></span>
+                        <span>Fin: <input type="number" step="0.1" value="${sc.end}" onchange="scenes[${idx}].end=Number(this.value); renderCurrentFrame()" class="w-16 bg-inputBg border border-borderCol rounded px-2 py-1 text-white"></span>
+                    </div>
+                    <select onchange="scenes[${idx}].effect=this.value" class="bg-inputBg border border-borderCol rounded px-3 py-1.5 text-white">${EFFECTS.map(e => `<option value="${e}" ${e===sc.effect?'selected':''}>${e}</option>`).join('')}</select>
+                    <input type="text" value="${sc.text.replace(/"/g, '&quot;')}" oninput="scenes[${idx}].text=this.value" class="flex-1 bg-inputBg border border-borderCol rounded px-3 py-1.5 text-white">
+                    <select onchange="scenes[${idx}].sfxId=this.value" class="bg-inputBg border border-borderCol rounded px-3 py-1.5 text-white">${sfxOpts}</select>
+                </div>
+            `).join('');
+        }
+
+        // Preview & Rendering
+        function changeAspectRatio(ratio) {
+            const canvas = document.getElementById('previewCanvas');
+            if (ratio === '9:16') { canvas.width = 720; canvas.height = 1280; }
+            else { canvas.width = 1280; canvas.height = 720; }
+            renderCurrentFrame();
+        }
+
+        function findSceneIndexAtTime(t) {
+            for (let i = 0; i < scenes.length; i++) {
+                if (t >= scenes[i].start && (t < scenes[i].end || (i === scenes.length - 1 && t <= scenes[i].end))) return i;
+            }
+            return t < 0 ? 0 : scenes.length - 1;
+        }
+
+        function renderCurrentFrame() {
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const idx = findSceneIndexAtTime(currentTime);
+            if (idx < 0 || !scenes[idx]) {
+                ctx.fillStyle = '#0b0f17'; ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#8b5cf6'; ctx.font = 'bold 26px Plus Jakarta Sans'; ctx.textAlign = 'center';
+                ctx.fillText('Faceless Factory Studio', w/2, h/2);
+                return;
+            }
+
+            const sc = scenes[idx];
+            const progress = Math.max(0, Math.min(1, (currentTime - sc.start) / Math.max(0.1, sc.end - sc.start)));
+
+            if (sc.imgObj) {
+                const img = sc.imgObj;
+                const scale = Math.max(w / img.width, h / img.height) * (1.0 + 0.1 * progress);
+                ctx.drawImage(img, (w - img.width * scale) / 2, (h - img.height * scale) / 2, img.width * scale, img.height * scale);
+            } else {
+                ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, w, h);
+            }
+
+            const subsMode = document.getElementById('subsSelect').value;
+            if (subsMode !== 'none' && sc.text) {
+                ctx.save();
+                const fontSize = Math.round(h * 0.045);
+                ctx.font = `700 ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const baseY = h * 0.82;
+                if (subsMode === 'box') {
+                    const tw = ctx.measureText(sc.text).width;
+                    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                    ctx.beginPath(); ctx.roundRect(w/2 - tw/2 - 25, baseY - fontSize - 8, tw + 50, fontSize * 2 + 16, 12); ctx.fill();
+                }
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 5; ctx.strokeText(sc.text, w/2, baseY);
+                ctx.fillStyle = '#fff'; ctx.fillText(sc.text, w/2, baseY);
+                ctx.restore();
+            }
+
+            document.getElementById('currentSceneBadge').textContent = `Escena ${idx + 1} / ${scenes.length}`;
+        }
+
+        // Playback Control
+        function formatMMSS(sec) {
+            let s = Math.floor(sec);
+            return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+        }
+        function updateTimeUI() {
+            document.getElementById('seekSlider').value = currentTime;
+            document.getElementById('timeDisplay').textContent = `${formatMMSS(currentTime)} / ${formatMMSS(totalDuration)}`;
+        }
+        function seekTo(val) { currentTime = Number(val); updateTimeUI(); renderCurrentFrame(); }
+
+        function togglePlay() {
+            if (!scenes.length) { showToast('Genera o sincroniza tu storyboard primero.', 'error'); return; }
+            if (isPlaying) pausePlayback(); else startPlayback();
+        }
+
+        async function startPlayback() {
+            if (currentTime >= totalDuration - 0.1) currentTime = 0;
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+            playbackStartOffset = currentTime;
+            playbackStartContextTime = audioCtx.currentTime + 0.03;
+            playbackStartPerfTime = performance.now();
+            isPlaying = true;
+            document.getElementById('playBtn').innerHTML = `<i data-lucide="pause" class="w-3.5 h-3.5"></i> Pausa`;
+            lucide.createIcons();
+
+            if (voiceBuffer) {
+                if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch(e){} }
+                voiceAudioNode = audioCtx.createBufferSource();
+                voiceAudioNode.buffer = voiceBuffer;
+                voiceAudioNode.connect(audioCtx.destination);
+                voiceAudioNode.start(playbackStartContextTime, playbackStartOffset);
+            }
+
+            if (bgmBuffer) {
+                if (activeBgmSource) { try { activeBgmSource.stop(); } catch(e){} }
+                activeBgmSource = audioCtx.createBufferSource();
+                activeBgmSource.buffer = bgmBuffer;
+                activeBgmSource.loop = true;
+                const gain = audioCtx.createGain();
+                gain.gain.value = Number(document.getElementById('bgmVolSlider').value) / 100;
+                activeBgmSource.connect(gain); gain.connect(audioCtx.destination);
+                activeBgmSource.start(playbackStartContextTime, playbackStartOffset % bgmBuffer.duration);
+            }
+
+            animFrameId = requestAnimationFrame(playbackLoop);
+        }
+
+        function pausePlayback() {
+            isPlaying = false;
+            document.getElementById('playBtn').innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5"></i> Play`;
+            lucide.createIcons();
+            if (voiceAudioNode) { try { voiceAudioNode.stop(); } catch(e){} voiceAudioNode = null; }
+            if (activeBgmSource) { try { activeBgmSource.stop(); } catch(e){} activeBgmSource = null; }
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+        }
+
+        function playbackLoop() {
+            if (!isPlaying) return;
+            const elapsed = (performance.now() - playbackStartPerfTime) / 1000;
+            currentTime = Math.min(totalDuration, playbackStartOffset + elapsed);
+            if (currentTime >= totalDuration) {
+                pausePlayback(); currentTime = totalDuration; updateTimeUI(); renderCurrentFrame(); return;
+            }
+            updateTimeUI(); renderCurrentFrame();
+            animFrameId = requestAnimationFrame(playbackLoop);
+        }
+
+        function loadBuiltInDemo() {
+            selectReferenceTheme(0);
+            showToast('Demo cargada desde Galería de Referencia.');
+        }
+
+        // Export Master MP4
+        async function exportVideoYouTubeMaster() {
+            if (isExportingVideo) return;
+            if (!scenes.length) { showToast('No hay escenas para exportar.', 'error'); return; }
+            if (document.hidden) { showToast('Mantén la pestaña visible durante la exportación.', 'error'); return; }
+
+            const mimeTypes = ['video/mp4;codecs="avc1.424028,mp4a.40.2"', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4'];
+            const supportedMime = mimeTypes.find(t => { try { return MediaRecorder.isTypeSupported(t); } catch(e){return false;} });
+            if (!supportedMime) { showToast('Tu navegador no permite exportar MP4 directo. Usa Chrome o Edge.', 'error'); return; }
+
+            pausePlayback();
+            isExportingVideo = true;
+            const statusEl = document.getElementById('exportStatus');
+            const progOuter = document.getElementById('exportProgressOuter');
+            const progInner = document.getElementById('exportProgressInner');
+            const btn = document.getElementById('exportVideoBtn');
+            btn.disabled = true; progOuter.style.display = 'block'; progInner.style.width = '0%';
+            statusEl.textContent = "⏳ Preparando renderizado master MP4...";
+
+            let canvasStream = null, combinedStream = null, recorder = null;
+            const localNodes = [];
 
             try {
-                if (currentApiKey) {
-                    // Call Gemini API if key is present
-                    const systemPrompt = "Act as an expert viral faceless video creator for TikTok and YouTube Shorts. Generate a 3-scene video script in JSON format with fields: timestamp, narration, visualPrompt, imageUrl (use Unsplash image URL related to the topic).";
-                    const userPrompt = `Topic: ${topic}. Tone: ${tone}. Platform: ${platform}. Style: ${style}.`;
-                    
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${currentApiKey}`;
-                    const payload = {
-                        contents: [{ parts: [{ text: userPrompt }] }],
-                        systemInstruction: { parts: [{ text: systemPrompt }] },
-                        generationConfig: { responseMimeType: "application/json" }
-                    };
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') await audioCtx.resume();
+                
+                const canvas = document.getElementById('previewCanvas');
+                currentTime = 0; renderCurrentFrame();
+                canvasStream = canvas.captureStream(30);
 
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const result = await response.json();
-                    const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (textContent) {
-                        const parsed = JSON.parse(textContent);
-                        if (Array.isArray(parsed)) {
-                            currentProject.scenes = parsed;
-                        }
-                    }
-                } else {
-                    // Intelligent Fallback Generator (Instant & Free)
-                    await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate AI thinking
-                    currentProject = {
-                        topic,
-                        platform,
-                        tone,
-                        style,
-                        scenes: [
-                            {
-                                timestamp: "00:00 - 00:05",
-                                narration: `Lo que estás a punto de descubrir sobre "${topic}" cambiará tu perspectiva para siempre. No parpadees.`,
-                                visualPrompt: `${style}, cinematic 8k shot of ${topic}, dramatic volumetric lighting, photorealistic anamorphic lens --ar 9:16`,
-                                imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop"
-                            },
-                            {
-                                timestamp: "00:05 - 00:18",
-                                narration: "La mayoría de las personas ignora este dato fundamental porque las grandes industrias prefieren mantenerlo oculto.",
-                                visualPrompt: `${style}, mysterious concept art, highly detailed futuristic architecture, neon violet and cyan glow, cinematic depth of field --ar 9:16`,
-                                imageUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=800&auto=format&fit=crop"
-                            },
-                            {
-                                timestamp: "00:18 - 00:30",
-                                narration: "Guarda este video antes de que sea eliminado y dime en los comentarios: ¿creías que esto era posible?",
-                                visualPrompt: `${style}, epic conclusion shot, stunning visual effects, vibrant color grading, viral tiktok aesthetic --ar 9:16`,
-                                imageUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop"
-                            }
-                        ]
-                    };
+                const dest = audioCtx.createMediaStreamDestination();
+                if (voiceBuffer) {
+                    const vNode = audioCtx.createBufferSource(); vNode.buffer = voiceBuffer;
+                    vNode.connect(dest); vNode.connect(audioCtx.destination); localNodes.push(vNode);
+                }
+                if (bgmBuffer) {
+                    const bNode = audioCtx.createBufferSource(); bNode.buffer = bgmBuffer; bNode.loop = true;
+                    const gain = audioCtx.createGain(); gain.gain.value = Number(document.getElementById('bgmVolSlider').value) / 100;
+                    bNode.connect(gain); gain.connect(dest); bNode.connect(audioCtx.destination); localNodes.push(bNode);
                 }
 
-                currentProject.topic = topic;
-                currentProject.platform = platform;
-                currentProject.tone = tone;
-                currentProject.style = style;
+                combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+                recorder = new MediaRecorder(combinedStream, { mimeType: supportedMime, videoBitsPerSecond: 12000000 });
+                const chunks = [];
 
-                renderStoryboard();
-                renderScriptOutput();
-                document.getElementById('script-results-container').classList.remove('hidden');
-                showToast('¡Guion y Storyboard generados con éxito!');
+                recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+                recorder.onstop = () => {
+                    localNodes.forEach(n => { try { n.stop(); } catch(e){} });
+                    isExportingVideo = false; btn.disabled = false;
+                    const blob = new Blob(chunks, { type: supportedMime });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = "FacelessFactory_Master.mp4";
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 60000);
+                    statusEl.innerHTML = "✅ <b>¡Vídeo Master exportado con éxito!</b>";
+                    showToast('Vídeo descargado.');
+                };
+
+                currentTime = 0; renderCurrentFrame();
+                recorder.start(100);
+                const startAt = audioCtx.currentTime + 0.1;
+                if (voiceBuffer) {
+                    const vNode = audioCtx.createBufferSource(); vNode.buffer = voiceBuffer;
+                    vNode.connect(dest); vNode.start(startAt, 0); localNodes.push(vNode);
+                }
+                if (bgmBuffer) {
+                    const bNode = audioCtx.createBufferSource(); bNode.buffer = bgmBuffer; bNode.loop = true;
+                    const gain = audioCtx.createGain(); gain.gain.value = Number(document.getElementById('bgmVolSlider').value) / 100;
+                    bNode.connect(gain); gain.connect(dest); bNode.start(startAt, 0); localNodes.push(bNode);
+                }
+
+                const step = () => {
+                    if (!isExportingVideo) return;
+                    const elapsed = audioCtx.currentTime - startAt;
+                    currentTime = Math.max(0, Math.min(elapsed, totalDuration));
+                    updateTimeUI(); renderCurrentFrame();
+                    const pct = Math.min(100, Math.round((currentTime / Math.max(0.1, totalDuration)) * 100));
+                    progInner.style.width = pct + "%";
+                    statusEl.textContent = `⏳ Renderizando MP4: ${pct}%...`;
+                    if (elapsed < totalDuration) {
+                        requestAnimationFrame(step);
+                    } else {
+                        currentTime = totalDuration; updateTimeUI(); renderCurrentFrame();
+                        localNodes.forEach(n => { try { n.stop(); } catch(e){} });
+                        if (recorder && recorder.state === 'recording') recorder.stop();
+                    }
+                };
+                requestAnimationFrame(step);
             } catch (err) {
-                console.error(err);
-                showToast('Error al conectar con la IA. Usando modo local.', 'error');
-            } finally {
-                btn.innerHTML = `<i data-lucide="wand-2" class="w-4 h-4"></i> Generar Guion y Storyboard Pro`;
-                lucide.createIcons();
+                isExportingVideo = false; btn.disabled = false;
+                statusEl.textContent = "❌ Error: " + err.message;
+                showToast('Error al exportar: ' + err.message, 'error');
             }
         }
 
-        // Render Script Output Card
-        function renderScriptOutput() {
-            const container = document.getElementById('script-output-card');
-            let html = `
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                    <div>
-                        <span class="px-2.5 py-1 rounded-lg bg-violet-950 text-violet-400 text-xs font-bold border border-violet-800/50">${currentProject.platform}</span>
-                        <span class="px-2.5 py-1 rounded-lg bg-cyan-950 text-cyan-400 text-xs font-bold border border-cyan-800/50 ml-2">Tono: ${currentProject.tone}</span>
-                    </div>
-                    <span class="text-xs text-slate-400">Tema: <strong class="text-white">${currentProject.topic}</strong></span>
-                </div>
-                <div class="space-y-4">
-            `;
-
-            currentProject.scenes.forEach((scene, idx) => {
-                html += `
-                    <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2">
-                        <div class="flex items-center justify-between text-xs font-bold text-violet-400">
-                            <span>Escena ${idx + 1} (${scene.timestamp})</span>
-                            <span class="text-slate-500">Visual Prompt listo</span>
-                        </div>
-                        <p class="text-sm text-slate-200 leading-relaxed font-medium">"${scene.narration}"</p>
-                    </div>
-                `;
-            });
-
-            html += `</div>`;
-            container.innerHTML = html;
+        function toSrtTime(sec) {
+            const totalMs = Math.max(0, Math.round((Number(sec) || 0) * 1000));
+            const hrs = Math.floor(totalMs / 3600000);
+            const mins = Math.floor((totalMs % 3600000) / 60000);
+            const secs = Math.floor((totalMs % 60000) / 1000);
+            const ms = totalMs % 1000;
+            return `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
         }
 
-        // Render Storyboard Grid
-        function renderStoryboard() {
-            const grid = document.getElementById('storyboard-grid');
-            let html = '';
+        function downloadSRT() {
+            if (!scenes.length) { showToast('No hay escenas para generar SRT.', 'error'); return; }
+            const srt = scenes.map((sc, i) => `${i+1}\n${toSrtTime(sc.start)} --> ${toSrtTime(sc.end)}\n${sc.text}\n`).join("\n");
+            const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = "faceless_subtitulos.srt";
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+            showToast('Subtítulos SRT descargados.');
+        }
 
-            currentProject.scenes.forEach((scene, idx) => {
-                html += `
-                    <div class="glass-card p-6 rounded-3xl border border-slate-800 space-y-4 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="px-3 py-1 rounded-full bg-violet-600/20 text-violet-300 text-xs font-bold border border-violet-500/30">Escena ${idx + 1} • ${scene.timestamp}</span>
-                                <button onclick="editScenePrompt(${idx})" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition">
-                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Editar
-                                </button>
-                            </div>
-
-                            <!-- Scene Image Preview -->
-                            <div class="relative aspect-[16/9] rounded-2xl overflow-hidden border border-slate-700/50 group">
-                                <img src="${scene.imageUrl}" alt="Scene ${idx + 1}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
-                                    <span class="text-[11px] font-mono text-cyan-300 bg-black/60 px-2.5 py-1 rounded-lg backdrop-blur-md border border-white/10 truncate">
-                                        ${scene.visualPrompt}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Narration Text -->
-                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
-                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Texto de Voz (Narration)</label>
-                                <p class="text-sm text-slate-200 font-medium">"${scene.narration}"</p>
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                            <span class="text-slate-400">Estilo: ${currentProject.style}</span>
-                            <button onclick="regenerateSceneImage(${idx})" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition flex items-center gap-1.5">
-                                <i data-lucide="refresh-cw" class="w-3 h-3"></i> Nueva Imagen
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            grid.innerHTML = html;
+        window.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-        }
-
-        function regenerateSceneImage(idx) {
-            const randomImages = [
-                "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=800&auto=format&fit=crop"
-            ];
-            currentProject.scenes[idx].imageUrl = randomImages[Math.floor(Math.random() * randomImages.length)];
-            renderStoryboard();
-            showToast(`Imagen de la Escena ${idx + 1} regenerada con éxito!`);
-        }
-
-        function editScenePrompt(idx) {
-            const newPrompt = prompt("Edita el prompt visual para esta escena:", currentProject.scenes[idx].visualPrompt);
-            if (newPrompt) {
-                currentProject.scenes[idx].visualPrompt = newPrompt;
-                renderStoryboard();
-                showToast('Prompt actualizado correctamente.');
-            }
-        }
-
-        function regenerateAllVisuals() {
-            currentProject.scenes.forEach((scene, i) => regenerateSceneImage(i));
-            showToast('Todos los prompts y visuales han sido actualizados.');
-        }
-
-        // Voice & Audio Studio Actions
-        function selectVoice(voiceId) {
-            currentVoice = voiceId;
-            document.querySelectorAll('.voice-card').forEach(card => {
-                card.className = "voice-card p-4 rounded-2xl glass-card border border-slate-800 hover:border-slate-700 cursor-pointer transition flex items-center justify-between";
-                card.querySelector('span').className = "w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center";
-                card.querySelector('span').innerHTML = "";
-            });
-            const selected = document.getElementById(`voice-${voiceId}`);
-            selected.className = "voice-card p-4 rounded-2xl glass-card border border-violet-500/50 cursor-pointer transition flex items-center justify-between";
-            selected.querySelector('span').className = "w-4 h-4 rounded-full border-2 border-violet-500 flex items-center justify-center bg-violet-500";
-            showToast(`Voz seleccionada: ${voiceId.toUpperCase()}`);
-        }
-
-        function selectBgm(bgmId) {
-            currentBgm = bgmId;
-            document.querySelectorAll('.bgm-card').forEach(card => {
-                card.className = "bgm-card p-4 rounded-2xl glass-card border border-slate-800 hover:border-slate-700 cursor-pointer transition flex items-center justify-between";
-                card.querySelector('span').className = "w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center";
-                card.querySelector('span').innerHTML = "";
-            });
-            const selected = document.getElementById(`bgm-${bgmId}`);
-            selected.className = "bgm-card p-4 rounded-2xl glass-card border border-violet-500/50 cursor-pointer transition flex items-center justify-between";
-            selected.querySelector('span').className = "w-4 h-4 rounded-full border-2 border-violet-500 flex items-center justify-center bg-violet-500";
-            showToast(`Música de fondo seleccionada: ${bgmId.toUpperCase()}`);
-        }
-
-        function toggleAudioPreview() {
-            isAudioPlaying = !isAudioPlaying;
-            const btn = document.getElementById('play-audio-btn');
-            const statusLabel = document.getElementById('audio-status-label');
-            if (isAudioPlaying) {
-                btn.innerHTML = `<i data-lucide="pause" class="w-5 h-5"></i>`;
-                statusLabel.innerText = "Reproduciendo mezcla de audio con voz IA y música...";
-                showToast('Reproduciendo audio simulado...');
-            } else {
-                btn.innerHTML = `<i data-lucide="play" class="w-5 h-5 ml-0.5"></i>`;
-                statusLabel.innerText = "Haz clic para escuchar la mezcla de voz y música.";
-            }
-            lucide.createIcons();
-        }
-
-        // Interactive Video Preview Player
-        function updatePreviewScene() {
-            const scene = currentProject.scenes[previewSceneIndex];
-            document.getElementById('preview-bg-image').style.backgroundImage = `url('${scene.imageUrl}')`;
-            document.getElementById('preview-scene-counter').innerText = `Escena ${previewSceneIndex + 1} / ${currentProject.scenes.length}`;
-            document.getElementById('preview-subtitle').innerText = `"${scene.narration}"`;
-            document.getElementById('preview-timer').innerText = `00:0${previewSceneIndex * 5}`;
-        }
-
-        function nextPreviewScene() {
-            previewSceneIndex = (previewSceneIndex + 1) % currentProject.scenes.length;
-            updatePreviewScene();
-        }
-
-        function prevPreviewScene() {
-            previewSceneIndex = (previewSceneIndex - 1 + currentProject.scenes.length) % currentProject.scenes.length;
-            updatePreviewScene();
-        }
-
-        function toggleVideoPlayback() {
-            isVideoPlaying = !isVideoPlaying;
-            const btn = document.getElementById('preview-play-pause-btn');
-            if (isVideoPlaying) {
-                btn.innerHTML = `<i data-lucide="pause" class="w-5 h-5"></i>`;
-                showToast('Reproducción de video iniciada');
-                previewInterval = setInterval(() => {
-                    nextPreviewScene();
-                }, 4000);
-            } else {
-                btn.innerHTML = `<i data-lucide="play" class="w-5 h-5 ml-0.5"></i>`;
-                clearInterval(previewInterval);
-                showToast('Reproducción pausada');
-            }
-            lucide.createIcons();
-        }
-
-        // Export Actions
-        function copyFullScript() {
-            let text = `TEMA: ${currentProject.topic}\nPLATAFORMA: ${currentProject.platform}\nTONO: ${currentProject.tone}\n\n`;
-            currentProject.scenes.forEach((s, i) => {
-                text += `[Escena ${i+1} - ${s.timestamp}]\nNarración: ${s.narration}\nPrompt Visual: ${s.visualPrompt}\n\n`;
-            });
-            navigator.clipboard.writeText(text);
-            showToast('¡Guion completo copiado al portapapeles!');
-        }
-
-        function copyAllPrompts() {
-            let text = '';
-            currentProject.scenes.forEach((s, i) => {
-                text += `Scene ${i+1}: ${s.visualPrompt}\n`;
-            });
-            navigator.clipboard.writeText(text);
-            showToast('¡Prompts visuales copiados al portapapeles!');
-        }
-
-        function downloadJson() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentProject, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "faceless_factory_project.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-            showToast('¡Archivo JSON descargado con éxito!');
-        }
-
-        function showGrowthKit() {
-            showToast('Kit Viral: #shorts #space #misterio #viral #foryou');
-        }
-
-        function toggleMobileMenu() {
-            const sidebar = document.querySelector('aside');
-            sidebar.classList.toggle('hidden');
-            sidebar.classList.toggle('fixed');
-            sidebar.classList.toggle('inset-y-0');
-            sidebar.classList.toggle('left-0');
-            sidebar.classList.toggle('z-50');
-        }
+            renderReferenceGallery();
+            selectReferenceTheme(0);
+        });
     </script>
 </body>
 </html>
