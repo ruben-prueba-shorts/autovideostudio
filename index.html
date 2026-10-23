@@ -367,6 +367,8 @@ header{height:72px;padding:0 25px;background:#fff}.brand{gap:10px;letter-spacing
 
     <!-- PESTAÑA 4: TIMELINE & AI SFX -->
     <div class="tab-View" id="tab4">
+      <div class="card" id="imageFitCard"><div class="section-kicker">IMÁGENES Y TEXTO</div><h3 style="font-size:.95rem;margin:4px 0 6px">Ajuste de imágenes a cada escena</h3><p class="style-hint">Compara el texto de cada escena solo con las imágenes cercanas (según el alcance que elijas) y corrige las que van adelantadas o atrasadas. Entiende cada imagen por su prompt, por los metadatos PNG de Automatic1111, por la lista de «Prompts manuales» (en el mismo orden que las imágenes) o por el nombre del archivo. Nunca compara escenas lejanas.</p><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" id="autoImageFit" checked> Ajustar automáticamente al sincronizar</label><label style="display:block;font-size:12px;margin:8px 0"><input type="checkbox" id="aiImageFit" checked> Usar la IA de texto del Worker para entender prompts en otro idioma (gasta pocas neuronas)</label><div class="field" style="margin:8px 0"><label for="imageFitRange">Alcance de la comprobación (escenas a cada lado)</label><select id="imageFitRange"><option value="2">±2 · desfases pequeños</option><option value="3">±3</option><option value="4" selected>±4 · recomendado</option><option value="6">±6</option><option value="8">±8 · desfases grandes</option></select></div><div class="button-row"><button class="btn btn-primary" onclick="fitImagesToScenes(false)">🧭 Ajustar imágenes al texto</button><button class="btn" onclick="undoImageFit()">↶ Deshacer último ajuste</button></div><div class="fields2" style="margin-top:12px;align-items:end"><div class="field"><label for="shiftFrom">Mover a mano desde la escena</label><input type="number" id="shiftFrom" min="1" value="1"></div><div class="button-row"><button class="btn" onclick="shiftImagesFrom(-1)">Imágenes −1 desde aquí</button><button class="btn" onclick="shiftImagesFrom(1)">Imágenes +1 desde aquí</button></div></div><div class="progress-label" id="imageFitStatus" role="status"></div></div>
+      <div class="card" id="syncFineCard"><div class="section-kicker">SINCRONIZACIÓN</div><h3 style="font-size:.95rem;margin:4px 0 6px">Ajuste fino de imágenes y subtítulos</h3><p class="style-hint">Se aplica a la vista previa, a la exportación y a los clips. Un valor positivo adelanta (la imagen o el subtítulo aparece antes). Lo habitual en edición es que la imagen cambie 0,05–0,15 s antes de que se diga la primera palabra.</p><div class="fields2"><div class="field"><label for="imageLeadInput">Adelanto de imágenes (segundos)</label><div class="button-row"><button class="btn" onclick="syncNudge('imageLeadInput',-0.02)">−</button><input type="number" id="imageLeadInput" min="-1" max="1" step="0.01" value="0.08" style="width:90px" onchange="syncOffsetsChanged()"><button class="btn" onclick="syncNudge('imageLeadInput',0.02)">+</button></div></div><div class="field"><label for="subShiftInput">Desfase de subtítulos (segundos)</label><div class="button-row"><button class="btn" onclick="syncNudge('subShiftInput',-0.02)">−</button><input type="number" id="subShiftInput" min="-1" max="1" step="0.01" value="0.00" style="width:90px" onchange="syncOffsetsChanged()"><button class="btn" onclick="syncNudge('subShiftInput',0.02)">+</button></div></div></div><div class="button-row" style="margin-top:12px"><button class="btn btn-primary" onclick="syncCalibrate()">🎯 Calibrar con el audio</button><button class="btn" onclick="syncResetOffsets()">Restablecer</button></div><div class="divider"></div><div class="mini-title">Revisión rápida de cortes</div><div class="button-row"><button class="btn" onclick="reviewCut(-1)">⏮ Corte anterior</button><button class="btn btn-primary" onclick="reviewCut(0)">▶ Revisar corte actual</button><button class="btn" onclick="reviewCut(1)">Corte siguiente ⏭</button></div><div class="progress-label" id="syncFineStatus" role="status"></div><div class="muted" id="currentOffsetsLabel"></div><div class="divider"></div><div class="mini-title">Informe de fiabilidad por escena</div><div id="syncReport"></div><div class="button-row" style="margin-top:8px"><button class="btn" onclick="renderSyncReport()">↻ Actualizar informe</button></div></div>
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
           <div>
@@ -1620,7 +1622,7 @@ function buildSpeechActivityMap(buffer) {
       } else i++;
     }
 
-    return { duration, hop, frameCount, voiced, prefix, activeDuration, silenceIntervals, firstVoiceStart, lastVoiceEnd };
+    return { duration, hop, frameCount, voiced, prefix, activeDuration, silenceIntervals, firstVoiceStart, lastVoiceEnd, rms };
   } catch (err) {
     console.warn('No se pudo analizar la actividad de voz; se usará la sincronización proporcional.', err);
     return null;
@@ -1738,7 +1740,7 @@ function splitLongParagraphs() {
 
 function handleImagesUpload(fileList) {
   if (!fileList || fileList.length === 0) return;
-  const files = Array.from(fileList);
+  const files = Array.from(fileList).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
   const startIdx = loadedImages.length;
   files.forEach((_, idx) => {
     loadedImages.push({ name: "", url: "", imgObj: null });
@@ -1754,6 +1756,8 @@ function handleImagesUpload(fileList) {
     };
     img.src = url;
     loadedImages[targetSlot] = { name: file.name, url, imgObj: img, sceneIndex: targetSlot };
+    const hintRef = loadedImages[targetSlot];
+    if (window.readImageHint) window.readImageHint(file).then(h => { if (h) hintRef.hint = h; }).catch(() => {});
   });
   renderMediaGrid();
 }
@@ -2454,6 +2458,42 @@ async function matchScriptInLinearSpace(a, b) {
   return matches;
 }
 
+// Busca el inicio acústico real de una frase: primer fotograma con voz tras al menos
+// 60 ms de silencio, el más cercano a la marca del reconocimiento (cuyos tiempos
+// suelen errar entre 50 y 200 ms). Nunca retrocede más allá de «floor».
+function acousticOnsetNear(map, start, floor, back = 0.30, fwd = 0.10) {
+  if (!map || !map.voiced) return null;
+  const i0 = Math.max(1, Math.floor(Math.max(floor, start - back) / map.hop));
+  const i1 = Math.min(map.frameCount - 1, Math.ceil((start + fwd) / map.hop));
+  let best = null, bestDist = Infinity;
+  for (let i = i0; i <= i1; i++) {
+    if (!map.voiced[i] || map.voiced[i - 1]) continue;
+    let silent = 0;
+    for (let k = i - 1; k >= 0 && !map.voiced[k] && silent < 3; k--) silent++;
+    if (silent < 3) continue;
+    const t = i * map.hop, d = Math.abs(t - start);
+    if (d < bestDist) { bestDist = d; best = t; }
+  }
+  return best;
+}
+
+// Cuando dos frases van pegadas (sin silencio), el límite entre palabras suele coincidir
+// con un valle claro de energía. Solo se acepta un valle nítido y no pegado al borde.
+function energyDipNear(map, start, floor) {
+  if (!map || !map.rms) return null;
+  const i0 = Math.max(2, Math.floor(Math.max(floor, start - 0.10) / map.hop));
+  const i1 = Math.min(map.frameCount - 3, Math.ceil((start + 0.05) / map.hop));
+  if (i1 - i0 < 3) return null;
+  let minV = Infinity, minI = -1, maxV = 0;
+  for (let i = i0; i <= i1; i++) {
+    const v = (map.rms[i - 1] + map.rms[i] * 2 + map.rms[i + 1]) / 4;
+    if (v < minV) { minV = v; minI = i; }
+    if (v > maxV) maxV = v;
+  }
+  if (maxV <= 0 || minV > maxV * 0.45 || minI <= i0 || minI >= i1) return null;
+  return (minI + 1) * map.hop;
+}
+
 function refineWordAgainstVoice(timing, map, preferLastRegion = false) {
   if (!map) return timing;
   const first = Math.max(0, Math.floor(timing.start / map.hop));
@@ -2576,6 +2616,23 @@ async function alignScenesToVoice(lines, recognized, duration, map, options = {}
       if (!interrupted) word.start = pause.end;
     }
   }
+  // Ajusta el inicio de cada escena al arranque real de la voz medido en el audio.
+  let snappedCuts = 0;
+  if (map?.voiced && !options.inspect) {
+    for (let i = 1; i < timings.length; i++) {
+      if (reference[i - 1].sceneIndex === reference[i].sceneIndex) continue;
+      const word = timings[i], prev = timings[i - 1];
+      if (!word || !prev) continue;
+      let onset = acousticOnsetNear(map, word.start, prev.start + 0.05);
+      if (onset === null) onset = energyDipNear(map, word.start, prev.start + 0.05);
+      if (onset === null || Math.abs(onset - word.start) < 0.012) continue;
+      const snapped = Math.min(onset, word.end - 0.02);
+      // Nunca se admite un ajuste que deje un corte antes (o pegado) al de la palabra anterior.
+      if (!(snapped > prev.start + 0.04)) continue;
+      word.start = snapped;
+      snappedCuts++;
+    }
+  }
   for (let i = 0; i < timings.length - 1; i++) {
     if (!timings[i] || !timings[i + 1]) continue;
     timings[i].end = Math.min(timings[i].end, timings[i + 1].start);
@@ -2589,7 +2646,7 @@ async function alignScenesToVoice(lines, recognized, duration, map, options = {}
   const grouped = lines.map((_, sceneIndex) => timings.filter((word, i) => reference[i].sceneIndex === sceneIndex));
   const cuts = [0, ...grouped.slice(1).map(words => words[0].start), duration];
   for (let i = 1; i < cuts.length; i++) if (cuts[i] <= cuts[i - 1]) throw new Error("No se han podido distinguir todos los límites de escena en la voz.");
-  return { grouped, cuts, matchedCount, reconstructed: reference.length - matchedCount };
+  return { grouped, cuts, matchedCount, reconstructed: reference.length - matchedCount, snapped: snappedCuts };
 }
 
 async function alignScenesWithRecovery(lines, recognized, buffer, progress, model = "Xenova/whisper-base") {
@@ -2801,6 +2858,7 @@ async function autoSyncProject(goToTimeline = true) {
       wordTimings: alignment.grouped[i], timingSource: "recognized", timingText: text,
       timingStart: alignment.cuts[i], timingEnd: alignment.cuts[i + 1]
     }));
+    if (document.getElementById("autoImageFit")?.checked !== false && window.fitImagesToScenes) await window.fitImagesToScenes(true);
     verifiedSyncBuffer = buffer; verifiedSyncScript = script;
     verifiedSyncPlan = JSON.stringify(lines);
     currentTime = 0;
@@ -2810,7 +2868,7 @@ async function autoSyncProject(goToTimeline = true) {
     renderSceneListUI(); updateTimeUI(); renderCurrentFrame();
     document.getElementById("exportStatus").textContent = alignment.omittedScenes?.length
       ? `✅ Vídeo sincronizado: ${scenes.length} escenas narradas. El audio no contiene ${alignment.omittedScenes.length === 1 ? "la escena " : "las escenas "}${alignment.omittedScenes.map(item => item.index + 1).join(", ")}; se han dejado fuera del vídeo. Las imágenes se conservan. Para incluirlas, carga la narración completa.`
-      : `✅ Voz, imágenes y subtítulos sincronizados: ${scenes.length} escenas.${alignment.reconstructed ? ` ${alignment.reconstructed} palabras ajustadas entre palabras reconocidas.` : ""}`;
+      : `✅ Voz, imágenes y subtítulos sincronizados: ${scenes.length} escenas.${alignment.reconstructed ? ` ${alignment.reconstructed} palabras ajustadas entre palabras reconocidas.` : ""}${alignment.snapped ? ` ${alignment.snapped} cortes afinados al inicio real de la voz.` : ""}`;
     if (goToTimeline) switchTab(4);
     return true;
   } catch (error) {
@@ -2828,14 +2886,72 @@ async function autoSyncProject(goToTimeline = true) {
   }
 }
 
+// Subtítulos por frases para la voz generada aquí. Una escena puede ser un párrafo
+// entero: se parte en frases (puntuación, pausas reales de la voz y un máximo de
+// 9 palabras) y cada frase se muestra solo mientras suena; en las pausas se oculta.
+const phraseCueCache = new WeakMap();
+function getTtsPhraseCues(scene) {
+  const words = String(scene.text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length || !(scene.speechEnd > scene.speechStart)) return [];
+  const map = (voiceBuffer && !isDemoSynthMode) ? speechActivityMap : null;
+  const key = [scene.text, scene.speechStart, scene.speechEnd, scene.end, map ? map.frameCount : 0].join("|");
+  const cached = phraseCueCache.get(scene);
+  if (cached && cached.key === key) return cached.cues;
+  const timings = createWordTimings(scene.text, scene.speechStart, scene.speechEnd, map);
+  const MAXW = 9;
+  // Pausas reales de la voz (≥ 0,35 s) dentro del habla: la frase se corta ahí y
+  // el subtítulo no permanece en pantalla mientras nadie habla.
+  const pauseAfter = new Map();
+  if (map?.silenceIntervals) {
+    for (const pause of map.silenceIntervals) {
+      if (pause.duration < 0.35 || pause.start <= scene.speechStart + 0.05 || pause.end >= scene.speechEnd - 0.05) continue;
+      const pauseActive = speechSecondsAt(map, pause.start);
+      let b = -1;
+      for (let k = 0; k < words.length - 1; k++) {
+        const mid = (speechSecondsAt(map, timings[k].start) + speechSecondsAt(map, timings[k].end)) / 2;
+        if (mid <= pauseActive + 1e-6) b = k; else break;
+      }
+      if (b >= 0 && b < words.length - 1 && !pauseAfter.has(b)) pauseAfter.set(b, pause);
+    }
+  }
+  const units = [];
+  for (let i = 0; i < words.length;) {
+    let j = i;
+    while (j + 1 < words.length) {
+      const len = j - i + 1;
+      const gap = timings[j + 1].start - timings[j].end;
+      if (pauseAfter.has(j)) break;
+      if (/[.!?…]["'”’)\]]*$/.test(words[j])) break;
+      if (len >= 2 && gap >= 0.35) break;
+      if (len >= 5 && /[,;:—–]$/.test(words[j])) break;
+      j++;
+    }
+    units.push([i, j]);
+    i = j + 1;
+  }
+  // Una frase larga se reparte por igual, sin dejar palabras sueltas.
+  const ranges = [];
+  for (const [a, b] of units) {
+    const n = b - a + 1, pieces = Math.max(1, Math.ceil(n / MAXW));
+    for (let k = 0; k < pieces; k++) ranges.push([a + Math.round(n * k / pieces), a + Math.round(n * (k + 1) / pieces) - 1]);
+  }
+  const cues = ranges.map(([a, b], idx) => {
+    const before = pauseAfter.get(a - 1), after = pauseAfter.get(b);
+    let start = Math.max(scene.start, timings[a].start);
+    if (before) start = Math.max(start, before.end - 0.03);
+    let nextStart = idx + 1 < ranges.length ? timings[ranges[idx + 1][0]].start : scene.end;
+    if (after) nextStart = Math.min(nextStart, after.start + 0.12);
+    let end = Math.min(scene.end, nextStart, timings[b].end + 0.18);
+    end = Math.max(end, Math.min(start + 0.3, nextStart, scene.end));
+    return { start, end, startIndex: a, endIndex: b, words: words.slice(a, b + 1), text: words.slice(a, b + 1).join(" "), timings: timings.slice(a, b + 1) };
+  }).filter(cue => cue.end > cue.start);
+  phraseCueCache.set(scene, { key, cues });
+  return cues;
+}
+
 // Una misma lista de cues se usa en pantalla y al descargar los subtítulos.
 function getSubtitleCues(scene) {
-  if (scene.timingSource === "tts-segment") {
-    const words = String(scene.text || "").trim().split(/\s+/).filter(Boolean);
-    if (!words.length || !(scene.speechEnd > scene.speechStart)) return [];
-    return [{start: scene.speechStart, end: scene.speechEnd, startIndex:0, endIndex:words.length-1, words, text:scene.text,
-      timings:words.map(word => ({word,start:scene.speechStart,end:scene.speechEnd}))}];
-  }
+  if (scene.timingSource === "tts-segment") return getTtsPhraseCues(scene);
   const words = String(scene.text || "").trim().split(/\s+/).filter(Boolean);
   if (!words.length) return [];
   const timings = scene.wordTimings?.length === words.length ? scene.wordTimings
@@ -2845,7 +2961,8 @@ function getSubtitleCues(scene) {
     let j = i;
     while (j + 1 < words.length && j - i < 2 && timings[j + 1].start - timings[j].end < 0.45) j++;
     const start = Math.max(scene.start, timings[i].start);
-    const end = Math.min(scene.end, timings[j].end + 0.18, j + 1 < words.length ? timings[j + 1].start : scene.end);
+    let end = Math.min(scene.end, timings[j].end + 0.18, j + 1 < words.length ? timings[j + 1].start : scene.end);
+    end = Math.max(end, Math.min(start + 0.3, j + 1 < words.length ? timings[j + 1].start : scene.end, scene.end));
     if (end > start) cues.push({ start, end, startIndex: i, endIndex: j, words: words.slice(i, j + 1), text: words.slice(i, j + 1).join(" "), timings: timings.slice(i, j + 1) });
     i = j + 1;
   }
@@ -3095,6 +3212,11 @@ function renderCurrentFrame() {
         triggeredSfxInCurrentScene[key] = false;
       }
     }
+  }
+
+  if (window.studioPaintsFrame && idx >= 0 && scenes[idx]) {
+    document.getElementById("currentSceneBadge").textContent = `Escena ${idx + 1} / ${scenes.length}`;
+    return;
   }
 
   if (idx < 0 || !scenes[idx]) {
@@ -3523,9 +3645,10 @@ async function downloadSRT() {
     if (!await autoSyncProject(false) || !hasVerifiedVoiceSync()) return;
   }
   if (scenes.length === 0) return;
+  const shift = typeof window.syncSubShift === "function" ? window.syncSubShift() : 0;
   const cues = scenes.flatMap(getSubtitleCues);
   cues.sort((a, b) => a.start - b.start);
-  const srt = cues.map((cue, index) => `${index + 1}\n${toSrtTime(cue.start)} --> ${toSrtTime(cue.end)}\n${cue.text}\n`).join("\n");
+  const srt = cues.map((cue, index) => `${index + 1}\n${toSrtTime(cue.start - shift)} --> ${toSrtTime(cue.end - shift)}\n${cue.text}\n`).join("\n");
   const blob = new Blob([srt], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = "subtitulos_sincronizados.srt";
@@ -3574,7 +3697,7 @@ const Studio = (() => {
   ];
   let chosen='doodle', capabilities=null, templates=[], clips=[], selectedClip=null, voiceFile=null,bgmFile=null,sfxFiles=[],ttsController=null,clipPreview=null;
   let draftTimer=null, toastTimer=null, sampleUrl=null, exporting=null,projectRevision=0,initialized=false,preparingExport=false;
-  const SETTINGS=['studioImageEngine','imageDetail','characterKind','characterScope','voicePauseMs','syncEngine','characterDesc','studioFormat','scenePacing','cameraMode','voiceEngine','voiceChoice','dailyBudget','subsSelect','subColorText','subColorPicker','subFontSelect','subSize','subPosition','exportResolution','fitSelect','transSelect'];
+  const SETTINGS=['studioImageEngine','imageDetail','characterKind','characterScope','voicePauseMs','syncEngine','characterDesc','studioFormat','scenePacing','cameraMode','voiceEngine','voiceChoice','dailyBudget','subsSelect','subColorText','subColorPicker','subFontSelect','subSize','subPosition','exportResolution','fitSelect','transSelect','imageLeadInput','subShiftInput'];
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
   function notify(message){$('studioToast').textContent=message;$('studioToast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('studioToast').hidden=true,7000);}
   function guarded(fn){return async(...args)=>{try{return await fn(...args);}catch(e){const message=e.name==='AbortError'?'Proceso pausado. Se conservan los fragmentos terminados.':String(e.message||e);const id={writeScript:'scriptGenerationStatus',planPrompts:'promptsPlanningStatus',generateVoice:'voiceGenerationStatus'}[fn.name];if(id&&$(id))$(id).textContent='Proceso detenido: '+message;notify(message);return false;}};}
@@ -3628,7 +3751,7 @@ const Studio = (() => {
   let replaceTarget=-1;
   function replaceSceneImage(i){replaceTarget=i;$('replaceImageInput').click();}
   async function receiveReplacement(file){if(!file||replaceTarget<0)return;const url=await toDataUrl(file),img=await loadImageCrossOrigin(url);const s=scenes[replaceTarget],item={name:file.name,url:img.dataUrl,imgObj:img.imgObj,isPending:false,prompt:''};if(s.imgIndex<0){s.imgIndex=loadedImages.length;loadedImages.push(item);}else loadedImages[s.imgIndex]=item;renderMediaGrid();renderScenes();renderCurrentFrame();saveDraftSoon();}
-  function paintFrame(ctx,w,h,t,opts={}){ctx.save();ctx.fillStyle='#1d251c';ctx.fillRect(0,0,w,h);const i=findSceneIndexAtTime(t),s=scenes[i];if(!s){ctx.fillStyle='#dae0d1';ctx.font=`500 ${Math.round(w*.026)}px sans-serif`;ctx.textAlign='center';ctx.fillText('Tu próxima historia empieza aquí.',w/2,h/2);ctx.restore();return;}if(opts.crop!==undefined){const im=loadedImages[s.imgIndex]?.imgObj;if(im){const scale=Math.max(w/im.width,h/im.height);ctx.drawImage(im,(w-im.width*scale)*opts.crop/100,(h-im.height*scale)/2,im.width*scale,im.height*scale);}else drawSceneLayer(ctx,w,h,s,0);}else drawSceneLayer(ctx,w,h,s,(t-s.start)/Math.max(.01,s.end-s.start));if($('transSelect').value==='fade'&&i>0&&t>=s.start&&t<s.start+.22){ctx.save();ctx.globalAlpha=1-(t-s.start)/.22;drawSceneLayer(ctx,w,h,scenes[i-1],1);ctx.restore();}if(opts.subs!==false)drawSubtitlesOnCanvas(ctx,w,h,s,t);if(opts.text)paintTitle(ctx,w,h,opts);ctx.restore();}
+  function paintFrame(ctx,w,h,t,opts={}){ctx.save();ctx.fillStyle='#1d251c';ctx.fillRect(0,0,w,h);const tSub=t+syncSubShift(),tImg=t+syncImageLead(),i=findSceneIndexAtTime(tImg),s=scenes[i];if(!s){ctx.fillStyle='#dae0d1';ctx.font=`500 ${Math.round(w*.026)}px sans-serif`;ctx.textAlign='center';ctx.fillText('Tu próxima historia empieza aquí.',w/2,h/2);ctx.restore();return;}if(opts.crop!==undefined){const im=loadedImages[s.imgIndex]?.imgObj;if(im){const scale=Math.max(w/im.width,h/im.height);ctx.drawImage(im,(w-im.width*scale)*opts.crop/100,(h-im.height*scale)/2,im.width*scale,im.height*scale);}else drawSceneLayer(ctx,w,h,s,0);}else drawSceneLayer(ctx,w,h,s,(tImg-s.start)/Math.max(.01,s.end-s.start));if($('transSelect').value==='fade'&&i>0&&tImg>=s.start&&tImg<s.start+.22){ctx.save();ctx.globalAlpha=1-(tImg-s.start)/.22;drawSceneLayer(ctx,w,h,scenes[i-1],1);ctx.restore();}if(opts.subs!==false){const subScene=scenes[findSceneIndexAtTime(tSub)]||s;drawSubtitlesOnCanvas(ctx,w,h,subScene,tSub);}if(opts.text)paintTitle(ctx,w,h,opts);ctx.restore();}
   function paintTitle(ctx,w,h,o){ctx.save();const size=h*(Number(o.size)||7)/100;ctx.font=`800 ${size}px ${getSubtitleFont().family}`;ctx.textAlign='center';ctx.textBaseline='middle';const words=String(o.text).split(/\s+/),lines=[];let line='';for(const wd of words){const n=line?line+' '+wd:wd;if(ctx.measureText(n).width>w*.88&&line){lines.push(line);line=wd;}else line=n;}if(line)lines.push(line);const lineHeight=size*1.18,x=w*(Number(o.x)||50)/100,y=h*(Number(o.y)||20)/100;lines.forEach((t,i)=>{const yy=y+(i-(lines.length-1)/2)*lineHeight;if(o.box){ctx.fillStyle='rgba(0,0,0,.72)';const tw=Math.min(w*.94,ctx.measureText(t).width+size*.65);ctx.fillRect(x-tw/2,yy-size*.62,tw,size*1.24);}ctx.strokeStyle='#000';ctx.lineWidth=Math.max(2,size*.08);ctx.strokeText(t,x,yy,w*.9);ctx.fillStyle=/^#[0-9a-f]{6}$/i.test(o.color)?o.color:'#ffffff';ctx.fillText(t,x,yy,w*.9);});ctx.restore();}
   function subtitleDraw(ctx,w,h,s,t){const mode=$('subsSelect').value;if(mode==='none'||!s?.text)return;if(s.timingSource==='tts-segment'){drawPhraseCaption(ctx,w,h,s,t);return;}const cues=getSubtitleCues(s),cue=cues.find(c=>t>=c.start&&t<c.end);if(!cue)return;const font=Math.max(8,h*Math.min(12,Math.max(2,Number($('subSize').value)||5.2))/100),y=h*Math.min(95,Math.max(10,Number($('subPosition').value)||82))/100;ctx.save();ctx.font=`${getSubtitleFont().weight} ${font}px ${getSubtitleFont().family}`;ctx.textBaseline='middle';ctx.textAlign='left';const words=cue.words,active=Math.max(0,cue.timings.findLastIndex(a=>t>=a.start));let full=words.join(' '),scale=Math.min(1,w*.9/Math.max(1,ctx.measureText(full).width));ctx.font=`${getSubtitleFont().weight} ${font*scale}px ${getSubtitleFont().family}`;const width=ctx.measureText(full).width,x=(w-width)/2;if(mode==='box'||mode==='headline'){ctx.fillStyle=mode==='headline'?'#e96840':'rgba(0,0,0,.8)';ctx.beginPath();ctx.roundRect(x-font*.4,y-font*.7,width+font*.8,font*1.4,font*.13);ctx.fill();}let xx=x;words.forEach((word,i)=>{const tt=word+(i<words.length-1?' ':''),isActive=i===active;const pop=mode==='pop'&&isActive?1.08:1;ctx.save();if(pop!==1){ctx.translate(xx,y);ctx.scale(pop,pop);ctx.translate(-xx,-y);}ctx.lineWidth=font*.09;ctx.strokeStyle='#151b16';ctx.strokeText(tt,xx,y);ctx.fillStyle=(mode==='minimal'||mode==='headline')?'#ffffff':isActive?($('subColorText').value||'#ffffff'):'#dadfd6';ctx.fillText(tt,xx,y);if(mode==='karaoke'&&isActive){ctx.fillStyle=$('subColorText').value||'#e96840';ctx.fillRect(xx,y+font*.57,ctx.measureText(word).width,font*.08);}ctx.restore();xx+=ctx.measureText(tt).width;});ctx.restore();}
   function newClip(start=0,end=Math.min(totalDuration,60)){return {id:crypto.randomUUID(),start,end,aspect:'9:16',text:'',size:7,color:'#ffffff',x:50,y:20,box:true,subs:true,crop:50};}
@@ -3650,7 +3773,7 @@ const Studio = (() => {
   function stopExport(){if(exporting?.offline){exportAbortReason='Has cancelado la exportación. El proyecto se conserva.';exporting.cancel=true;return;}if(exporting?.rec?.state==='recording'){exportAbortReason='Has cancelado la exportación. El proyecto se conserva.';exporting.rec.stop();}}
   async function toDataUrl(blob){const bytes=new Uint8Array(await blob.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));return 'data:'+(blob.type||'application/octet-stream')+';base64,'+btoa(binary);}
   async function fromDataUrl(value,name){if(typeof value!=='string'||!/^data:(?:audio\/[^;,]+|application\/octet-stream)[;,]/i.test(value))throw new Error('Audio del proyecto no válido.');return new File([await (await fetch(value)).blob()],name||'audio.wav');}
-  function snapshot(){return {type:'FacelessStudioProject',version:1,createdAt:new Date().toISOString(),title:$('projectName').value,style:chosen,settings:settings(),script:$('scriptArea').value,manualPrompts:$('aiManualPrompts19').value,promptMode:$('promptGenMode').value,prompts:$('promptsArea').value,scenes:scenes.map(s=>({...s})),duration:totalDuration,voiceManifest:generatedVoiceManifest,characterReference,imageRecovery:{jobKey:generationJobKey,cacheKey:generationCacheKey},imageProfiles:Object.fromEntries(loadedImages.filter(x=>x.generationProfile?.key).map(x=>[x.generationProfile.key,x.generationProfile])),images:loadedImages.map(({name,url,prompt,isPending,generationProfile,sceneIndex},index)=>({name,url,prompt,isPending,sceneIndex:sceneIndex??index,profileKey:generationProfile?.key||null})),clips:clips.map(c=>({...c})),selectedClip,verified:!!voiceBuffer&&hasVerifiedVoiceSync(),bgmVolume:$('bgmVolSlider').value,bgmOffset:$('bgmOffsetInput').value};}
+  function snapshot(){return {type:'FacelessStudioProject',version:1,createdAt:new Date().toISOString(),title:$('projectName').value,style:chosen,settings:settings(),script:$('scriptArea').value,manualPrompts:$('aiManualPrompts19').value,promptMode:$('promptGenMode').value,prompts:$('promptsArea').value,scenes:scenes.map(s=>({...s})),duration:totalDuration,voiceManifest:generatedVoiceManifest,characterReference,imageRecovery:{jobKey:generationJobKey,cacheKey:generationCacheKey},imageProfiles:Object.fromEntries(loadedImages.filter(x=>x.generationProfile?.key).map(x=>[x.generationProfile.key,x.generationProfile])),images:loadedImages.map(({name,url,prompt,hint,isPending,generationProfile,sceneIndex},index)=>({name,url,prompt,hint,isPending,sceneIndex:sceneIndex??index,profileKey:generationProfile?.key||null})),clips:clips.map(c=>({...c})),selectedClip,verified:!!voiceBuffer&&hasVerifiedVoiceSync(),bgmVolume:$('bgmVolSlider').value,bgmOffset:$('bgmOffsetInput').value};}
   function saveDraftSoon(){if(!initialized)return;clearTimeout(draftTimer);draftTimer=setTimeout(()=>saveDraft().catch(()=>{}),1500);refreshBudget();}
   async function saveDraft(){if(isExportingVideo)return;const saved=await recoveryStore('put','faceless-studio-draft',{...snapshot(),voice:voiceFile,bgm:bgmFile,sfx:userSfxList.filter(s=>s._sourceFile).map(s=>({file:s._sourceFile,id:s.id,keywords:s.keywords}))});$('saveState').textContent=saved?'Borrador local guardado':'No se pudo guardar el borrador. Usa Guardar proyecto.';}
   async function saveProject(){const b=$('saveProjectBtn');b.disabled=true;try{const data=snapshot();data.voice=voiceFile?{name:voiceFile.name,data:await toDataUrl(voiceFile)}:voiceBuffer?{name:'narracion.wav',data:await toDataUrl(wav(voiceBuffer))}:null;data.bgm=bgmFile?{name:bgmFile.name,data:await toDataUrl(bgmFile)}:null;data.sfx=[];for(const item of userSfxList.filter(s=>s._sourceFile))data.sfx.push({name:item._sourceFile.name,data:await toDataUrl(item._sourceFile),id:item.id,keywords:item.keywords||[]});download(new Blob([JSON.stringify(data)],{type:'application/json'}),($('projectName').value||'mi-video').replace(/[^\w\-áéíóúñ]/gi,'_')+'.avfproject');await saveDraft();notify('Proyecto guardado con imágenes, sonido, tiempos y clips.');}finally{b.disabled=false;}}
@@ -3915,12 +4038,22 @@ const Studio = (() => {
     if(speechRecognitionTask&&speechRecognitionBuffer===buffer)return speechRecognitionTask;
     const version=syncRequestVersion;await requireCapability('word-timestamps');if(version!==syncRequestVersion||voiceBuffer!==buffer)throw new DOMException('Pausado','AbortError');cloudSyncController=new AbortController();const signal=cloudSyncController.signal;
     const task=(async()=>{const ranges=getRecognitionRanges(buffer.duration,speechActivityMap),words=[];
+      const parts=new Array(ranges.length);let nextRange=0,doneRanges=0,failure=null;
+      const asrWorker=async()=>{
+        while(!failure){
+          const i=nextRange++;if(i>=ranges.length)return;
+          if(version!==syncRequestVersion||voiceBuffer!==buffer){failure=failure||new DOMException('Audio cambiado','AbortError');return;}
+          const r=ranges[i],start=Math.max(0,r.start-.7),end=Math.min(buffer.duration,r.end+.7);
+          try{parts[i]=await cloudRange(buffer,start,end,false,signal);}catch(e){failure=failure||e;return;}
+          doneRanges++;
+          progress?.({phase:'audio',progress:doneRanges/ranges.length,message:`Reconociendo tramos en la nube (3 a la vez): ${doneRanges} de ${ranges.length}. No se descarga un modelo al navegador.`});
+        }
+      };
+      await Promise.all(Array.from({length:Math.min(3,ranges.length)},asrWorker));
+      if(failure)throw failure;
       for(let i=0;i<ranges.length;i++){
-        if(version!==syncRequestVersion||voiceBuffer!==buffer)throw new DOMException('Audio cambiado','AbortError');
-        const r=ranges[i],start=Math.max(0,r.start-.7),end=Math.min(buffer.duration,r.end+.7);
-        progress?.({phase:'audio',progress:i/ranges.length,message:`Reconociendo tramo ${i+1} de ${ranges.length} en la nube. No se descarga un modelo al navegador.`});
-        const part=await cloudRange(buffer,start,end,false,signal);
-        words.push(...part.filter(w=>{const center=(w.start+w.end)/2;return center>=r.start&&(i===ranges.length-1?center<=r.end:center<r.end);}));
+        const r=ranges[i];
+        words.push(...parts[i].filter(w=>{const center=(w.start+w.end)/2;return center>=r.start&&(i===ranges.length-1?center<=r.end:center<r.end);}));
       }
       const clean=sanitizeRecognizedWords(words,buffer.duration);if(!clean.length)throw new Error('No se ha reconocido voz en el archivo.');return clean;
     })();speechRecognitionBuffer=buffer;speechRecognitionTask=task;
@@ -3953,14 +4086,14 @@ const Studio = (() => {
     try{
       const ranges=lines.map((text,i)=>{const p=m.segments.filter(s=>s.scene===i);if(!p.length||p.some(s=>!Number.isFinite(s.speechStart)||!Number.isFinite(s.speechEnd)))throw new Error('Los fragmentos de voz no coinciden con el guion. Vuelve a generar o usa reconocimiento por palabras.');return {start:p[0].speechStart,end:p.at(-1).speechEnd,text};});
       const next=[];for(let i=0;i<lines.length;i++){next.push({start:i===0?0:ranges[i].start,end:i+1<lines.length?ranges[i+1].start:voiceBuffer.duration,text:lines[i],imgIndex:loadedImages.length?i%loadedImages.length:-1,effect:$('cameraMode').value==='none'?EFFECTS[0]:EFFECTS[i%EFFECTS.length],sfxId:'',sfxStart:2,sfxEnd:3,wordTimings:[],timingSource:'tts-segment',speechStart:ranges[i].start,speechEnd:ranges[i].end,timingText:lines[i]});if(i%100===0)await wait(0);}
-      if(version!==syncRequestVersion||!validGeneratedManifest())return false;scenes=next;totalDuration=voiceBuffer.duration;currentTime=0;verifiedSyncBuffer=voiceBuffer;verifiedSyncScript=$('scriptArea').value.trim();verifiedSyncPlan=JSON.stringify(lines);$('seekSlider').max=totalDuration;$('st4').textContent=scenes.length+' escenas';
-      renderScenes();renderFilm();updateTimeUI();renderCurrentFrame();$('exportStatus').textContent=`✅ ${scenes.length} escenas sincronizadas con los fragmentos reales de la narración. Los subtítulos se muestran por frase; para karaoke palabra a palabra elige Reconocimiento por palabras.`;if(goToTimeline)switchTab(4);saveDraftSoon();return true;
+      if(version!==syncRequestVersion||!validGeneratedManifest())return false;scenes=next;if($('autoImageFit')?.checked!==false)await fitImagesToScenes(true);if(version!==syncRequestVersion)return false;totalDuration=voiceBuffer.duration;currentTime=0;verifiedSyncBuffer=voiceBuffer;verifiedSyncScript=$('scriptArea').value.trim();verifiedSyncPlan=JSON.stringify(lines);$('seekSlider').max=totalDuration;$('st4').textContent=scenes.length+' escenas';
+      renderScenes();renderFilm();updateTimeUI();renderCurrentFrame();$('exportStatus').textContent=`✅ ${scenes.length} escenas sincronizadas con los fragmentos reales de la narración. Los subtítulos se muestran por frases cortas, ocultas durante las pausas de la voz; para karaoke palabra a palabra elige Reconocimiento por palabras.`;if(goToTimeline)switchTab(4);saveDraftSoon();return true;
     }finally{if(version===syncRequestVersion){syncInProgress=false;$('syncAllBtn').disabled=false;$('syncAllBtn').textContent='🔄 Sincronizar Todo';}}
   }
   function cancelSync(){++syncRequestVersion;cloudSyncController?.abort();if(speechWorker)destroySpeechWorker('Sincronización pausada');speechRecognitionTask=speechRecognitionBuffer=null;syncInProgress=false;verifiedSyncBuffer=verifiedSyncScript=verifiedSyncPlan=null;$('syncAllBtn').disabled=false;$('syncAllBtn').textContent='🔄 Sincronizar Todo';updateSyncProgress('Sincronización pausada. Los tramos terminados se conservan.',true);}
   function drawPhraseCaption(ctx,w,h,s,t){
-    if(t<s.speechStart||t>=s.speechEnd)return;const mode=$('subsSelect').value;if(mode==='none')return;
-    const font=Math.max(12,h*Math.min(12,Math.max(2,Number($('subSize').value)||5.2))/100),words=s.text.split(/\s+/),rows=[];let line='';ctx.save();ctx.font=`${getSubtitleFont().weight} ${font}px ${getSubtitleFont().family}`;
+    const phrase=getSubtitleCues(s).find(c=>t>=c.start&&t<c.end);if(!phrase)return;const mode=$('subsSelect').value;if(mode==='none')return;
+    const font=Math.max(12,h*Math.min(12,Math.max(2,Number($('subSize').value)||5.2))/100),words=phrase.words,rows=[];let line='';ctx.save();ctx.font=`${getSubtitleFont().weight} ${font}px ${getSubtitleFont().family}`;
     for(const word of words){const test=line?line+' '+word:word;if(line&&ctx.measureText(test).width>w*.86){rows.push(line);line=word;}else line=test;}if(line)rows.push(line);
     const scale=Math.min(1,4/Math.max(1,rows.length)),size=font*scale,lh=size*1.2;ctx.font=`${getSubtitleFont().weight} ${size}px ${getSubtitleFont().family}`;ctx.textAlign='center';ctx.textBaseline='middle';const y=Math.min(h-lh*rows.length/2-size*.4,Math.max(lh*rows.length/2+size*.4,h*Number($('subPosition').value||82)/100));
     if(mode==='box'||mode==='headline'){ctx.fillStyle=mode==='headline'?'#e96840':'rgba(0,0,0,.78)';ctx.fillRect(w*.04,y-lh*rows.length/2-size*.2,w*.92,lh*rows.length+size*.4);}
@@ -3985,6 +4118,299 @@ const Studio = (() => {
       return await recordInternal({...opts,start,end,target});
     }finally{preparingExport=false;}
   }
+
+
+  // ===== Ajuste de imágenes al texto de cada escena =====
+  const FIT_STOP=new Set(('para pero como esta este estos estas esto esos esas cuando donde porque entonces tambien mucho muchos mucha muchas sobre entre desde hasta hacia ellos ellas nosotros tienen tiene tenia habia fueron siendo sido cada otro otra otros otras algo todo todos toda todas aqui alli ahora luego despues antes siempre nunca solo bien mismo misma pues aunque mientras durante contra segun sino cual cuales quien quienes with that this from have were your they them then than into over under about because while which would could there their what when where also very much more some been being just like only other after before '+'shot style illustration stickman minimalist vector animation clean outlines background simple detailed quality masterpiece best white black scene character characters camera lighting strictly text words letters numbers typography pure visual graphics wide close angle high view image imagen escena').split(/\s+/).filter(Boolean));
+  function fitTokens(text){
+    const plain=String(text||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/<[^>]*>/g,' ');
+    const out=new Set();
+    for(const w of plain.split(/[^a-z0-9]+/)){if(w.length<4||/^\d+$/.test(w)||FIT_STOP.has(w))continue;out.add(w.length>5?w.slice(0,5):w);}
+    return out;
+  }
+  function cleanHint(t){return String(t||'').replace(/<[^>]*>/g,' ').replace(/[()\[\]{}]/g,' ').replace(/:\s*\d+(\.\d+)?/g,' ').replace(/\s+/g,' ').trim();}
+  function imageDescriptor(k,manual){
+    const im=loadedImages[k];if(!im)return '';
+    let d=im.hint||(im.prompt?sceneSource(im.prompt):'')||'';
+    if(!d&&manual&&manual.length===loadedImages.length)d=manual[k]||'';
+    if(!d&&im.name){const base=String(im.name).replace(/\.[a-z0-9]+$/i,'');if(/[a-zA-Z]{4,}/.test(base))d=base.replace(/[_\-.]+/g,' ');}
+    return cleanHint(d);
+  }
+  function fitCandidate(i,o,n,m){const k=(i%m)+o;if(n<=m)return(k<0||k>=m)?-1:k;return((k%m)+m)%m;}
+  function fitScores(n,m,manual){
+    const sceneTok=scenes.map(sc=>fitTokens(sc.text)),descs=[];
+    for(let k=0;k<m;k++)descs.push(imageDescriptor(k,manual));
+    const imgTok=descs.map(fitTokens),df=new Map(),N=n+m;
+    for(const set of [...sceneTok,...imgTok])for(const t of set)df.set(t,(df.get(t)||0)+1);
+    const idf=t=>Math.log(1+N/(df.get(t)||1));
+    const norm=set=>{let x=0;for(const t of set)x+=idf(t)**2;return Math.sqrt(x)||1;};
+    const sn=sceneTok.map(norm),inn=imgTok.map(norm);
+    const sim=(i,k)=>{let d=0;for(const t of sceneTok[i])if(imgTok[k].has(t))d+=idf(t)**2;return d/(sn[i]*inn[k]);};
+    return {sim,descs,imgTok};
+  }
+  function fitSolve(n,m,sim,votes,W){
+    const O=[];for(let o=-W;o<=W;o++)O.push(o);
+    const NEG=1e9,MU=0.25,LAM=0.03,cost=[],from=[];
+    for(let i=0;i<n;i++){
+      cost.push(new Array(O.length).fill(NEG));from.push(new Array(O.length).fill(-1));
+      for(let a=0;a<O.length;a++){
+        const k=fitCandidate(i,O[a],n,m);if(k<0)continue;
+        const gain=sim(i,k)+(votes?(votes.get(i+':'+k)||0):0),own=-gain+LAM*Math.abs(O[a]);
+        if(i===0){cost[i][a]=own+MU*Math.abs(O[a]);continue;}
+        let best=NEG,bi=-1;
+        for(let b=0;b<O.length;b++){const c=cost[i-1][b]+MU*Math.abs(O[a]-O[b]);if(c<best){best=c;bi=b;}}
+        if(bi>=0){cost[i][a]=best+own;from[i][a]=bi;}
+      }
+    }
+    let a=O.indexOf(0),best=NEG;for(let x=0;x<O.length;x++)if(cost[n-1][x]<best){best=cost[n-1][x];a=x;}
+    const path=new Array(n).fill(0);
+    for(let i=n-1;i>=0;i--){path[i]=a>=0?O[a]:0;a=a>=0?from[i][a]:-1;}
+    return path;
+  }
+  async function fitLlmVotes(n,m,W,manual,sceneRef,say,sim){
+    const votes=new Map(),CH=10,VOTE=0.7,CLEAR=0.2;let error='',skipped=0,asked=0;
+    const system='Emparejas escenas de un guion con descripciones de imágenes. Las descripciones pueden estar en otro idioma que el guion. Responde SOLO con un objeto JSON válido, sin texto adicional.';
+    const chunks=[];
+    for(let s0=0;s0<n;s0+=CH){
+      const s1=Math.min(n,s0+CH);
+      // Si cada escena del bloque ya tiene una coincidencia clara por palabras, no hace falta gastar IA
+      let clear=true;
+      for(let i=s0;i<s1&&clear;i++){let best=0;for(let o=-W;o<=W;o++){const k=fitCandidate(i,o,n,m);if(k>=0)best=Math.max(best,sim(i,k));}if(best<CLEAR)clear=false;}
+      if(clear){skipped++;continue;}
+      chunks.push([s0,s1]);
+    }
+    let next=0,done=0;
+    const worker=async()=>{
+      while(!error){
+        const idx=next++;if(idx>=chunks.length)return;if(scenes!==sceneRef)return;
+        const [s0,s1]=chunks[idx],cand=new Set();
+        for(let i=s0;i<s1;i++)for(let o=-W;o<=W;o++){const k=fitCandidate(i,o,n,m);if(k>=0)cand.add(k);}
+        const ks=[...cand].sort((x,y)=>x-y).filter(k=>imageDescriptor(k,manual).length>3);
+        if(ks.length>=2){
+          const sc=[];for(let i=s0;i<s1;i++)sc.push('E'+(i+1)+': '+String(scenes[i].text||'').slice(0,240));
+          const im=ks.map(k=>'I'+(k+1)+': '+imageDescriptor(k,manual).slice(0,180));
+          const prompt='Escenas:\n'+sc.join('\n')+'\n\nImágenes disponibles:\n'+im.join('\n')+'\n\nPara cada escena indica la imagen que mejor la ilustra, eligiendo solo entre las imágenes disponibles. Responde con JSON como {"E12":"I10","E13":"I11"}. Si ninguna encaja, omite esa escena.';
+          try{
+            const out=stripFences(await textTask(system,prompt,360));asked++;
+            for(const mt of out.matchAll(/"?E(\d+)"?\s*:\s*"?I?(\d+)"?/g)){const i=Number(mt[1])-1,k=Number(mt[2])-1;if(i>=s0&&i<s1&&ks.includes(k))votes.set(i+':'+k,VOTE);}
+          }catch(e){error=e.message||String(e);return;}
+        }
+        done++;say('Entendiendo las imágenes con IA de texto… '+Math.min(100,Math.round(done/Math.max(1,chunks.length)*100))+'%');
+      }
+    };
+    await Promise.all(Array.from({length:Math.min(3,chunks.length)},worker));
+    return {votes,error,skipped,asked};
+  }
+  let lastFitMapping=null;
+  async function fitImagesToScenes(silent=false){
+    const st=$('imageFitStatus'),say=t=>{if(st)st.textContent=t;};
+    try{
+      const sceneRef=scenes,n=scenes.length,m=loadedImages.length;
+      if(!n||!m){say('Primero necesito escenas sincronizadas e imágenes.');return false;}
+      let manual=[];try{manual=parseManualList($('aiManualPrompts19').value)||[];}catch{}
+      const W=Math.max(1,Math.min(8,Number($('imageFitRange')?.value)||4)),{sim,descs,imgTok}=fitScores(n,m,manual);
+      const described=imgTok.filter(x=>x.size>=2).length;
+      if(described<Math.max(2,Math.ceil(m*0.3))){say('No puedo saber qué muestra cada imagen (los nombres no dicen nada y no hay prompts). Pega los prompts en «Prompts manuales» en el mismo orden que las imágenes, usa PNG de Automatic1111 con metadatos, o genera las imágenes aquí. Mientras tanto puedes moverlas a mano con los botones de arriba.');return false;}
+      let votes=null,aiNote='';
+      if($('aiImageFit')?.checked!==false){
+        try{const r=await fitLlmVotes(n,m,W,manual,sceneRef,say,sim);votes=r.votes;if(r.error)aiNote=' La IA de texto no estuvo disponible ('+r.error+'); se usó solo la comparación de palabras.';}
+        catch(e){aiNote=' La IA de texto no estuvo disponible; se usó solo la comparación de palabras.';}
+      }
+      if(scenes!==sceneRef)return false;
+      const before=scenes.map(x=>x.imgIndex),path=fitSolve(n,m,sim,votes,W);
+      lastFitMapping=before;let changed=0;const moves=[];
+      for(let i=0;i<n;i++){const k=fitCandidate(i,path[i],n,m);if(k>=0&&k!==scenes[i].imgIndex){scenes[i].imgIndex=k;changed++;if(moves.length<10)moves.push('escena '+(i+1)+': imagen '+(before[i]+1)+' → '+(k+1));}}
+      renderScenes();renderCurrentFrame();saveDraftSoon();
+      const doubtful=[];
+      for(let i=0;i<n;i++){const k=scenes[i].imgIndex;if(k<0)continue;const weak=!imgTok[k]||imgTok[k].size<2||(sim(i,k)<0.05&&!(votes&&votes.get(i+':'+k)));if(weak)doubtful.push(i+1);}
+      const review=doubtful.length?(' Escenas a revisar a mano (sin coincidencia clara con su imagen): '+doubtful.slice(0,25).join(', ')+(doubtful.length>25?' y '+(doubtful.length-25)+' más':'')+'.'):' Todas las escenas tienen una imagen que encaja con su texto.';
+      say(changed?('✅ He recolocado '+changed+' escenas ('+moves.join('; ')+(changed>moves.length?'…':'')+'). Revísalas y usa «Deshacer» si alguna no te convence.'+review+aiNote):('✅ Las imágenes ya coinciden con el texto de sus escenas.'+review+aiNote));
+      return true;
+    }catch(e){say('No se pudo ajustar las imágenes: '+(e.message||e));return false;}
+  }
+  function shiftImagesFrom(delta){
+    const n=scenes.length,m=loadedImages.length,st=$('imageFitStatus');
+    if(!n||!m){if(st)st.textContent='Primero necesito escenas sincronizadas e imágenes.';return;}
+    const from=Math.max(1,Math.min(n,Math.round(Number($('shiftFrom')?.value)||1)))-1;
+    lastFitMapping=scenes.map(x=>x.imgIndex);
+    for(let i=from;i<n;i++)scenes[i].imgIndex=Math.max(0,Math.min(m-1,scenes[i].imgIndex+delta));
+    renderScenes();renderCurrentFrame();saveDraftSoon();
+    if(st)st.textContent='Imágenes movidas '+(delta>0?'+1':'−1')+' desde la escena '+(from+1)+' en adelante.';
+  }
+  function undoImageFit(){
+    const st=$('imageFitStatus');
+    if(!lastFitMapping||lastFitMapping.length!==scenes.length){if(st)st.textContent='No hay ningún ajuste que deshacer.';return;}
+    scenes.forEach((x,i)=>{x.imgIndex=lastFitMapping[i];});lastFitMapping=null;
+    renderScenes();renderCurrentFrame();saveDraftSoon();if(st)st.textContent='Ajuste deshecho.';
+  }
+  function extractPromptText(val){const neg=val.indexOf('\nNegative prompt:'),steps=val.indexOf('\nSteps:'),end=neg>=0?neg:(steps>=0?steps:val.length);return cleanHint(val.slice(0,end));}
+  function extractComfyText(val){try{const g=JSON.parse(val);for(const node of Object.values(g)){const t=node?.inputs?.text;if(/CLIPTextEncode/i.test(node?.class_type||'')&&typeof t==='string'&&!/worst quality|lowres|bad anatomy|nsfw/i.test(t))return cleanHint(t);}}catch{}return '';}
+  async function readImageHint(file){
+    if(!file||!/png/i.test((file.type||'')+(file.name||'')))return '';
+    const buf=new Uint8Array(await file.slice(0,524288).arrayBuffer());
+    if([137,80,78,71,13,10,26,10].some((b,i)=>buf[i]!==b))return '';
+    const dv=new DataView(buf.buffer),latin=a=>{let x='';for(const c of a)x+=String.fromCharCode(c);return x;},utf8=a=>new TextDecoder('utf-8').decode(a);
+    let p=8;
+    while(p+12<=buf.length){
+      const len=dv.getUint32(p),type=latin(buf.subarray(p+4,p+8)),data=buf.subarray(p+8,Math.min(buf.length,p+8+len));
+      if(type==='IDAT'||type==='IEND')break;
+      if(type==='tEXt'||type==='iTXt'){
+        const z=data.indexOf(0);
+        if(z>0){
+          const key=latin(data.subarray(0,z));let val='';
+          if(type==='tEXt')val=utf8(data.subarray(z+1));
+          else if(data[z+1]===0){let q=data.indexOf(0,z+3)+1;q=data.indexOf(0,q)+1;val=utf8(data.subarray(q));}
+          if(key==='parameters'&&val)return extractPromptText(val);
+          if(key==='prompt'&&val.trim().startsWith('{')){const r=extractComfyText(val);if(r)return r;}
+        }
+      }
+      p+=12+len;
+    }
+    return '';
+  }
+
+  // ===== Ajuste fino de sincronización: desfase global, calibración, informe y revisión de cortes =====
+  function syncNum(id,def,lim){const el=$(id),v=el?Number(el.value):NaN;return Number.isFinite(v)?Math.max(-lim,Math.min(lim,v)):def;}
+  function syncImageLead(){return syncNum('imageLeadInput',0.08,1);}
+  function syncSubShift(){return syncNum('subShiftInput',0,1);}
+  window.syncImageLead=syncImageLead;window.syncSubShift=syncSubShift;
+  function syncOffsetsChanged(){renderCurrentFrame();if($('currentOffsetsLabel'))$('currentOffsetsLabel').textContent=`Imágenes ${syncImageLead()>=0?'+':''}${syncImageLead().toFixed(2)} s · Subtítulos ${syncSubShift()>=0?'+':''}${syncSubShift().toFixed(2)} s`;saveDraftSoon();}
+  function syncNudge(id,delta){const el=$(id);if(!el)return;const v=Math.round((syncNum(id,0,1)+delta)*100)/100;el.value=Math.max(-1,Math.min(1,v)).toFixed(2);syncOffsetsChanged();}
+  function syncResetOffsets(){$('imageLeadInput').value='0.08';$('subShiftInput').value='0.00';syncOffsetsChanged();$('syncFineStatus').textContent='Valores recomendados restablecidos.';}
+  function voiceOnsets(map){const on=[];let silent=0;for(let i=0;i<map.frameCount;i++){if(map.voiced[i]){if(silent>=4||i===0)on.push(i*map.hop);silent=0;}else silent++;}return on;}
+  function syncCalibrate(){
+    const st=$('syncFineStatus');
+    if(!voiceBuffer||isDemoSynthMode||!speechActivityMap||scenes.length<4){st.textContent='Para calibrar necesito una voz cargada o generada y al menos 4 escenas sincronizadas.';return;}
+    const on=voiceOnsets(speechActivityMap),diffs=[];
+    for(let i=1;i<scenes.length;i++){
+      const sc=scenes[i],first=sc.timingSource==='tts-segment'?sc.speechStart:(sc.wordTimings?.[0]?.start??sc.start);
+      let best=null;for(const o of on){if(o-first>0.4)break;if(Math.abs(o-first)<=0.4&&(best===null||Math.abs(o-first)<Math.abs(best)))best=o-first;}
+      if(best!==null)diffs.push(best);
+    }
+    if(diffs.length<Math.max(3,Math.round((scenes.length-1)*0.4))){st.textContent=`Solo pude medir ${diffs.length} cortes con una pausa clara antes de hablar; no es suficiente para calibrar. Ajusta a mano con los botones.`;return;}
+    diffs.sort((a,b)=>a-b);const median=diffs[Math.floor(diffs.length/2)];
+    const shift=Math.max(-0.3,Math.min(0.3,Math.round(-median*100)/100));
+    $('subShiftInput').value=shift.toFixed(2);syncOffsetsChanged();
+    st.textContent=Math.abs(median)<0.02?`Medidos ${diffs.length} cortes: los subtítulos ya coinciden con el inicio real de la voz (desvío ${Math.round(median*1000)} ms). No hace falta corregir.`:`Medidos ${diffs.length} cortes: la voz empieza de media ${Math.abs(Math.round(median*1000))} ms ${median<0?'antes':'después'} de lo que marcaba el reconocimiento. Desfase de subtítulos fijado en ${shift>=0?'+':''}${shift.toFixed(2)} s.`;
+  }
+  function sceneSyncInfo(sc,i){
+    const issues=[],words=String(sc.text||'').trim().split(/\s+/).filter(Boolean),dur=sc.end-sc.start,hasVoice=!!voiceBuffer&&!isDemoSynthMode;
+    let conf=1;
+    if(sc.timingSource==='tts-segment')conf=1;
+    else if(sc.timingSource==='recognized'){
+      const wt=sc.wordTimings||[],rec=wt.filter(w=>w.source==='recognized').length;conf=wt.length?rec/wt.length:0;
+      if(conf<0.7)issues.push(`solo ${Math.round(conf*100)} % de las palabras se reconocieron en la voz; el resto son tiempos reconstruidos`);
+      if(wt.length>=4){const span=Math.max(0.2,wt[wt.length-1].end-wt[0].start),wps=words.length/span;
+        if(wps>6.5)issues.push(`ritmo anómalo (${wps.toFixed(1)} palabras/s): puede haber un corte mal colocado`);
+        else if(wps<1)issues.push(`ritmo muy lento (${wps.toFixed(1)} palabras/s): puede incluir una pausa larga o parte de otra escena`);}
+    }else if(hasVoice){conf=0.5;issues.push('tiempos estimados o editados a mano: no verificados con la voz');}
+    if(dur<0.6)issues.push(`escena muy corta (${dur.toFixed(2)} s): la imagen apenas se verá`);
+    let split=false,merge=false;
+    if(dur>10&&words.length>=6){split=true;issues.push(`escena larga (${dur.toFixed(0)} s con una sola imagen): conviene dividirla`);}
+    if(dur<0.6&&i<scenes.length-1)merge=true;
+    const img=sc.imgIndex>=0?loadedImages[sc.imgIndex]:null;
+    if(!img||img.isPending||!img.imgObj){conf=Math.min(conf,0.3);issues.push('sin imagen lista');}
+    return {index:i,conf,issues,split,merge};
+  }
+  function renderSyncReport(){
+    const box=$('syncReport');if(!box)return;if($('currentOffsetsLabel'))$('currentOffsetsLabel').textContent=`Ahora: imágenes ${syncImageLead()>=0?'+':''}${syncImageLead().toFixed(2)} s · subtítulos ${syncSubShift()>=0?'+':''}${syncSubShift().toFixed(2)} s`;
+    if(!scenes.length){box.innerHTML='<div class="empty-state">Aún no hay escenas. Sincroniza primero y aquí verás qué escenas conviene revisar.</div>';return;}
+    const infos=scenes.map(sceneSyncInfo),bad=infos.filter(x=>x.issues.length),good=infos.length-bad.length;
+    let html=`<div class="callout ${bad.length?'warn':''}" style="margin-bottom:10px"><strong>${good} de ${infos.length} escenas fiables</strong>${bad.length?` · ${bad.length} a revisar`:' · no hay nada sospechoso.'}</div>`;
+    html+=bad.slice(0,40).map(x=>`<div style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:7px;font-size:11px;line-height:1.55"><div style="flex:1"><b>Escena ${x.index+1}</b> · ${formatMMSS(scenes[x.index].start)}<br>${x.issues.map(esc).join('<br>')}</div><button class="btn" style="font-size:10px;padding:5px 9px" onclick="syncGoScene(${x.index})">Ir ▶</button>${x.split?`<button class="btn" style="font-size:10px;padding:5px 9px" onclick="syncSplitScene(${x.index})">✂ Dividir</button>`:''}${x.merge?`<button class="btn" style="font-size:10px;padding:5px 9px" onclick="syncMergeNext(${x.index})">Unir con la siguiente</button>`:''}</div>`).join('');
+    if(infos.some(x=>x.split))html+=`<div class="button-row" style="margin-top:8px"><button class="btn btn-primary" onclick="syncSplitAllLong()">✂ Dividir todas las escenas largas</button></div>`;
+    if(bad.length>40)html+=`<div class="muted">…y ${bad.length-40} más.</div>`;
+    box.innerHTML=html;
+  }
+  function syncGoScene(i){if(!scenes[i])return;if(isPlaying)pausePlayback();currentTime=Math.max(0,scenes[i].start);updateTimeUI();renderCurrentFrame();window.scrollTo({top:0,behavior:'smooth'});}
+  let cutIdx=0,cutTimer=null;
+  function stopCutReview(){if(cutTimer){clearInterval(cutTimer);cutTimer=null;}}
+  async function reviewCut(dir){
+    const st=$('syncFineStatus');if(!scenes.length){st.textContent='Sincroniza primero para revisar cortes.';return;}
+    const last=scenes.length-1;
+    if(dir===0){const k=findSceneIndexAtTime(currentTime);cutIdx=Math.max(1,Math.min(last,k>0?k:1));}
+    else cutIdx=Math.max(1,Math.min(last,cutIdx+dir));
+    if(last<1){st.textContent='Solo hay una escena: no hay cortes que revisar.';return;}
+    const cut=scenes[cutIdx].start,from=Math.max(0,cut-2),to=Math.min(totalDuration,cut+2);
+    stopCutReview();if(isPlaying)pausePlayback();
+    currentTime=from;updateTimeUI();renderCurrentFrame();
+    st.textContent=`Corte ${cutIdx} de ${last} · ${formatMMSS(cut)} · se reproducen 2 s antes y 2 s después.`;
+    await startPlayback();
+    cutTimer=setInterval(()=>{if(!isPlaying){stopCutReview();return;}if(currentTime>=to){pausePlayback();stopCutReview();}},40);
+  }
+
+  // ===== Dividir escenas largas / unir escenas cortas =====
+  function splitPoint(sc){
+    const words=String(sc.text||'').trim().split(/\s+/).filter(Boolean);
+    if(words.length<6)return null;
+    const map=(voiceBuffer&&!isDemoSynthMode)?speechActivityMap:null,tts=sc.timingSource==='tts-segment';
+    const timings=(!tts&&sc.wordTimings?.length===words.length)?sc.wordTimings:createWordTimings(sc.text,tts?sc.speechStart:sc.start,tts?sc.speechEnd:sc.end,map);
+    const mid=(timings[0].start+timings[words.length-1].end)/2;let best=-1,bestScore=Infinity;
+    for(let k=3;k<=words.length-3;k++){
+      const gap=timings[k].start-timings[k-1].end,sentence=/[.!?…]["'”’)\]]*$/.test(words[k-1]),clause=/[,;:—–]$/.test(words[k-1]);
+      const score=Math.abs(timings[k].start-mid)-(sentence?1.5:clause?0.6:0)-Math.min(1,Math.max(0,gap)*2);
+      if(score<bestScore){bestScore=score;best=k;}
+    }
+    return best<0?null:{k:best,words,timings,map,tts};
+  }
+  function splitSceneAt(i){
+    const sc=scenes[i],sp=sc&&splitPoint(sc);if(!sp)return false;
+    const {k,words,timings,map,tts}=sp;
+    let cut=timings[k].start;
+    if(map){const on=acousticOnsetNear(map,cut,timings[k-1].start+0.05);if(on!==null)cut=Math.min(on,timings[k].end-0.02);}
+    cut=Math.max(sc.start+0.4,Math.min(sc.end-0.4,cut));
+    if(!(cut>sc.start+0.3&&cut<sc.end-0.3))return false;
+    const textA=words.slice(0,k).join(' '),textB=words.slice(k).join(' ');
+    const A={...sc,end:cut,text:textA},B={...sc,start:cut,text:textB,sfxId:''};
+    const noCam=$('cameraMode')&&$('cameraMode').value==='none';
+    B.effect=noCam?sc.effect:EFFECTS[(Math.max(0,EFFECTS.indexOf(sc.effect))+2)%EFFECTS.length];
+    if(tts){
+      A.speechEnd=Math.min(cut,Math.max(sc.speechStart+0.05,timings[k-1].end));
+      B.speechStart=Math.min(sc.speechEnd-0.05,Math.max(cut,timings[k].start));
+      if(!(A.speechEnd>A.speechStart&&B.speechEnd>B.speechStart))return false;
+    }else if(sc.timingSource==='recognized'&&sc.wordTimings?.length===words.length){
+      A.wordTimings=timings.slice(0,k).map(w=>({...w,end:Math.min(w.end,cut)}));
+      B.wordTimings=timings.slice(k).map((w,n)=>n===0?{...w,start:Math.min(w.start,cut)}:{...w});
+    }else{A.wordTimings=[];B.wordTimings=[];A.timingSource=B.timingSource='estimated';}
+    for(const x of [A,B]){x.timingText=x.text;x.timingStart=x.start;x.timingEnd=x.end;}
+    scenes.splice(i,1,A,B);return true;
+  }
+  function afterSceneEdit(msg){
+    renderScenes();renderFilm();renderCurrentFrame();updateTimeUI();
+    if($('st4'))$('st4').textContent=scenes.length+' escenas';
+    renderSyncReport();saveDraftSoon();const st=$('syncFineStatus');if(st)st.textContent=msg;
+  }
+  function syncSplitScene(i){
+    if(isExportingVideo||syncInProgress)return;
+    if(!splitSceneAt(i)){$('syncFineStatus').textContent='No he encontrado un punto claro para dividir esa escena.';return;}
+    afterSceneEdit(`Escena ${i+1} dividida en dos. La segunda parte usa la misma imagen con otro movimiento de cámara: cámbiala en la lista de escenas si quieres otra.`);
+  }
+  function syncSplitAllLong(){
+    if(isExportingVideo||syncInProgress)return;
+    let count=0;
+    for(let pass=0;pass<3;pass++){let changed=false;
+      for(let i=scenes.length-1;i>=0;i--){const sc=scenes[i];if(sc.end-sc.start>10&&splitSceneAt(i)){count++;changed=true;}}
+      if(!changed)break;}
+    afterSceneEdit(count?`${count} divisiones hechas. Las partes nuevas reutilizan la imagen de su escena; revísalas en la lista de escenas y cambia las que quieras.`:'No había escenas largas que se pudieran dividir con un punto claro.');
+  }
+  function syncMergeNext(i){
+    if(isExportingVideo||syncInProgress)return;
+    const a=scenes[i],b=scenes[i+1];if(!a||!b)return;
+    const M={...a,end:b.end,text:(a.text+' '+b.text).trim()};
+    const wa=a.text.trim().split(/\s+/).filter(Boolean).length,wb=b.text.trim().split(/\s+/).filter(Boolean).length;
+    if(a.timingSource==='tts-segment'&&b.timingSource==='tts-segment'){M.speechEnd=b.speechEnd;}
+    else if(a.timingSource==='recognized'&&b.timingSource==='recognized'&&a.wordTimings?.length===wa&&b.wordTimings?.length===wb){M.wordTimings=[...a.wordTimings,...b.wordTimings];}
+    else{M.wordTimings=[];M.timingSource='estimated';}
+    M.timingText=M.text;M.timingStart=M.start;M.timingEnd=M.end;
+    scenes.splice(i,2,M);
+    if(M.timingSource==='estimated')refreshSceneWordTimings();
+    afterSceneEdit(`Escenas ${i+1} y ${i+2} unidas.`);
+  }
+  window.syncSplitScene=syncSplitScene;window.syncSplitAllLong=syncSplitAllLong;window.syncMergeNext=syncMergeNext;
+  window.syncOffsetsChanged=syncOffsetsChanged;window.syncNudge=syncNudge;window.syncResetOffsets=syncResetOffsets;window.syncCalibrate=syncCalibrate;
+  window.renderSyncReport=renderSyncReport;window.syncGoScene=syncGoScene;window.reviewCut=reviewCut;
+
+  window.fitImagesToScenes=fitImagesToScenes;window.undoImageFit=undoImageFit;window.shiftImagesFrom=shiftImagesFrom;window.readImageHint=readImageHint;
 
   // ===== Exportación rápida en segundo plano (WebCodecs + mp4-muxer) =====
   // No reproduce nada: pinta cada fotograma por su tiempo exacto, mezcla el audio
@@ -4051,7 +4477,7 @@ const Studio = (() => {
       // 2) Vídeo: un fotograma por su instante exacto
       const total=Math.max(1,Math.round(duration*fps)),frameUs=1e6/fps;
       for(let i=0;i<total;i++){
-        check();const t=Math.min(end,start+i/fps);
+        check();const t=Math.min(end,start+(i+0.5)/fps);
         paintFrame(ctx,w,h,t,clip||{});
         const vf=new VideoFrame(canvas,{timestamp:Math.round(i*frameUs),duration:Math.round(frameUs)});
         venc.encode(vf,{keyFrame:i%(fps*2)===0});vf.close();
@@ -4129,10 +4555,10 @@ const Studio = (() => {
   const baseBgm=handleBgmUpload;handleBgmUpload=async file=>{if(!file)return;await baseBgm(file);bgmFile=file;saveDraftSoon();};
   const baseSfx=handleSfxUpload;handleSfxUpload=async files=>{for(const file of Array.from(files||[])){const count=userSfxList.length;await baseSfx([file]);if(userSfxList.length>count){userSfxList.at(-1)._sourceFile=file;userSfxList.at(-1).id='sfx_'+crypto.randomUUID();}}renderSfxLibraryUI();renderScenes();saveDraftSoon();};
   const baseScriptStatus=updateScriptStatus;updateScriptStatus=()=>{baseScriptStatus();refreshBudget();};
-  switchTab=num=>{document.querySelectorAll('.tab-View').forEach(el=>el.classList.toggle('active',el.id==='tab'+num));document.querySelectorAll('.step-btn').forEach(el=>el.classList.toggle('active',el.id==='nav'+num));if(num===4&&$('sceneList').dataset.dirty==='true')renderScenes();if(num===7)refreshBudget();if(num===5&&selected())drawClip(Number($('clipSeek').value));};
+  switchTab=num=>{document.querySelectorAll('.tab-View').forEach(el=>el.classList.toggle('active',el.id==='tab'+num));document.querySelectorAll('.step-btn').forEach(el=>el.classList.toggle('active',el.id==='nav'+num));if(num===4&&$('sceneList').dataset.dirty==='true')renderScenes();if(num===4)try{renderSyncReport();}catch(_){}if(num===7)refreshBudget();if(num===5&&selected())drawClip(Number($('clipSeek').value));};
   changeAspectRatio=ratio=>setFormat(ratio);
   renderSceneListUI=renderScenes;drawSubtitlesOnCanvas=subtitleDraw;
-  const originalFrame=renderCurrentFrame;renderCurrentFrame=()=>{if(!scenes.length){const c=$('previewCanvas');paintFrame(c.getContext('2d'),c.width,c.height,currentTime);return;}originalFrame();const c=$('previewCanvas');paintFrame(c.getContext('2d'),c.width,c.height,currentTime);};
+  window.studioPaintsFrame=true;const originalFrame=renderCurrentFrame;renderCurrentFrame=()=>{if(!scenes.length){const c=$('previewCanvas');paintFrame(c.getContext('2d'),c.width,c.height,currentTime);return;}originalFrame();const c=$('previewCanvas');paintFrame(c.getContext('2d'),c.width,c.height,currentTime);};
   generateImagesFromPromptsAI=guarded(generateImages);
   testCloudflareWorker=guarded(async()=>{try{await health();notify($('connectionStatus').textContent);}catch(e){$('connectionStatus').textContent=e.message;$('connectionStatus').className='callout warn';throw e;}});
   exportVideoYouTubeMaster=guarded(()=>record());
@@ -4140,7 +4566,7 @@ const Studio = (() => {
   const originalRecognition=getRecognizedSpeech,originalRecovery=alignScenesWithRecovery;
   getRecognizedSpeech=(buffer,progress,model)=>$('syncEngine').value==='local'?originalRecognition(buffer,progress,model):cloudRecognition(buffer,progress);
   alignScenesWithRecovery=(lines,recognized,buffer,progress,model)=>$('syncEngine').value==='local'?originalRecovery(lines,recognized,buffer,progress,model):cloudAlignment(lines,recognized,buffer,progress);
-  const baseSync=autoSyncProject;autoSyncProject=async(...args)=>{if(voiceOperation||isExportingVideo)return false;const result=$('syncEngine').value==='auto'&&validGeneratedManifest()?await syncGeneratedVoice(...args):await baseSync(...args);if(result){if($('cameraMode').value==='none')scenes.forEach(s=>s.effect=EFFECTS[0]);renderFilm();saveDraftSoon();}return result;};
+  const baseSync=autoSyncProject;autoSyncProject=async(...args)=>{if(voiceOperation||isExportingVideo)return false;const result=$('syncEngine').value==='auto'&&validGeneratedManifest()?await syncGeneratedVoice(...args):await baseSync(...args);if(result){if($('cameraMode').value==='none')scenes.forEach(s=>s.effect=EFFECTS[0]);renderFilm();saveDraftSoon();try{renderSyncReport();}catch(_){}}return result;};
   window.addEventListener('DOMContentLoaded',initialize);
   return {updateCharacterUI,clearCharacter,showPromptReview,cancelSync,useBasicStickman:guarded(useBasicStickman),useSceneCharacter:guarded(useSceneCharacter),uploadCharacter:guarded(uploadCharacter),generateCharacter:guarded(generateCharacter),reviewPrompts:guarded(reviewPrompts),chooseStyle,populateImages,setFormat,saveTemplate,loadTemplate,deleteTemplate,applyMotion,refreshBudget,voiceEngineChanged,saveDraftSoon,drawClip,selectClip,updateClip,removeClip,replaceSceneImage,stopExport,cancelVoice:()=>ttsController?.abort(),
     writeScript:guarded(writeScript),paceScript:guarded(paceScript),planPrompts:guarded(planPrompts),createVideo:guarded(createVideo),sampleVoice:guarded(sampleVoice),generateVoice:guarded(generateVoice),downloadVoice:guarded(downloadVoice),editSceneText,editSceneTime:guarded(editSceneTime),regenerateScene:guarded(regenerateScene),receiveReplacement:guarded(receiveReplacement),addClip:guarded(addClip),autoClips:guarded(autoClips),previewClip:guarded(previewClip),exportClip:guarded(exportClip),exportSelectedClip:guarded(()=>exportClip(selectedClip)),saveProject:guarded(saveProject),loadProject:guarded(loadProject),restoreDraft:guarded(restoreDraft),copyWorker:guarded(copyWorker),downloadWorker,
