@@ -1763,28 +1763,67 @@ function splitLongParagraphs() {
   updateScriptStatus();
 }
 
-function handleImagesUpload(fileList) {
+// Las URL blob: solo sirven durante esta sesión; un proyecto guardado debe contener datos persistentes.
+let activeImageImports = 0;
+async function handleImagesUpload(fileList) {
   if (!fileList || fileList.length === 0) return;
   const files = Array.from(fileList).sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
   const startIdx = loadedImages.length;
-  files.forEach((_, idx) => {
-    loadedImages.push({ name: "", url: "", imgObj: null });
-  });
-  files.forEach((file, idx) => {
-    const targetSlot = startIdx + idx;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
+  const slots = files.map((file, idx) => ({
+    name: file.name, url: "", imgObj: null, sceneIndex: startIdx + idx, isPending: true
+  }));
+  loadedImages.push(...slots);
+  ++activeImageImports;
+  renderMediaGrid();
+  const failed = [];
+  try {
+    // Lectura secuencial para evitar picos de memoria al importar decenas de PNG.
+    for (let idx = 0; idx < files.length; idx++) {
+      const file = files[idx], item = slots[idx];
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error || new Error("No se pudo leer el archivo."));
+          reader.readAsDataURL(file);
+        });
+        if (typeof dataUrl !== "string" || !/^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(dataUrl)) {
+          throw new Error("Formato de imagen no compatible.");
+        }
+        const image = await loadImageCrossOrigin(dataUrl);
+        // Si se borró la imagen mientras se leía, no volver a insertarla.
+        if (!loadedImages.includes(item)) continue;
+        item.url = image.dataUrl;
+        item.imgObj = image.imgObj;
+        item.isPending = false;
+        if (window.readImageHint) window.readImageHint(file).then(h => {
+          if (h && loadedImages.includes(item)) { item.hint = h; window.Studio?.saveDraftSoon?.(); }
+        }).catch(() => {});
+      } catch (error) {
+        failed.push({ item, name: file.name, reason: error?.message || String(error) });
+      }
       renderMediaGrid();
       renderSceneListUI();
       renderCurrentFrame();
-    };
-    img.src = url;
-    loadedImages[targetSlot] = { name: file.name, url, imgObj: img, sceneIndex: targetSlot };
-    const hintRef = loadedImages[targetSlot];
-    if (window.readImageHint) window.readImageHint(file).then(h => { if (h) hintRef.hint = h; }).catch(() => {});
-  });
-  renderMediaGrid();
+    }
+  } finally {
+    // Las imágenes defectuosas no deben dejar rutas efímeras en el proyecto.
+    for (const entry of failed.reverse()) {
+      const index = loadedImages.indexOf(entry.item);
+      if (index < 0) continue;
+      loadedImages.splice(index, 1);
+      scenes.forEach(scene => {
+        if (scene.imgIndex === index) scene.imgIndex = -1;
+        else if (scene.imgIndex > index) scene.imgIndex--;
+      });
+    }
+    --activeImageImports;
+    renderMediaGrid();
+    renderSceneListUI();
+    renderCurrentFrame();
+    if (activeImageImports === 0) window.Studio?.saveDraftSoon?.();
+    if (failed.length) alert("No se pudieron importar " + failed.length + " imágenes. Revisa los archivos y vuelve a intentarlo. " + failed.slice(0, 3).map(e => e.name + ": " + e.reason).join("; "));
+  }
 }
 
 function clearAllImages() {
@@ -3806,8 +3845,8 @@ const Studio = (() => {
   async function fromDataUrl(value,name){if(typeof value!=='string'||!/^data:(?:audio\/[^;,]+|application\/octet-stream)[;,]/i.test(value))throw new Error('Audio del proyecto no válido.');return new File([await (await fetch(value)).blob()],name||'audio.wav');}
   function snapshot(){return {type:'FacelessStudioProject',version:1,createdAt:new Date().toISOString(),title:$('projectName').value,style:chosen,settings:settings(),script:$('scriptArea').value,manualPrompts:$('aiManualPrompts19').value,promptMode:$('promptGenMode').value,prompts:$('promptsArea').value,scenes:scenes.map(s=>({...s})),duration:totalDuration,voiceManifest:generatedVoiceManifest,characterReference,imageRecovery:{jobKey:generationJobKey,cacheKey:generationCacheKey},imageProfiles:Object.fromEntries(loadedImages.filter(x=>x.generationProfile?.key).map(x=>[x.generationProfile.key,x.generationProfile])),images:loadedImages.map(({name,url,prompt,hint,isPending,generationProfile,sceneIndex},index)=>({name,url,prompt,hint,isPending,sceneIndex:sceneIndex??index,profileKey:generationProfile?.key||null})),clips:clips.map(c=>({...c})),selectedClip,verified:!!voiceBuffer&&hasVerifiedVoiceSync(),bgmVolume:$('bgmVolSlider').value,bgmOffset:$('bgmOffsetInput').value};}
   function saveDraftSoon(){if(!initialized)return;clearTimeout(draftTimer);draftTimer=setTimeout(()=>saveDraft().catch(()=>{}),1500);refreshBudget();}
-  async function saveDraft(){if(isExportingVideo)return;const saved=await recoveryStore('put','faceless-studio-draft',{...snapshot(),voice:voiceFile,bgm:bgmFile,sfx:userSfxList.filter(s=>s._sourceFile).map(s=>({file:s._sourceFile,id:s.id,keywords:s.keywords}))});$('saveState').textContent=saved?'Borrador local guardado':'No se pudo guardar el borrador. Usa Guardar proyecto.';}
-  async function saveProject(){const b=$('saveProjectBtn');b.disabled=true;try{const data=snapshot();data.voice=voiceFile?{name:voiceFile.name,data:await toDataUrl(voiceFile)}:voiceBuffer?{name:'narracion.wav',data:await toDataUrl(wav(voiceBuffer))}:null;data.bgm=bgmFile?{name:bgmFile.name,data:await toDataUrl(bgmFile)}:null;data.sfx=[];for(const item of userSfxList.filter(s=>s._sourceFile))data.sfx.push({name:item._sourceFile.name,data:await toDataUrl(item._sourceFile),id:item.id,keywords:item.keywords||[]});download(new Blob([JSON.stringify(data)],{type:'application/json'}),($('projectName').value||'mi-video').replace(/[^\w\-áéíóúñ]/gi,'_')+'.avfproject');await saveDraft();notify('Proyecto guardado con imágenes, sonido, tiempos y clips.');}finally{b.disabled=false;}}
+  async function saveDraft(){if(isExportingVideo||activeImageImports)return;const saved=await recoveryStore('put','faceless-studio-draft',{...snapshot(),voice:voiceFile,bgm:bgmFile,sfx:userSfxList.filter(s=>s._sourceFile).map(s=>({file:s._sourceFile,id:s.id,keywords:s.keywords}))});$('saveState').textContent=saved?'Borrador local guardado':'No se pudo guardar el borrador. Usa Guardar proyecto.';}
+  async function saveProject(){if(activeImageImports)throw new Error('Espera a que terminen de importarse las imágenes antes de guardar.');const b=$('saveProjectBtn');b.disabled=true;try{const data=snapshot();data.voice=voiceFile?{name:voiceFile.name,data:await toDataUrl(voiceFile)}:voiceBuffer?{name:'narracion.wav',data:await toDataUrl(wav(voiceBuffer))}:null;data.bgm=bgmFile?{name:bgmFile.name,data:await toDataUrl(bgmFile)}:null;data.sfx=[];for(const item of userSfxList.filter(s=>s._sourceFile))data.sfx.push({name:item._sourceFile.name,data:await toDataUrl(item._sourceFile),id:item.id,keywords:item.keywords||[]});download(new Blob([JSON.stringify(data)],{type:'application/json'}),($('projectName').value||'mi-video').replace(/[^\w\-áéíóúñ]/gi,'_')+'.avfproject');await saveDraft();notify('Proyecto guardado con imágenes, sonido, tiempos y clips.');}finally{b.disabled=false;}}
   async function restore(data,isDraft=false){if(data?.type!=='FacelessStudioProject'||data.version!==1||!Array.isArray(data.images)||!Array.isArray(data.scenes))throw new Error('Este archivo no es un proyecto compatible.');if(data.images.length>3000||data.scenes.length>5000||typeof data.script!=='string')throw new Error('El proyecto tiene una estructura no válida.');if(isExportingVideo||imageGenerationInProgress||syncInProgress||voiceOperation||characterBusy)throw new Error('Espera a que termine la operación actual antes de abrir otro proyecto.');pausePlayback();stopClip();++projectRevision;const images=[];generationJobKey=/^image-job:[a-f0-9]{64}$/.test(data.imageRecovery?.jobKey||'')?data.imageRecovery.jobKey:'';generationCacheKey=generationJobKey&&typeof data.imageRecovery?.cacheKey==='string'&&data.imageRecovery.cacheKey.startsWith(generationJobKey+':')&&data.imageRecovery.cacheKey.length<200?data.imageRecovery.cacheKey:'';for(const rawItem of data.images){const item={...rawItem,sceneIndex:rawItem.sceneIndex??images.length,generationProfile:data.imageProfiles?.[rawItem.profileKey]||null};if(item.isPending&&generationCacheKey){const cached=await recoveryStore('get','image:'+generationCacheKey+':'+item.sceneIndex);if(cached?.prompt===item.prompt&&/^data:image\/(png|jpeg|webp);base64,/i.test(cached.url||'')){try{const recovered=await loadImageCrossOrigin(cached.url);Object.assign(item,{url:recovered.dataUrl,imgObj:recovered.imgObj,isPending:false});}catch{}}}if(item.isPending){images.push({...item,imgObj:null});continue;}if(!/^data:image\/(png|jpeg|webp|gif);base64,/i.test(item.url||''))throw new Error('El proyecto contiene una imagen externa o no compatible.');const im=item.imgObj?{dataUrl:item.url,imgObj:item.imgObj}:await loadImageCrossOrigin(item.url);images.push({...item,url:im.dataUrl,imgObj:im.imgObj});}let vf=null,bf=null;if(data.voice)vf=isDraft?data.voice:await fromDataUrl(data.voice.data,data.voice.name);if(data.bgm)bf=isDraft?data.bgm:await fromDataUrl(data.bgm.data,data.bgm.name);if(vf)await installVoice(vf);else{voiceBuffer=null;voiceFile=null;verifiedSyncBuffer=verifiedSyncScript=verifiedSyncPlan=null;totalDuration=Number(data.duration)||15;}$('scriptArea').value=data.script;$('aiTopicInput').value=data.script;loadedImages=images;$('aiManualPrompts19').value=data.manualPrompts||'';$('promptsArea').value=data.prompts||'';$('promptGenMode').value=data.promptMode==='manual19'?'manual19':'auto';togglePromptMode($('promptGenMode').value);const dur=voiceBuffer?.duration||Number(data.duration)||15;scenes=data.scenes.map(s=>{if(!Number.isFinite(s.start)||!Number.isFinite(s.end)||s.start<0||s.end<=s.start||s.end>dur+.1||!Number.isInteger(s.imgIndex)||s.imgIndex>=images.length||s.imgIndex< -1||typeof s.text!=='string')throw new Error('Una escena del proyecto no tiene tiempos válidos.');return {...s};});totalDuration=dur;chosen=STYLES.some(s=>s[0]===data.style)?data.style:'doodle';applySettings(data.settings);$('projectName').value=data.title||'Mi vídeo';characterReference=data.characterReference&&/^data:image\/(jpeg|png|webp);base64,/.test(data.characterReference.url||'')?data.characterReference:null;generatedVoiceManifest=data.voiceManifest||null;if(!validGeneratedManifest())generatedVoiceManifest=null;lastImageProfile=loadedImages.find(x=>x.generationProfile)?.generationProfile||null;studioImageRunSnapshot=lastImageProfile;updateCharacterUI();clips=(data.clips||[]).filter(c=>Number.isFinite(c.start)&&Number.isFinite(c.end)&&c.start>=0&&c.end>c.start&&c.end<=dur+.01).map(c=>({...newClip(),...c}));selectedClip=data.selectedClip||clips[0]?.id;bgmBuffer=null;bgmFile=null;if(bf){bgmFile=bf;await handleBgmUpload(bf);}userSfxList=[];sfxFiles=[];for(const item of data.sfx||[]){const file=isDraft?(item.file||item):await fromDataUrl(item.data,item.name);await handleSfxUpload([file]);const restored=userSfxList.at(-1);if(restored&&item.id)restored.id=item.id;if(restored&&item.keywords)restored.keywords=item.keywords;}renderSfxLibraryUI();if(voiceBuffer&&data.verified){verifiedSyncBuffer=voiceBuffer;verifiedSyncScript=data.script.trim();verifiedSyncPlan=JSON.stringify(getProjectSceneLines());}else{verifiedSyncBuffer=verifiedSyncScript=verifiedSyncPlan=null;}$('bgmVolSlider').value=data.bgmVolume||14;$('bgmOffsetInput').value=data.bgmOffset||0;$('seekSlider').max=dur;currentTime=0;renderStyles();renderMediaGrid();renderScenes();renderClips();if(selectedClip)selectClip(selectedClip);updateScriptStatus();updateTimeUI();renderCurrentFrame();switchTab(4);notify('Proyecto abierto. Revisa la vista previa antes de exportar.');}
   async function loadProject(file){if(!file)return;if(file.size>600*1024*1024)throw new Error('Este proyecto ocupa más de 600 MB. Ábrelo en un navegador con suficiente memoria.');const data=JSON.parse(await file.text());await restore(data);}
   async function restoreDraft(){const d=await recoveryStore('get','faceless-studio-draft');if(!d)throw new Error('No hay un borrador guardado en este navegador.');await restore(d,true);}
