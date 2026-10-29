@@ -1,0 +1,18 @@
+{
+  "format": "video-factory-job/v1",
+  "id": "demo_001",
+  "title": "Qué cambia al ganar más",
+  "language": "es",
+  "niche": "life-ranges",
+  "aspectRatio": "16:9",
+  "scenes": [
+    {
+      "narration": "Nivel uno. Empiezas aquí.",
+      "imagePrompt": "Dibujo de persona mirando monedas."
+    },
+    {
+      "narration": "Nivel dos. Cambia la rutina.",
+      "imagePrompt": "Dibujo de persona frente a nueva casa."
+    }
+  ]
+}
