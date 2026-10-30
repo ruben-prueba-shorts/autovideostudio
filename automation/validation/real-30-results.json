@@ -1,0 +1,922 @@
+{
+  "format": "video-factory-real-smoke-validation/v1",
+  "date": "2026-10-30",
+  "jobId": "football_real_smoke_001",
+  "material": "real",
+  "technicallyComplete": true,
+  "unattendedFactoryComplete": false,
+  "humanListeningApproved": false,
+  "execution": {
+    "sourceBrowser": "authorized Brave with Flow and AI Studio",
+    "editors": "isolated localhost checkouts of AutoVideo PR3 and ClipFarming PR2",
+    "deployed": false,
+    "published": false,
+    "merged": false
+  },
+  "generation": {
+    "voice": "Mako",
+    "model": "gemini-3.8-flash-tts",
+    "narrationRequests": 1,
+    "imageRequests": 0,
+    "retries": 0,
+    "additionalGenerativePreviews": 0,
+    "authorizationRemaining": 0,
+    "incrementalEconomicCostEUR": 0,
+    "basis": [
+      "Official model pricing showed Free Tier input and output free of charge",
+      "UI showed No API key selected",
+      "No billing setup or paid key linkage performed"
+    ],
+    "billingInvoiceAudited": false,
+    "receipt": {
+      "format": "video-factory-generation-attempt/v1",
+      "authorization": "one free narration ~30s, no billing, no paid API keys, no retries",
+      "model": "gemini-3.8-flash-tts",
+      "voice": "Mako",
+      "runClickCount": 1,
+      "status": "downloaded-and-probed",
+      "pricingEvidence": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash-tts",
+      "paidApiKeySelected": false,
+      "providerGenerationStarted": true,
+      "displayedDuration": "0:25",
+      "additionalRunClicks": 0,
+      "zeroCostBasis": "Official model free-tier pricing + UI without selected API key; no billing setup or paid key linked",
+      "actualDurationSeconds": 25.8,
+      "audioSha256": "b045d2aecc27c5200812510e874646451e374d13b1dc6497fe5a2eca41b08414",
+      "audioBytes": 1238444,
+      "codec": "pcm_s16le",
+      "sampleRate": 24000,
+      "channels": 1
+    }
+  },
+  "sourceAudio": {
+    "name": "mako-gemini-3.8.wav",
+    "bytes": 1238444,
+    "sha256": "b045d2aecc27c5200812510e874646451e374d13b1dc6497fe5a2eca41b08414",
+    "codec": "pcm_s16le",
+    "sampleRate": 24000,
+    "channels": 1,
+    "duration": 25.8,
+    "savedProjectBytesIdentical": true,
+    "peakDbFS": -1.708465608994074,
+    "rmsDbFS": -21.257119304474386,
+    "clippedSamples": 0
+  },
+  "images": [
+    {
+      "scene": 1,
+      "sourcePromptId": "102",
+      "width": 1376,
+      "height": 768,
+      "bytes": 799234,
+      "sha256": "63c939cb38caabfae5570d512dd875698f88b9f423163362afeca530201a1605",
+      "savedProjectBytesIdentical": true
+    },
+    {
+      "scene": 2,
+      "sourcePromptId": "110",
+      "width": 1376,
+      "height": 768,
+      "bytes": 618715,
+      "sha256": "246e6095f8ca1f986b596083c26042b666690fefd43efb9182a5ccb8286df527",
+      "savedProjectBytesIdentical": true
+    },
+    {
+      "scene": 3,
+      "sourcePromptId": "97",
+      "width": 1376,
+      "height": 768,
+      "bytes": 827564,
+      "sha256": "2a762deb72f5bc5371344a65452cb89a5594790f549b5500b85df55278985385",
+      "savedProjectBytesIdentical": true
+    }
+  ],
+  "viralDnaBatchExportCertified": false,
+  "alignment": {
+    "source": "actual-local-whisper-base",
+    "words": 67,
+    "recognizedWords": 67,
+    "reconstructedWords": 0,
+    "verifiedFromActualAsr": true,
+    "cues": 25,
+    "sceneOrder": [
+      "102",
+      "110",
+      "97"
+    ],
+    "scenes": [
+      {
+        "start": 0,
+        "end": 7.12,
+        "imageIndex": 0,
+        "timingSource": "recognized"
+      },
+      {
+        "start": 7.12,
+        "end": 16.36,
+        "imageIndex": 1,
+        "timingSource": "recognized"
+      },
+      {
+        "start": 16.36,
+        "end": 25.8,
+        "imageIndex": 2,
+        "timingSource": "recognized"
+      }
+    ]
+  },
+  "persistence": {
+    "savedClosedAndReopenedFreshBrowserContext": true,
+    "imageAudioAndSceneAssociationsPassed": true,
+    "projectBytes": 4660188,
+    "projectSha256": "247c9b1bcb24e4872d66a31ceda794e7469adc8775efa5f2a47280177600d5cf"
+  },
+  "browserRenders": [
+    {
+      "name": "autovideo-browser",
+      "elapsedSeconds": 26.062,
+      "sourceDuration": 25.8,
+      "subtitlesBurned": false
+    },
+    {
+      "name": "autovideo-captioned-browser",
+      "elapsedSeconds": 26.006,
+      "sourceDuration": 25.8,
+      "subtitlesBurned": true
+    }
+  ],
+  "clipRender": {
+    "elapsedSeconds": 25.953
+  },
+  "transition": "cut",
+  "firstFadeExportsPreservedInternally": true,
+  "outputs": {
+    "master-h264.mp4": {
+      "format": "video-factory-finalized-mp4/v1",
+      "source": {
+        "name": "autovideo-browser.mp4",
+        "sha256": "bafe90fec57d801183c77d9d84f637ff774ef1332e23aecb64da5fb6154db1c0"
+      },
+      "output": {
+        "name": "master-h264.mp4",
+        "sha256": "3f120f91af73de024bcf02a68cd30c0e5a952740bc87f12b2019aa1b76e4cd93",
+        "bytes": 10695148
+      },
+      "elapsedSeconds": 8.086,
+      "audit": {
+        "file": "master-h264.mp4",
+        "duration": 25.800146,
+        "expected": 25.8,
+        "video": [
+          {
+            "codec_name": "h264",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "audio": [
+          {
+            "codec_name": "aac",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "checks": {
+          "mp4": true,
+          "h264": true,
+          "yuv420p": true,
+          "aac": true,
+          "duration": true,
+          "durationMatches": true,
+          "faststart": true,
+          "orientation": true,
+          "fullDecode": true
+        },
+        "passed": true
+      }
+    },
+    "video-real-horizontal.mp4": {
+      "format": "video-factory-finalized-mp4/v1",
+      "source": {
+        "name": "autovideo-captioned-browser.mp4",
+        "sha256": "6ab987af8ce74405e63af78a22676d6f42be5d4420fc10ac6346b2f4621b2fb0"
+      },
+      "output": {
+        "name": "video-real-horizontal.mp4",
+        "sha256": "0d09a48696482fd417d1dfb9e550c0be588f86302394d848c3919637e6fef047",
+        "bytes": 11121642
+      },
+      "elapsedSeconds": 7.506,
+      "audit": {
+        "file": "video-real-horizontal.mp4",
+        "duration": 25.819938,
+        "expected": 25.8,
+        "video": [
+          {
+            "codec_name": "h264",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "audio": [
+          {
+            "codec_name": "aac",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "checks": {
+          "mp4": true,
+          "h264": true,
+          "yuv420p": true,
+          "aac": true,
+          "duration": true,
+          "durationMatches": true,
+          "faststart": true,
+          "orientation": true,
+          "fullDecode": true
+        },
+        "passed": true
+      }
+    },
+    "short-real-vertical.mp4": {
+      "format": "video-factory-finalized-mp4/v1",
+      "source": {
+        "name": "short-browser.mp4",
+        "sha256": "1cf0c872e6628ded4fb13923d7c0d7189ee8620470650f985bb0352ee3a55b47"
+      },
+      "output": {
+        "name": "short-real-vertical.mp4",
+        "sha256": "feae1687cf35922eba191d1aaae4c4dddda422508dfb174883bae3c6c3258020",
+        "bytes": 6645558
+      },
+      "elapsedSeconds": 6.793,
+      "audit": {
+        "file": "short-real-vertical.mp4",
+        "duration": 25.746917,
+        "expected": 25.8,
+        "video": [
+          {
+            "codec_name": "h264",
+            "width": 720,
+            "height": 1280,
+            "pix_fmt": "yuv420p",
+            "avg_frame_rate": "30/1"
+          }
+        ],
+        "audio": [
+          {
+            "codec_name": "aac",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "checks": {
+          "mp4": true,
+          "h264": true,
+          "yuv420p": true,
+          "aac": true,
+          "duration": true,
+          "durationMatches": true,
+          "faststart": true,
+          "orientation": true,
+          "fullDecode": true
+        },
+        "passed": true
+      }
+    }
+  },
+  "inspection": {
+    "material": "real",
+    "humanListeningApproved": false,
+    "videos": {
+      "video-real-horizontal.mp4": {
+        "duration": 25.819938,
+        "audio": [
+          {
+            "sourceStart": 0.2,
+            "duration": 4,
+            "lagSeconds": 0.05554166666666667,
+            "streamStartSeconds": 0.067,
+            "correlation": 0.9955399140949509
+          },
+          {
+            "sourceStart": 10.2,
+            "duration": 4,
+            "lagSeconds": 0.05554166666666667,
+            "streamStartSeconds": 0.067,
+            "correlation": 0.9901086114881978
+          },
+          {
+            "sourceStart": 21.2,
+            "duration": 4,
+            "lagSeconds": 0.05554166666666667,
+            "streamStartSeconds": 0.067,
+            "correlation": 0.9938414689970243
+          }
+        ],
+        "imageChecks": [
+          {
+            "scene": 1,
+            "time": 1.7,
+            "expectedPromptId": "102",
+            "matchingImageIndex": 0,
+            "mse": [
+              54.266475677490234,
+              8324.607421875,
+              9106.890625
+            ],
+            "passed": true
+          },
+          {
+            "scene": 2,
+            "time": 8.82,
+            "expectedPromptId": "110",
+            "matchingImageIndex": 1,
+            "mse": [
+              8170.916015625,
+              1348.6793212890625,
+              12042.4072265625
+            ],
+            "passed": true
+          },
+          {
+            "scene": 3,
+            "time": 18.06,
+            "expectedPromptId": "97",
+            "matchingImageIndex": 2,
+            "mse": [
+              9567.58984375,
+              11798.9326171875,
+              3569.01708984375
+            ],
+            "passed": true
+          }
+        ],
+        "subtitleSamples": [
+          {
+            "cue": 1,
+            "time": 0.7300000000000001,
+            "expected": "En la élite,",
+            "ocr": "En la élite,",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 2,
+            "time": 1.6,
+            "expected": "un partido se",
+            "ocr": "un partido.se",
+            "exactNormalizedMatch": false
+          },
+          {
+            "cue": 3,
+            "time": 2.27,
+            "expected": "ve desde todos",
+            "ocr": "ve desde todos",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 4,
+            "time": 2.9699999999999998,
+            "expected": "los rincones del",
+            "ocr": "los rincones del",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 5,
+            "time": 3.59,
+            "expected": "mundo.",
+            "ocr": "mundo.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 6,
+            "time": 4.68,
+            "expected": "Cada jugada llega",
+            "ocr": "Cada jugada llega",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 7,
+            "time": 5.5600000000000005,
+            "expected": "a millones de",
+            "ocr": "a millones.de",
+            "exactNormalizedMatch": false
+          },
+          {
+            "cue": 8,
+            "time": 6.15,
+            "expected": "personas.",
+            "ocr": "personas.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 9,
+            "time": 7.5,
+            "expected": "Pero las cámaras",
+            "ocr": "Pero las camaras",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 10,
+            "time": 8.37,
+            "expected": "no siempre enseñan",
+            "ocr": "o siempre ensena",
+            "exactNormalizedMatch": false
+          },
+          {
+            "cue": 11,
+            "time": 9.309999999999999,
+            "expected": "la recuperación.",
+            "ocr": "la recuperacion.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 12,
+            "time": 10.65,
+            "expected": "Una lesión cambia",
+            "ocr": "Una lesion cambia",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 13,
+            "time": 12.11,
+            "expected": "la rutina: tratamiento,",
+            "ocr": "la rutina: tratamiento,",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 14,
+            "time": 13.79,
+            "expected": "ejercicios y paciencia",
+            "ocr": "ejercicios y paciencia",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 15,
+            "time": 14.899999999999999,
+            "expected": "para volver al",
+            "ocr": "para volver al",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 16,
+            "time": 15.43,
+            "expected": "campo.",
+            "ocr": "campo.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 17,
+            "time": 16.759999999999998,
+            "expected": "Levantar un trofeo",
+            "ocr": "Levantar un: trofeo",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 18,
+            "time": 17.64,
+            "expected": "dura unos segundos.",
+            "ocr": "‘ura unos segundos.",
+            "exactNormalizedMatch": false
+          },
+          {
+            "cue": 19,
+            "time": 18.880000000000003,
+            "expected": "Detrás de esa",
+            "ocr": "Detras de esa",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 20,
+            "time": 19.810000000000002,
+            "expected": "fotografía hay años",
+            "ocr": "fotografia hay anos",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 21,
+            "time": 21.090000000000003,
+            "expected": "de trabajo compartido,",
+            "ocr": "de trabajo compatido,",
+            "exactNormalizedMatch": false
+          },
+          {
+            "cue": 22,
+            "time": 22.79,
+            "expected": "partidos difíciles y",
+            "ocr": "Rartidos difitciles y.",
+            "exactNormalizedMatch": false
+          },
+          {
+            "cue": 23,
+            "time": 23.900000000000002,
+            "expected": "días en los",
+            "ocr": "dias en los",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 24,
+            "time": 24.62,
+            "expected": "que tocó empezar",
+            "ocr": "ue dckogs empeza",
+            "exactNormalizedMatch": false
+          },
+          {
+            "cue": 25,
+            "time": 25.29,
+            "expected": "de nuevo.",
+            "ocr": "de nuevo.",
+            "exactNormalizedMatch": true
+          }
+        ],
+        "passedImageOrder": true,
+        "passedAudioPreservation": true,
+        "subtitleExactOcrMatches": 18
+      },
+      "short-real-vertical.mp4": {
+        "duration": 25.746917,
+        "audio": [
+          {
+            "sourceStart": 0.2,
+            "duration": 4,
+            "lagSeconds": 0.07141666666666667,
+            "streamStartSeconds": 0.067,
+            "correlation": 0.9977951638248249
+          },
+          {
+            "sourceStart": 10.2,
+            "duration": 4,
+            "lagSeconds": 0.07141666666666667,
+            "streamStartSeconds": 0.067,
+            "correlation": 0.9963959836239175
+          },
+          {
+            "sourceStart": 21.2,
+            "duration": 4,
+            "lagSeconds": 0.07141666666666667,
+            "streamStartSeconds": 0.067,
+            "correlation": 0.9975696958898328
+          }
+        ],
+        "imageChecks": [
+          {
+            "scene": 1,
+            "time": 1.7,
+            "expectedPromptId": "102",
+            "matchingImageIndex": 0,
+            "mse": [
+              125.76590728759766,
+              8358.908203125,
+              8987.5361328125
+            ],
+            "passed": true
+          },
+          {
+            "scene": 2,
+            "time": 8.82,
+            "expectedPromptId": "110",
+            "matchingImageIndex": 1,
+            "mse": [
+              8120.37255859375,
+              1312.115234375,
+              11903.9296875
+            ],
+            "passed": true
+          },
+          {
+            "scene": 3,
+            "time": 18.06,
+            "expectedPromptId": "97",
+            "matchingImageIndex": 2,
+            "mse": [
+              9540.255859375,
+              11812.0166015625,
+              3541.4931640625
+            ],
+            "passed": true
+          }
+        ],
+        "subtitleSamples": [
+          {
+            "cue": 1,
+            "time": 0.7300000000000001,
+            "expected": "En la élite,",
+            "ocr": "En la élite,",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 2,
+            "time": 1.6,
+            "expected": "un partido se",
+            "ocr": "un partido se",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 3,
+            "time": 2.27,
+            "expected": "ve desde todos",
+            "ocr": "ve desde todos",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 4,
+            "time": 2.9699999999999998,
+            "expected": "los rincones del",
+            "ocr": "los rincones del",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 5,
+            "time": 3.59,
+            "expected": "mundo.",
+            "ocr": "mundo.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 6,
+            "time": 4.68,
+            "expected": "Cada jugada llega",
+            "ocr": "Cada jugada llega",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 7,
+            "time": 5.5600000000000005,
+            "expected": "a millones de",
+            "ocr": "a millones de",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 8,
+            "time": 6.15,
+            "expected": "personas.",
+            "ocr": "personas.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 9,
+            "time": 7.5,
+            "expected": "Pero las cámaras",
+            "ocr": "Pero las camaras",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 10,
+            "time": 8.37,
+            "expected": "no siempre enseñan",
+            "ocr": "no siempre ensenan",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 11,
+            "time": 9.309999999999999,
+            "expected": "la recuperación.",
+            "ocr": "la recuperacion.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 12,
+            "time": 10.65,
+            "expected": "Una lesión cambia",
+            "ocr": "Una lesion cambia",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 13,
+            "time": 12.11,
+            "expected": "la rutina: tratamiento,",
+            "ocr": "la rutina: tratamiento,",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 14,
+            "time": 13.79,
+            "expected": "ejercicios y paciencia",
+            "ocr": "ejercicios y paciencia",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 15,
+            "time": 14.899999999999999,
+            "expected": "para volver al",
+            "ocr": "para volver al",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 16,
+            "time": 15.43,
+            "expected": "campo.",
+            "ocr": "campo.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 17,
+            "time": 16.759999999999998,
+            "expected": "Levantar un trofeo",
+            "ocr": "Levantar un trofeo",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 18,
+            "time": 17.64,
+            "expected": "dura unos segundos.",
+            "ocr": "dura unos segundos.",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 19,
+            "time": 18.880000000000003,
+            "expected": "Detrás de esa",
+            "ocr": "Detras de esa",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 20,
+            "time": 19.810000000000002,
+            "expected": "fotografía hay años",
+            "ocr": "fotografia hay anos",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 21,
+            "time": 21.090000000000003,
+            "expected": "de trabajo compartido,",
+            "ocr": "de trabajo compartido,",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 22,
+            "time": 22.79,
+            "expected": "partidos difíciles y",
+            "ocr": "partidos dificiles y",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 23,
+            "time": 23.900000000000002,
+            "expected": "días en los",
+            "ocr": "dias en los",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 24,
+            "time": 24.62,
+            "expected": "que tocó empezar",
+            "ocr": "que toco empezar",
+            "exactNormalizedMatch": true
+          },
+          {
+            "cue": 25,
+            "time": 25.29,
+            "expected": "de nuevo.",
+            "ocr": "de nuevo.",
+            "exactNormalizedMatch": true
+          }
+        ],
+        "passedImageOrder": true,
+        "passedAudioPreservation": true,
+        "subtitleExactOcrMatches": 25
+      }
+    },
+    "agentVisualReview": {
+      "horizontalOcrNonMatchesReviewed": [
+        2,
+        7,
+        10,
+        18,
+        21,
+        22,
+        24
+      ],
+      "allSevenTextSamplesVisiblyCorrect": true,
+      "fullHumanListeningApproved": false
+    }
+  },
+  "sceneCutSamples": [
+    {
+      "recognizedSceneStart": 7.12,
+      "firstSampleMatchingNextImage": 7.0200000000000005,
+      "approximateLeadSeconds": 0.09999999999999964,
+      "sampleIntervalSeconds": 0.04,
+      "labels": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "recognizedSceneStart": 16.36,
+      "firstSampleMatchingNextImage": 16.259999999999998,
+      "approximateLeadSeconds": 0.10000000000000142,
+      "sampleIntervalSeconds": 0.04,
+      "labels": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    }
+  ],
+  "network": {
+    "align": {
+      "pageErrors": [],
+      "generationProviderRequests": 0,
+      "publicLocalAsrDependencyGets": 9
+    },
+    "render": {
+      "pageErrors": [],
+      "generationProviderRequests": 0,
+      "publicLocalAsrDependencyGets": 0
+    },
+    "handoff": {
+      "pageErrors": [],
+      "generationProviderRequests": 0,
+      "publicLocalAsrDependencyGets": 0
+    },
+    "clip": {
+      "pageErrors": [],
+      "generationProviderRequests": 0,
+      "publicLocalAsrDependencyGets": 0
+    }
+  },
+  "regressionTests": {
+    "autoVideoNode": {
+      "passed": 6,
+      "failed": 0
+    },
+    "localFactoryPython": {
+      "passed": 4,
+      "failed": 0
+    },
+    "clipFarmingNode": {
+      "passed": 2,
+      "failed": 0
+    },
+    "normalizerExistingOutputRefused": true,
+    "streamingHashNormalizerMatchedPreviousOutput": true
+  },
+  "previousLongTests": {
+    "rerunThisPhase": false,
+    "material": "synthetic",
+    "localFfmpeg18Minutes160Images720p30Passed": true,
+    "real18MinuteNarrationAnd160AlignedScenesTested": false,
+    "longBrowserExportCertified": false
+  },
+  "limitations": [
+    "One generated sample; no voice/model listening comparison or human voice approval",
+    "Viral DNA numbering and retry behavior not certified",
+    "No real English, finance or 18-minute narration tested",
+    "Image matching samples three scenes; OCR samples one frame per cue, not every frame",
+    "Audio correlation samples three four-second windows; not a subjective acoustic-quality judgment",
+    "No YouTube upload or acceptance test",
+    "Personal-browser file transfer is not yet a durable unattended adapter"
+  ]
+}

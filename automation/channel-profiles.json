@@ -1,13 +1,14 @@
 {
   "format": "video-factory-channel-profiles/v1",
   "provider": "google-ai-studio-ui",
-  "model": "gemini-2.5-flash-preview-tts",
+  "model": "gemini-3.8-flash-tts",
   "generationEnabled": false,
-  "acousticValidation": "pending-user-authorized-generation",
+  "generationAuthorization": "The one authorized free Spanish narration was consumed. Further Run/preview requests require new authorization; never retry generation automatically.",
+  "acousticValidation": "One 25.8-second Mako Spanish football sample; 67/67 normalized script words recognized locally. Subjective listening approval and all other profiles remain pending.",
   "channels": {
-    "life-ranges-es": {"language": "es", "voice": "Charon", "direction": "Español de España. Narración documental cercana, ritmo moderado, sin exagerar. Lee exactamente el texto."},
-    "life-ranges-en": {"language": "en", "voice": "Charon", "direction": "Natural documentary narration, conversational and measured. Read the supplied text exactly."},
-    "finance-es": {"language": "es", "voice": "Orus", "direction": "Español de España. Explicación clara y serena, cifras bien articuladas, ritmo moderado. Lee exactamente el texto."},
-    "finance-en": {"language": "en", "voice": "Orus", "direction": "Calm, clear personal-finance explanation. Articulate numbers carefully. Read the supplied text exactly."}
+    "life-ranges-es": {"language": "es", "voice": "Mako", "status": "real-sample-generated-local-asr-passed-listening-approval-pending", "direction": "Español de España. Narración documental natural y expresiva, cercana y clara. Ritmo moderado, pausas breves, sin tono publicitario ni exageración."},
+    "life-ranges-en": {"language": "en", "voice": "Mako", "status": "proposed-not-generated-or-acoustically-tested", "direction": "Natural, expressive documentary narration in clear international English. Conversational and engaging, moderate pace, brief pauses. Avoid a commercial announcer tone. Read the supplied text exactly."},
+    "finance-es": {"language": "es", "voice": "Mako", "status": "proposed-not-generated-or-acoustically-tested", "direction": "Español de España. Explicación serena y cercana de finanzas personales. Energía contenida, cifras y porcentajes bien articulados, ritmo moderado y pausas después de cada idea. Lee exactamente el texto."},
+    "finance-en": {"language": "en", "voice": "Mako", "status": "proposed-not-generated-or-acoustically-tested", "direction": "Calm, approachable personal-finance explanation in clear international English. Restrained energy, careful pronunciation of figures and percentages, moderate pace with pauses after each idea. Read the supplied text exactly."}
   }
 }

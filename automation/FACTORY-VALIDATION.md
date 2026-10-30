@@ -1,6 +1,6 @@
 # Validación de la fábrica — 30 de octubre de 2026
 
-**La integración con material real NO está completada.** No se generó voz ni imagen ni se consumieron cuotas. Los resultados siguientes usan JPEG de prueba y un tono sintético; no certifican narración natural ni alineación acústica. Detalle reproducible en `FACTORY-RUNBOOK.md` y datos en `validation/factory-results.json`.
+**La prueba corta con material real está completada técnicamente**, con una sola narración gratuita Mako/Flash TTS 3.8 y tres imágenes existentes de Flow. Su aprobación subjetiva por escucha sigue pendiente. Resultados separados en `REAL-INTEGRATION.md` y `validation/real-30-results.json`. Las pruebas largas siguientes son **sintéticas, ejecutadas en la fase anterior**: no se repitieron ni se presentan como una narración real de 18 minutos. Detalle reproducible en `FACTORY-RUNBOOK.md` y datos en `validation/factory-results.json`.
 
 ## Render local FFmpeg: pruebas ejecutadas
 
@@ -42,16 +42,16 @@ Exportación de 120 s bajo carga concurrente: **no pasa** el margen de 0,15 s; s
 - Prueba UI del manifiesto: un hash incorrecto deja el lote intacto; el manifiesto correcto se importa, y el ID original del prompt/huella sobreviven guardar y reabrir.
 - En una copia del trabajo de 18 min se corrompió un fragmento, se reparó y se provocó una interrupción después del checkpoint. La reanudación reutilizó los 160 fragmentos sin recodificarlos. La salida completa se decodificó y conservó 1080 s.
 - La comparación SHA-256 del maestro recuperado y el original dio **idénticos**.
-- Las pruebas de los dos editores bloquearon solicitudes externas y no observaron errores JavaScript de página ni peticiones a proveedores de generación.
+- Las pruebas sintéticas anteriores de los dos editores bloquearon solicitudes externas y no observaron errores JavaScript de página ni peticiones a proveedores de generación. En la prueba real nueva se permitieron únicamente descargas GET de las dependencias del reconocimiento local; el montaje y la exportación bloquearon el resto.
 
 ## ClipFarming PR #2
 
-Importación de maestro **H.264/AAC** generado por el render local, con JSON y cuatro cues: pasa en la interfaz real de ClipFarming. Exportación vertical: 720×1280, 30.002133 s, audio presente, en 30.5 s. El exportador estándar produjo VP9/Opus; la copia normalizada con FFmpeg a H.264/AAC y faststart pasa la auditoría (30,075632 s). Es un clip sintético, no el primer Short real solicitado.
+Importación de maestro **H.264/AAC** generado por el render local, con JSON y cuatro cues: pasa en la interfaz real de ClipFarming. Exportación vertical: 720×1280, 30.002133 s, audio presente, en 30.5 s. El exportador estándar produjo VP9/Opus; la copia normalizada con FFmpeg a H.264/AAC y faststart pasa la auditoría (30,075632 s). Este resultado anterior es sintético. La nueva prueba con voz e imágenes reales está documentada por separado en `REAL-INTEGRATION.md`.
 
 ## Límites para producción
 
-- Faltan originales descargados de Viral DNA, su numeración real y el comportamiento de reintentos. Se observaron los prompts originales 102/110/97; no se ha certificado el lote exportado.
-- Flash TTS 2.5 tiene nivel gratuito documentado y Run está habilitado sin clave en la cuenta observada. Falta autorización para una sola generación, disponibilidad efectiva de cuota, escucha, descarga del audio y sincronización real en español; después repetir en inglés. No se vincularán claves pagadas.
+- Se recuperaron y asociaron los tres recursos completos de Flow de los prompts 102/110/97. Sigue pendiente certificar la descarga por lotes de Viral DNA, su numeración y los reintentos; la recuperación individual no demuestra ese flujo.
+- La generación única de Mako/Flash TTS 3.8 y la alineación española de 67 palabras ya pasaron. Falta aprobación subjetiva por escucha, pruebas inglesas/financieras y narración larga. La autorización de generación está agotada; no se harán nuevas solicitudes sin autorización específica.
 - El render local conserva imágenes, voz y bloques de subtítulos; no replica aún música/SFX, transiciones, movimientos de cámara o palabra activa.
 - La carga estable de 160 imágenes y el render local sintético de 18 minutos no demuestran por sí solos una fábrica real desatendida ni una producción larga Full HD/60 fps.
 - La cola parte de medios/alineación ya preparados. Faltan automatización de transferencia desde Google, generación por tramos autorizados, alineación y controles de calidad acústicos, catálogo de ideas, elección editorial de Shorts y servicio local que ejecute el ciclo completo.

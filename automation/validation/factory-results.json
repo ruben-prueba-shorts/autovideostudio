@@ -8,8 +8,8 @@
     "pillow": "12.3.0",
     "notUserPc": true
   },
-  "realIntegrationComplete": false,
-  "generationRequests": 0,
+  "realIntegrationComplete": true,
+  "generationRequests": 1,
   "flowOriginalPromptIdsObserved": [
     "102",
     "110",
@@ -471,5 +471,7 @@
       "fullDecode": true
     },
     "passed": true
-  }
+  },
+  "realIntegrationResult": "real-30-results.json",
+  "humanListeningApproved": false
 }

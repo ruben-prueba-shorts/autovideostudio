@@ -44,15 +44,15 @@ Sin `bindings.json`, se conserva el importador numerado anterior: verifica nombr
 
 ## 2. Voz principal: AI Studio gratuito, sin API pagada
 
-1. Abrir Text-to-speech y seleccionar **Gemini 2.5 Flash Preview TTS** (no inferir que cualquier modelo TTS es gratuito).
-2. Seleccionar voz y dirección constantes según `channel-profiles.json`. Son propuestas aún sin validación acústica: Charon para rangos y Orus para finanzas, con variantes ES/EN.
-3. Pegar el guion exacto. La cuota depende de la cuenta/modelo; Run habilitado sin clave es una observación de interfaz, no garantía de generación disponible.
-4. **Antes de Run o de una previsualización que genere audio**, obtener autorización específica para consumir cuota. Nunca activar facturación ni vincular una clave pagada. Ante error de cuota, detener, conservar trabajo y registrar el motivo.
-5. Descargar el resultado existente mediante su control de descarga y verificar archivo/duración. Ese control y su formato aún no se han observado con una generación real en esta fase; no se inventa que la descarga está resuelta.
+1. Abrir Text-to-speech y comprobar el modelo y la tarifa gratuita actuales. En la prueba real se usó **Gemini 3.8 Flash TTS** (`gemini-3.8-flash-tts`) y **Mako**, disponibles en el selector de esta cuenta.
+2. Mantener la dirección de `channel-profiles.json`. Solo se ha generado una muestra española de fútbol; los otros tres perfiles son propuestas sin prueba acústica. No seleccionar Charon por defecto.
+3. Pegar el guion exacto. Run habilitado sin clave es una observación de interfaz, no garantía de cuota disponible ni de coste por sí sola.
+4. **Antes de Run o de una previsualización que genere audio**, obtener autorización específica para consumir cuota y comprobar la tarifa gratuita. La autorización de esta fase fue **una sola generación gratuita**, ya consumida: no volver a pulsar Run/Preview ni reintentar por un fallo de descarga. Nunca activar facturación ni vincular una clave pagada.
+5. Recuperar el resultado existente y comprobar hash, duración y formato. Esta vez el control Download no produjo un archivo accesible al proceso de montaje. Se recuperaron los bytes del WAV que ya alimentaba el reproductor (`audio.currentSrc`), sin generar otra voz. No se garantiza que todas las versiones de AI Studio mantengan este mecanismo.
 
-Google documenta nivel gratuito para Flash TTS 2.5: https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-preview-tts . Pro TTS y los modelos nuevos tienen condiciones distintas. No se garantiza capacidad gratuita para cuatro canales a escala.
+Google documentó entrada y salida gratuitas para Flash TTS 3.8 en la fecha de prueba: https://ai.google.dev/gemini-api/docs/pricing . Se ejecutó sin clave seleccionada, no se activó facturación ni se vinculó una clave de pago. Resultado real: WAV PCM16 mono de 24 kHz y 25,8 s. Esto acredita la ruta gratuita usada, no una auditoría de la factura ni capacidad gratuita ilimitada para cuatro canales.
 
-Para 18 minutos, preparar tramos de texto razonables (p.ej. 45–90 s), misma voz/dirección y guion sin reformular. Concatenar audio sin volver a sintetizar escenas completadas y alinear después. El troceado, generación, concatenación automática y medición acústica con voces reales siguen pendientes. No se han consumido cuotas para probarlos.
+Para 18 minutos, preparar tramos de texto razonables (p.ej. 45–90 s), misma voz/dirección y guion sin reformular. Concatenar audio sin volver a sintetizar escenas completadas y alinear después. El troceado, generación, concatenación automática y medición acústica con voces reales siguen pendientes. La muestra corta no valida todavía ese proceso por tramos ni una narración larga.
 
 ## 3. AutoVideo y alternativa FFmpeg
 
@@ -130,3 +130,22 @@ CLIPFARMING_DIR=/ruta/clipfarming node tests/offline-handoff-browser.cjs /ruta/r
 ```
 
 Las pruebas de carga usan ruido/etiquetas y un tono, nunca narración real. `SYNTHETIC_RENDER_SECONDS=30` o `120` junto a `HANDOFF_ONLY=1` ejecutan los recorridos sintéticos ampliados de `tests/browser.cjs`; requieren también FFprobe. Los navegadores aislados bloquean solicitudes externas. Las cifras medidas pertenecen al entorno de pruebas, no al PC del usuario.
+
+## Recorrido real reproducible con los mismos archivos (sin generar)
+
+La prueba optativa vive en `tests/real-integration-browser.cjs`; no forma parte de `npm test`, no pulsa Run y no contiene claves ni archivos personales. Necesita una carpeta con `numbered/0001.jpg`, `0002.jpg`, `0003.jpg`, `bindings.json` dentro de `numbered/`, y `mako-gemini-3.8.wav` junto a la carpeta. El encargo es `automation/real-smoke-job.json`. Ver detalles y límites en `REAL-INTEGRATION.md`.
+
+```sh
+node tests/real-integration-browser.cjs align /ruta/prueba-real
+node tests/real-integration-browser.cjs render /ruta/prueba-real
+node tools/finalize-mp4.cjs /ruta/prueba-real/autovideo-browser.mp4 /ruta/prueba-real/master-h264.mp4 25.8 horizontal
+node tools/finalize-mp4.cjs /ruta/prueba-real/autovideo-captioned-browser.mp4 /ruta/prueba-real/video-real-horizontal.mp4 25.8 horizontal
+node tests/real-integration-browser.cjs handoff /ruta/prueba-real
+node tests/real-integration-browser.cjs clip /ruta/prueba-real
+```
+
+Normalizar el Short con su duración real (el límite de corte está en `clip-settings.json`), después ejecutar `python3 tests/inspect-real.py /ruta/prueba-real`. Dependencias opcionales: `requirements-inspection.txt`, FFmpeg, FFprobe y Tesseract con inglés. La inspección compara la voz en tres ventanas, clasifica las tres imágenes y muestrea un fotograma por cue. El OCR puede fallar sobre dibujos detallados: conservar los resultados y revisar visualmente sus discrepancias. La correlación suma el inicio de la pista de audio al desfase de muestras; omitirlo daría una medida incorrecta de sincronía absoluta.
+
+`finalize-mp4.cjs` produce H.264/yuv420p, AAC a 48 kHz, 30 fps y faststart, preserva el original, rechaza sobrescrituras y publica la copia solo después de la auditoría. Deja un recibo `.audit.json` con huellas y medidas. No arregla un montaje desincronizado ni sustituye la revisión editorial; no usar su normalización para ocultar un fallo de duración. Se debe preparar el JSON de entrega **después** de normalizar el maestro.
+
+En el entorno de pruebas, Chromium no descargaba directamente las dependencias ASR. `tools/cache-public-model.py` usa GET HTTPS normal a los CDN/modelos públicos aprobados y conserva una caché local; no envía el audio, no consulta una API de inferencia y no altera TLS. El resto de solicitudes externas se bloquean en el navegador aislado. El helper limita descargas y sigue redirecciones solo a los mismos dominios de modelos/CDN aprobados.
