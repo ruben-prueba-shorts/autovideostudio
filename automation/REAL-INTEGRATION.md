@@ -1,5 +1,7 @@
 # Integración real — estado del 30 de octubre de 2026
 
+Consulta también `FACTORY-RUNBOOK.md` y `FACTORY-VALIDATION.md` para el render local, la cola y las pruebas sintéticas de capacidad. Estas pruebas no sustituyen los cinco pasos con material real.
+
 Los PR AutoVideo #3 y ClipFarming #2 siguen en borrador. No se fusionan ni despliegan. No se generan imágenes ni voces sin autorización de gasto.
 
 ## Observaciones reales
@@ -7,17 +9,17 @@ Los PR AutoVideo #3 y ClipFarming #2 siguen en borrador. No se fusionan ni despl
 - Brave está conectado. El proyecto abierto de Flow contiene imágenes de fútbol ya generadas; se observó el prompt completo de una de ellas. No se pulsó generación.
 - El menú de descarga de Flow distingue **1K Tamaño original** de **2K Resolución mejorada**. Solo se seleccionó el original. El evento de descarga no se recibió en 20 segundos; no se certifica el nombre final ni el archivo original descargado. No se solicitó mejora de resolución.
 - Se pudieron empaquetar tres imágenes WebP observadas en la página mediante la herramienta del navegador. Son recursos de vista previa `s1600-rw`, no una exportación original certificada. Están en el entorno del navegador, no en el checkout de pruebas. No se importaron en AutoVideo ni se subieron al repositorio.
-- AI Studio está abierto y autenticado. La vista **History / My files** no mostró filas y ofreció acceso a Drive. Esto no demuestra que no existan audios descargados en el equipo. No se amplió acceso a Drive y no se generó ninguna voz. Después se preparó el texto de tres escenas en un diálogo nuevo, voz predeterminada Fola. El modelo seleccionado, Gemini 3.8 Flash TTS, muestra `No API key selected`; al abrir el selector exige vincular una clave API de pago. No se vinculó ninguna clave ni se pulsó Run. El borrador queda abierto para continuar.
+- AI Studio está autenticado. La vista History / My files no mostró archivos reutilizables; no se inspeccionaron carpetas personales ni se amplió acceso a Drive. Se seleccionó **Gemini 2.5 Flash Preview TTS**, disponible en el selector y con nivel gratuito en la documentación oficial. **Run queda habilitado sin clave seleccionada**. Abrir el selector de claves ofrece vincular una API pagada, pero eso no demuestra que sea obligatoria para ejecutar la interfaz gratuita. Se corrige así la conclusión demasiado amplia de la fase anterior. No se pulsó Run ni Preview, por lo que la cuota disponible de esta cuenta y la descarga del audio siguen sin probarse. El borrador con voz Charon, dirección en español y tres escenas queda preparado; falta autorización para una única generación gratuita, sin reintentos ni facturación.
 - En la captura de Viral DNA proporcionada el 29 de octubre se ve **Numerado**, inicio **1**, carpeta nueva por ejecución y ejemplo `0001.mp4` (es una previsualización, no prueba del sufijo de imagen). La opción **Descargar lo generado** indica desplazar la galería hasta el final para descargar desde lo más antiguo. Hay reintentos al final. Falta comprobar el lote real, extensión, relación con prompts, selección de elementos anteriores y numeración de reintentos. El panel de la extensión no aparece en las pestañas controlables actuales.
 
 **No dar por validada la numeración de Viral DNA con estas observaciones.** Una carpeta nueva evita mezclar archivos locales, pero no garantiza que la galería descargada sea exclusivamente el encargo. Tampoco se pueden recuperar números de prompt desde imágenes renumeradas solo por orden cronológico.
 
-El ejemplo `real-smoke-job.json` y su narración son material preparado para la prueba, aún sin generar. Sus prompts son ilustrativos: no se presentan como los prompts originales de las imágenes existentes. Antes de reutilizar estas últimas hay que curar la correspondencia y registrar sus prompts originales.
+El ejemplo `real-smoke-job.json` conserva ahora **tres prompts originales observados en Flow**, con IDs de origen 102, 110 y 97, en ese orden para una narración nueva. La imagen del Mundial corresponde a la escena 1; la de fisioterapia, a la 2; la del trofeo, a la 3. La numeración del archivo de este nuevo encargo debe ser 0001/0002/0003, sin perder los IDs originales en `bindings.json`. El texto nuevo tiene 67 palabras y dura aproximadamente 30 segundos a ritmo moderado, pero aún no se ha generado ni medido el audio. Falta recuperar los originales y comprobar visualmente que son los archivos elegidos.
 
 ## Cinco pasos solicitados
 
-1. Exportación/numérico de Viral DNA: configuración observada en captura; lote real pendiente.
-2. Narración AI Studio: archivo real pendiente. Reutilizar uno ya generado o autorizar una sola generación del texto del ejemplo; la configuración actual requiere además una clave API de pago disponible.
+1. Exportación/numérico de Viral DNA: configuración observada en captura y tres prompts originales identificados; lote real pendiente.
+2. Narración AI Studio: archivo real pendiente. Se ha preparado Flash TTS 2.5 con Run habilitado sin clave. Hace falta autorizar una sola generación de cuota gratuita o aportar un audio ya generado con su guion exacto. No se vincularán claves pagadas ni se activará facturación.
 3. Importación y sincronización: pendiente de ambos archivos reales y su guion exacto. No usar `verified:true` ni tiempos inventados para esta validación. Ejecutar sincronización local, revisar transcripción y medir inicio/fin de cada frase contra el audio.
 4. MP4 real: pendiente. Se añadió y ejecutó un auditor offline sobre el vídeo sintético anterior y una copia recodificada; esto no sustituye una exportación con material real.
 5. Clip vertical real: pendiente. El recorrido sintético entre editores aprobado en la fase anterior sigue siendo la referencia; no se repitió ni se presenta como prueba real.

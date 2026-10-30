@@ -2,7 +2,9 @@
 const fs=require('node:fs/promises'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict'),zlib=require('node:zlib');
 const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'..'),clipRoot=process.env.CLIPFARMING_DIR&&path.resolve(process.env.CLIPFARMING_DIR);
-const out=path.join(root,'.test-artifacts');
+const renderSeconds=Number(process.env.SYNTHETIC_RENDER_SECONDS||0);
+if(!Number.isFinite(renderSeconds)||renderSeconds<0||renderSeconds>1200)throw Error('Invalid synthetic test duration');
+const out=path.join(root,'.test-artifacts',renderSeconds?'browser-render-'+renderSeconds:'');
 const example=require('../automation/example-job.json');
 function png(color){
   function crc(b){let c=-1;for(const v of b){c^=v;for(let i=0;i<8;i++)c=(c>>>1)^((c&1)?0xedb88320:0);}return (c^-1)>>>0;}
@@ -29,6 +31,19 @@ async function main(){
       assert.deepEqual(await p.evaluate(()=>[VideoFactoryImport.getJob().niche,VideoFactoryImport.getJob().language,document.getElementById('syncEngine').value,document.getElementById('voiceEngine').value]),[niche,language,'local','upload']);await p.close();
     }
     console.log('PASS: UI imports all four channel profiles without provider calls.');
+    // A curated batch binds image bytes, prompt and narration, preserving its
+    // original Flow prompt ID independently of the new scene number.
+    p=await pageAt();const boundJob={...example,id:'bound_scene_001',scenes:[{narration:'Known synthetic narration.',imagePrompt:'102- Known synthetic red image.'}]};await uploadJob(p,boundJob);
+    const hash=b=>require('node:crypto').createHash('sha256').update(b).digest('hex');
+    const bindings={format:'video-factory-bindings/v1',jobId:boundJob.id,scenes:[{sceneIndex:1,promptSha256:hash(boundJob.scenes[0].imagePrompt),narrationSha256:hash(boundJob.scenes[0].narration),sourcePromptId:'102',image:{name:'0001.png',sha256:hash(await fs.readFile(images[0]))}}]};
+    const wrongBinding=structuredClone(bindings);wrongBinding.scenes[0].image.sha256='0'.repeat(64);
+    await p.locator('#factoryImagesPicker').setInputFiles([{name:'0001.png',mimeType:'image/png',buffer:await fs.readFile(images[0])},{name:'bindings.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(wrongBinding))}]);
+    await p.waitForFunction(()=>document.getElementById('studioToast').textContent.includes('no coinciden'));assert.equal(await p.evaluate(()=>Studio._test.snapshot().images.length),0);await p.waitForFunction(()=>!Studio.projectInfo().busy);
+    await p.locator('#factoryImagesPicker').setInputFiles([{name:'0001.png',mimeType:'image/png',buffer:await fs.readFile(images[0])},{name:'bindings.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(bindings))}]);
+    await p.waitForFunction(()=>Studio._test.snapshot().images.length===1);await p.waitForFunction(()=>!Studio.projectInfo().busy);await p.evaluate(()=>autoSyncProject(false));
+    const bound=await save(p,'bound.avfproject');await p.close();p=await pageAt();await p.locator('#projectInput').setInputFiles(bound);await p.waitForFunction(()=>Studio._test.snapshot().images.length===1);
+    assert.equal(await p.evaluate(()=>Studio._test.snapshot().images[0].sourcePromptId),'102');assert.match(await p.evaluate(()=>Studio._test.snapshot().images[0].bindingSha256),/^[a-f0-9]{64}$/);await p.close();
+    console.log('PASS: binding mismatch rejected atomically and verified source prompt ID survives save/reopen.');
     p=await pageAt();const job={...example,id:'ordered_012',scenes:Array.from({length:12},(_,i)=>({narration:'Scene '+(i+1)+'. More words.',imagePrompt:'Prompt '+(i+1)}))};await uploadJob(p,job);
     await p.locator('#nav3').click();const promptsDone=p.waitForEvent('download');await p.locator('#factoryFlowPromptsBtn').click();const promptDownload=await promptsDone;const prompts=await fs.readFile(await promptDownload.path(),'utf8');assert.deepEqual(prompts.split('\n'),job.scenes.map(s=>s.imagePrompt));
     // Missing batch must leave the state untouched.
@@ -68,6 +83,7 @@ async function main(){
       // Completed test project with a synthetic tone and known scene times.
       // This tests media transport/rendering, not speech recognition or real narration alignment.
       const completed=await p.evaluate(()=>Studio._test.snapshot());
+      if(renderSeconds){const scale=renderSeconds/completed.duration;completed.scenes.forEach(s=>{s.start*=scale;s.end*=scale;for(const w of s.wordTimings||[]){w.start*=scale;w.end*=scale;}});completed.duration=renderSeconds;}
       const frames=Math.round(completed.duration*24000),wav=Buffer.alloc(44+frames*2);
       wav.write('RIFF');wav.writeUInt32LE(36+frames*2,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(24000,24);wav.writeUInt32LE(48000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(frames*2,40);
       for(let i=0;i<frames;i++)wav.writeInt16LE(Math.round(2500*Math.sin(2*Math.PI*440*i/24000)),44+i*2);
@@ -76,7 +92,8 @@ async function main(){
       await p.waitForFunction(()=>Studio._test.snapshot().verified===true);
       // Use the app's real MediaRecorder path; no CDN codec/model downloads.
       await p.locator('#exportMode').selectOption('realtime');await p.locator('#exportResolution').selectOption('720');await p.locator('#streamExport').uncheck();await p.locator('#subFontSelect').selectOption('segoe');await p.locator('#subsSelect').selectOption('none');
-      const done=p.waitForEvent('download',{timeout:60000});await p.evaluate(()=>exportVideoYouTubeMaster());const d=await done,master=path.join(out,d.suggestedFilename());await d.saveAs(master);assert.ok((await fs.stat(master)).size>1000);
+      const renderStarted=Date.now(),done=p.waitForEvent('download',{timeout:Math.max(60000,completed.duration*1500+60000)});await p.evaluate(()=>exportVideoYouTubeMaster());const d=await done,master=path.join(out,d.suggestedFilename());await d.saveAs(master);assert.ok((await fs.stat(master)).size>1000);
+      if(renderSeconds){const info=JSON.parse(require('node:child_process').execFileSync('ffprobe',['-v','error','-show_format','-show_streams','-of','json',master],{encoding:'utf8'})),passed=Math.abs(Number(info.format.duration)-renderSeconds)<.15;await fs.writeFile(path.join(out,'render-result.json'),JSON.stringify({material:'synthetic',duration:renderSeconds,passed,elapsedSeconds:(Date.now()-renderStarted)/1000,probe:info},null,2));assert.ok(passed,'Browser export exceeds the .15 s duration tolerance');}
       const packageDone=p.waitForEvent('download');await p.locator('#factoryMasterPicker').setInputFiles(master);const pd=await packageDone,packagePath=path.join(out,pd.suggestedFilename());await pd.saveAs(packagePath);
       const handoff=JSON.parse(await fs.readFile(packagePath,'utf8'));assert.ok(handoff.cues.length>0);assert.equal(handoff.jobId,example.id);
       console.log('PASS: real AutoVideo MP4 render and handoff JSON generation.');

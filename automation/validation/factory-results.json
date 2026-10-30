@@ -1,0 +1,475 @@
+{
+  "format": "video-factory-validation/v1",
+  "date": "2026-10-30",
+  "environment": {
+    "chromium": "153.0.8010.0",
+    "playwright": "1.62.1",
+    "ffmpeg": "6.1.1",
+    "pillow": "12.3.0",
+    "notUserPc": true
+  },
+  "realIntegrationComplete": false,
+  "generationRequests": 0,
+  "flowOriginalPromptIdsObserved": [
+    "102",
+    "110",
+    "97"
+  ],
+  "browserCapacity": [
+    {
+      "material": "synthetic",
+      "duration": 120,
+      "count": 18,
+      "passed": true,
+      "elapsedSeconds": 1.957,
+      "projectBytes": null,
+      "peakJsHeapBytes": 43251636,
+      "peakBrowserRssBytes": null,
+      "memoryCaveat": "JS heap excludes native decoded images; RSS is null when process namespaces cannot be matched. No narration alignment or full-duration browser export was tested."
+    },
+    {
+      "material": "synthetic",
+      "duration": 300,
+      "count": 44,
+      "passed": true,
+      "elapsedSeconds": 4.767,
+      "projectBytes": null,
+      "peakJsHeapBytes": 149569584,
+      "peakBrowserRssBytes": null,
+      "memoryCaveat": "JS heap excludes native decoded images; RSS is null when process namespaces cannot be matched. No narration alignment or full-duration browser export was tested."
+    },
+    {
+      "material": "synthetic",
+      "duration": 600,
+      "count": 89,
+      "passed": true,
+      "elapsedSeconds": 9.696,
+      "projectBytes": null,
+      "peakJsHeapBytes": 204335008,
+      "peakBrowserRssBytes": null,
+      "memoryCaveat": "JS heap excludes native decoded images; RSS is null when process namespaces cannot be matched. No narration alignment or full-duration browser export was tested."
+    },
+    {
+      "material": "synthetic",
+      "duration": 1080,
+      "count": 160,
+      "passed": true,
+      "elapsedSeconds": 38.188,
+      "projectBytes": 177561863,
+      "peakJsHeapBytes": 537140556,
+      "peakBrowserRssBytes": null,
+      "memoryCaveat": "JS heap excludes native decoded images; RSS is null when process namespaces cannot be matched. No narration alignment or full-duration browser export was tested."
+    }
+  ],
+  "localRenders": [
+    {
+      "actualDuration": 120.0,
+      "completed": true,
+      "duration": 120.0,
+      "elapsedSeconds": 72.834,
+      "fps": 30,
+      "height": 720,
+      "material": "synthetic",
+      "memorySource": "ffmpeg -benchmark (per-process maximum RSS)",
+      "outputBytes": 10623448,
+      "passed": true,
+      "peakFfmpegRssBytes": 146137088,
+      "renderedSegments": 18,
+      "reusedSegments": 0,
+      "scenes": 18,
+      "totalValidationSeconds": 75.868,
+      "audit": {
+        "audio": [
+          {
+            "channels": 1,
+            "codec_name": "aac",
+            "sample_rate": "48000"
+          }
+        ],
+        "checks": {
+          "aac": true,
+          "duration": true,
+          "durationMatches": true,
+          "faststart": true,
+          "fullDecode": true,
+          "h264": true,
+          "mp4": true,
+          "orientation": true,
+          "yuv420p": true
+        },
+        "duration": 120,
+        "expected": 120,
+        "passed": true,
+        "video": [
+          {
+            "avg_frame_rate": "30/1",
+            "codec_name": "h264",
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "width": 1280
+          }
+        ]
+      },
+      "sha256": "f8331e1b6236af6b8d3205692e6e3d2037b5f0aada5b4add60e081a6b964410f"
+    },
+    {
+      "actualDuration": 300.0,
+      "completed": true,
+      "duration": 300.0,
+      "elapsedSeconds": 169.576,
+      "fps": 30,
+      "height": 720,
+      "material": "synthetic",
+      "memorySource": "ffmpeg -benchmark (per-process maximum RSS)",
+      "outputBytes": 26120320,
+      "passed": true,
+      "peakFfmpegRssBytes": 146395136,
+      "renderedSegments": 44,
+      "reusedSegments": 0,
+      "scenes": 44,
+      "totalValidationSeconds": 177.131,
+      "audit": {
+        "audio": [
+          {
+            "channels": 1,
+            "codec_name": "aac",
+            "sample_rate": "48000"
+          }
+        ],
+        "checks": {
+          "aac": true,
+          "duration": true,
+          "durationMatches": true,
+          "faststart": true,
+          "fullDecode": true,
+          "h264": true,
+          "mp4": true,
+          "orientation": true,
+          "yuv420p": true
+        },
+        "duration": 300,
+        "expected": 300,
+        "passed": true,
+        "video": [
+          {
+            "avg_frame_rate": "30/1",
+            "codec_name": "h264",
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "width": 1280
+          }
+        ]
+      },
+      "sha256": "17ec98e76b28715306abc11a1466d4277d99e933ab50aaba4b2fb923ca7951e3"
+    },
+    {
+      "actualDuration": 600.0,
+      "completed": true,
+      "duration": 600.0,
+      "elapsedSeconds": 340.744,
+      "fps": 30,
+      "height": 720,
+      "material": "synthetic",
+      "memorySource": "ffmpeg -benchmark (per-process maximum RSS)",
+      "outputBytes": 52785431,
+      "passed": true,
+      "peakFfmpegRssBytes": 146436096,
+      "renderedSegments": 89,
+      "reusedSegments": 0,
+      "scenes": 89,
+      "totalValidationSeconds": 353.524,
+      "audit": {
+        "audio": [
+          {
+            "channels": 1,
+            "codec_name": "aac",
+            "sample_rate": "48000"
+          }
+        ],
+        "checks": {
+          "aac": true,
+          "duration": true,
+          "durationMatches": true,
+          "faststart": true,
+          "fullDecode": true,
+          "h264": true,
+          "mp4": true,
+          "orientation": true,
+          "yuv420p": true
+        },
+        "duration": 600,
+        "expected": 600,
+        "passed": true,
+        "video": [
+          {
+            "avg_frame_rate": "30/1",
+            "codec_name": "h264",
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "width": 1280
+          }
+        ]
+      },
+      "sha256": "597f5a37e487418438e0fc058dce254cc680357982544ac6b55f5a9bee90748e"
+    },
+    {
+      "actualDuration": 1080.0,
+      "completed": true,
+      "duration": 1080.0,
+      "elapsedSeconds": 610.948,
+      "fps": 30,
+      "height": 720,
+      "material": "synthetic",
+      "memorySource": "ffmpeg -benchmark (per-process maximum RSS)",
+      "outputBytes": 94961019,
+      "passed": true,
+      "peakFfmpegRssBytes": 149417984,
+      "renderedSegments": 160,
+      "reusedSegments": 0,
+      "scenes": 160,
+      "totalValidationSeconds": 632.548,
+      "audit": {
+        "audio": [
+          {
+            "channels": 1,
+            "codec_name": "aac",
+            "sample_rate": "48000"
+          }
+        ],
+        "checks": {
+          "aac": true,
+          "duration": true,
+          "durationMatches": true,
+          "faststart": true,
+          "fullDecode": true,
+          "h264": true,
+          "mp4": true,
+          "orientation": true,
+          "yuv420p": true
+        },
+        "duration": 1080,
+        "expected": 1080,
+        "passed": true,
+        "video": [
+          {
+            "avg_frame_rate": "30/1",
+            "codec_name": "h264",
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "width": 1280
+          }
+        ]
+      },
+      "sha256": "bd2e7aebaf9db8a4fe6431beb37adec70f79002ee8b7acc65d450d7e1f42a6c2"
+    }
+  ],
+  "decodedFrameChecks": [
+    {
+      "duration": 120.0,
+      "scenesCheckedInOrder": 18,
+      "maxColorError": 2,
+      "subtitleWhitePixels": 1689,
+      "audio": [
+        {
+          "position": 1,
+          "rms": 0.0883,
+          "frequency": 438.0
+        },
+        {
+          "position": 119.0,
+          "rms": 0.0884,
+          "frequency": 438.0
+        }
+      ],
+      "passed": true
+    },
+    {
+      "duration": 300.0,
+      "scenesCheckedInOrder": 44,
+      "maxColorError": 2,
+      "subtitleWhitePixels": 1689,
+      "audio": [
+        {
+          "position": 1,
+          "rms": 0.0883,
+          "frequency": 438.0
+        },
+        {
+          "position": 299.0,
+          "rms": 0.0884,
+          "frequency": 438.0
+        }
+      ],
+      "passed": true
+    },
+    {
+      "duration": 600.0,
+      "scenesCheckedInOrder": 89,
+      "maxColorError": 2,
+      "subtitleWhitePixels": 1689,
+      "audio": [
+        {
+          "position": 1,
+          "rms": 0.0883,
+          "frequency": 438.0
+        },
+        {
+          "position": 599.0,
+          "rms": 0.0883,
+          "frequency": 438.0
+        }
+      ],
+      "passed": true
+    },
+    {
+      "duration": 1080.0,
+      "scenesCheckedInOrder": 160,
+      "maxColorError": 2,
+      "subtitleWhitePixels": 1689,
+      "audio": [
+        {
+          "position": 1,
+          "rms": 0.0883,
+          "frequency": 438.0
+        },
+        {
+          "position": 1079.0,
+          "rms": 0.0884,
+          "frequency": 438.0
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "fullHd60Short": {
+    "material": "synthetic",
+    "scenes": 4,
+    "duration": 30.0,
+    "peakFfmpegRssBytes": 265637888,
+    "memorySource": "ffmpeg -benchmark (per-process maximum RSS)",
+    "reusedSegments": 0,
+    "renderedSegments": 4,
+    "fps": 60,
+    "height": 1080,
+    "elapsedSeconds": 39.008,
+    "outputBytes": 6579983,
+    "actualDuration": 30.0,
+    "completed": true,
+    "audit": {
+      "duration": 30,
+      "expected": 30,
+      "video": [
+        {
+          "codec_name": "h264",
+          "width": 1920,
+          "height": 1080,
+          "pix_fmt": "yuv420p",
+          "avg_frame_rate": "60/1"
+        }
+      ],
+      "audio": [
+        {
+          "codec_name": "aac",
+          "sample_rate": "48000",
+          "channels": 1
+        }
+      ],
+      "checks": {
+        "mp4": true,
+        "h264": true,
+        "yuv420p": true,
+        "aac": true,
+        "duration": true,
+        "durationMatches": true,
+        "faststart": true,
+        "orientation": true,
+        "fullDecode": true
+      },
+      "passed": true
+    }
+  },
+  "recovery": {
+    "actualDuration": 1080.0,
+    "completed": true,
+    "controlledCorruptionRepaired": true,
+    "duration": 1080.0,
+    "elapsedSeconds": 86.96,
+    "fps": 30,
+    "height": 720,
+    "interruptedAfterCheckpoint": true,
+    "material": "synthetic",
+    "memorySource": "ffmpeg -benchmark (per-process maximum RSS)",
+    "outputBytes": 94961019,
+    "passed": true,
+    "peakFfmpegRssBytes": 60444672,
+    "renderedSegments": 0,
+    "reusedSegments": 160,
+    "scenes": 160,
+    "matchesOriginalSha256": true
+  },
+  "browserExports": [
+    {
+      "durationTarget": 30,
+      "actualDuration": 29.977333,
+      "elapsedSeconds": 30.248,
+      "passedDuration": true,
+      "codecs": [
+        "vp9",
+        "opus"
+      ]
+    },
+    {
+      "durationTarget": 120,
+      "actualDuration": 120.163833,
+      "passedDuration": false,
+      "codecs": [
+        "vp9",
+        "opus"
+      ],
+      "note": "Observed under concurrent load. .15 s tolerance retained; no full 18-minute browser render certified."
+    }
+  ],
+  "clipFarmingH264Input": {
+    "material": "synthetic",
+    "passed": true,
+    "elapsedSeconds": 30.486,
+    "duration": 30.002133,
+    "videoCodec": "vp9",
+    "audioCodec": "opus",
+    "width": 720,
+    "height": 1280,
+    "cues": 4
+  },
+  "normalizedVerticalShort": {
+    "duration": 30.075632,
+    "expected": 30,
+    "video": [
+      {
+        "codec_name": "h264",
+        "width": 720,
+        "height": 1280,
+        "pix_fmt": "yuv420p",
+        "avg_frame_rate": "126600/8959"
+      }
+    ],
+    "audio": [
+      {
+        "codec_name": "aac",
+        "sample_rate": "48000",
+        "channels": 2
+      }
+    ],
+    "checks": {
+      "mp4": true,
+      "h264": true,
+      "yuv420p": true,
+      "aac": true,
+      "duration": true,
+      "durationMatches": true,
+      "faststart": true,
+      "orientation": true,
+      "fullDecode": true
+    },
+    "passed": true
+  }
+}

@@ -27,7 +27,7 @@
         a.href=url;a.download=job.id+'_flow.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
       } catch(e) {alert(e.message);}
     });
-    const images=picker('factoryImagesPicker','.png,.jpg,.jpeg,.webp,.gif',true,files=>Studio.importImages(files,true));
+    const images=picker('factoryImagesPicker','.png,.jpg,.jpeg,.webp,.gif,.json',true,files=>Studio.importImages(files,true));
     button('factoryImagesBtn','Importar imágenes Flow',()=>{try{requireJob();images.click();}catch(e){alert(e.message);}});
     const folder=picker('factoryFolderPicker','',true,files=>Studio.importImages(files,true));folder.setAttribute('webkitdirectory','');
     button('factoryFolderBtn','Carpeta de Flow',()=>{try{requireJob();folder.click();}catch(e){alert(e.message);}});
@@ -35,7 +35,7 @@
     const handoff=button('factoryHandoffBtn','Preparar para ClipFarming',()=>master.click());
     const delivery=document.createElement('div');delivery.className='card';delivery.appendChild(handoff);document.getElementById('tab5')?.appendChild(delivery);
     const note=document.createElement('p');note.className='style-hint';note.id='factoryFlowHelp';
-    note.textContent='Flow: un prompt por línea, cantidad x1 y archivos numerados desde 1. Importa un único lote completo. Para ClipFarming, selecciona el vídeo completo ya exportado.';
+    note.textContent='Flow: un prompt por línea, cantidad x1 y archivos numerados desde 1. Importa un único lote completo. Si incluyes bindings.json, se comprobarán las huellas de imágenes, prompts y narraciones. Para ClipFarming, selecciona el vídeo completo ya exportado.';
     panel.appendChild(note);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

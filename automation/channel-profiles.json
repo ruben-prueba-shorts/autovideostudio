@@ -1,0 +1,13 @@
+{
+  "format": "video-factory-channel-profiles/v1",
+  "provider": "google-ai-studio-ui",
+  "model": "gemini-2.5-flash-preview-tts",
+  "generationEnabled": false,
+  "acousticValidation": "pending-user-authorized-generation",
+  "channels": {
+    "life-ranges-es": {"language": "es", "voice": "Charon", "direction": "Español de España. Narración documental cercana, ritmo moderado, sin exagerar. Lee exactamente el texto."},
+    "life-ranges-en": {"language": "en", "voice": "Charon", "direction": "Natural documentary narration, conversational and measured. Read the supplied text exactly."},
+    "finance-es": {"language": "es", "voice": "Orus", "direction": "Español de España. Explicación clara y serena, cifras bien articuladas, ritmo moderado. Lee exactamente el texto."},
+    "finance-en": {"language": "en", "voice": "Orus", "direction": "Calm, clear personal-finance explanation. Articulate numbers carefully. Read the supplied text exactly."}
+  }
+}

@@ -1,0 +1,2 @@
+# Only synthetic image fixtures and decoded-frame checks use Pillow.
+Pillow==12.3.0

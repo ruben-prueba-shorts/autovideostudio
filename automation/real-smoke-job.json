@@ -1,13 +1,22 @@
 {
-  "format":"video-factory-job/v1",
-  "id":"football_real_smoke_001",
-  "title":"Prueba real de integración — fútbol",
-  "language":"es",
-  "niche":"life-ranges",
-  "aspectRatio":"16:9",
-  "scenes":[
-    {"narration":"Empiezas en un campo de barrio. No hay cámaras ni grandes contratos: solo entrenamientos, partidos y ganas de seguir jugando.","imagePrompt":"Stickman footballer training on a small neighbourhood pitch, flat 2D cartoon, 16:9."},
-    {"narration":"Cuando subes de nivel, también cambia la presión. Una lesión puede frenarte y cada oportunidad exige estar preparado.","imagePrompt":"Doctor examining an injured stickman footballer, flat 2D cartoon, 16:9."},
-    {"narration":"Llegar a levantar un trofeo es la parte que todos ven. Detrás quedan años de trabajo que nunca salen en la fotografía.","imagePrompt":"Stickman footballer lifting a league trophy, flat 2D cartoon, 16:9."}
+  "format": "video-factory-job/v1",
+  "id": "football_real_smoke_001",
+  "title": "Prueba real de integración — fútbol",
+  "language": "es",
+  "niche": "life-ranges",
+  "aspectRatio": "16:9",
+  "scenes": [
+    {
+      "narration": "En la élite, un partido se ve desde todos los rincones del mundo. Cada jugada llega a millones de personas.",
+      "imagePrompt": "102- Flat 2D cartoon, thick black outlines, simple stickman style, vibrant colors, clean cel shading, 16:9. [the protagonist: stickman with a big round white head, small black dot eyes, thick black eyebrows, thin line mouth, no nose, white stick body with thick black outlines, dark navy football jersey with gold trim and white number 9, white shorts, white socks, black football boots] on a World Cup pitch while a wall of TVs shows commentators in different countries"
+    },
+    {
+      "narration": "Pero las cámaras no siempre enseñan la recuperación. Una lesión cambia la rutina: tratamiento, ejercicios y paciencia para volver al campo.",
+      "imagePrompt": "110- Flat 2D cartoon, thick black outlines, simple stickman style, vibrant colors, clean cel shading, 16:9. [the protagonist: stickman with a big round white head, small black dot eyes, thick black eyebrows, thin line mouth, no nose, white stick body with thick black outlines, dark navy football jersey with gold trim and white number 9, white shorts, white socks, black football boots] on a physio bed with [a doctor stickman: big round white head, small black dot eyes, white coat, round glasses, stethoscope] checking his leg, a chart of training loads on the wall"
+    },
+    {
+      "narration": "Levantar un trofeo dura unos segundos. Detrás de esa fotografía hay años de trabajo compartido, partidos difíciles y días en los que tocó empezar de nuevo.",
+      "imagePrompt": "97- Flat 2D cartoon, thick black outlines, simple stickman style, vibrant colors, clean cel shading, 16:9. [the protagonist: stickman with a big round white head, small black dot eyes, thick black eyebrows, thin line mouth, no nose, white stick body with thick black outlines, dark navy football jersey with gold trim and white number 9, white shorts, white socks, black football boots] lifting a league trophy among teammates, confetti falling"
+    }
   ]
 }

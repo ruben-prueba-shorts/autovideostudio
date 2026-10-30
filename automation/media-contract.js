@@ -50,7 +50,28 @@
     const hash = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
     return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2,'0')).join('');
   }
-  const api = {FORMAT, IMAGE, orderImages, validateHandoff, digest};
+  async function textDigest(text) {
+    return digest(new Blob([text], {type:'text/plain;charset=utf-8'}));
+  }
+  async function verifyBindings(files, job) {
+    const manifests=Array.from(files).filter(f=>f.name==='bindings.json');
+    if (!manifests.length) return null;
+    if (manifests.length!==1 || manifests[0].size>2*1024*1024) throw new Error('Manifiesto de imágenes no válido.');
+    const source=manifests[0], data=JSON.parse(await source.text());
+    if(data.format!=='video-factory-bindings/v1'||data.jobId!==job.id||!Array.isArray(data.scenes)||data.scenes.length!==job.scenes.length)
+      throw new Error('El manifiesto no corresponde a este encargo.');
+    const ordered=orderImages(files,job.scenes.length), hash=await digest(source);
+    for(let i=0;i<ordered.length;i++) {
+      const entry=data.scenes[i], scene=job.scenes[i];
+      if(entry?.sceneIndex!==i+1||entry.image?.name!==ordered[i].name||
+        entry.promptSha256!==await textDigest(scene.imagePrompt)||entry.narrationSha256!==await textDigest(scene.narration)||
+        !/^[a-f0-9]{64}$/.test(entry.image.sha256)||entry.image.sha256!==await digest(ordered[i]))
+        throw new Error('La imagen, el prompt o la narración no coinciden con el manifiesto: escena '+(i+1));
+      if(entry.sourcePromptId!==undefined&&!/^\d{1,6}$/.test(String(entry.sourcePromptId)))throw new Error('Número de prompt original no válido.');
+    }
+    return {sha256:hash, scenes:data.scenes};
+  }
+  const api = {FORMAT, IMAGE, orderImages, validateHandoff, digest, textDigest, verifyBindings};
   root.VideoFactoryMedia = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

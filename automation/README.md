@@ -54,3 +54,5 @@ Sin `CLIPFARMING_DIR` se ejecutan las pruebas de AutoVideo y se informa explíci
 El navegador de pruebas se crea aislado y bloquea todas las solicitudes fuera del servidor local. Las imágenes y el audio son sintéticos. El resultado queda en `.test-artifacts/`, ignorado por Git. La prueba de vídeo usa un proyecto con tiempos conocidos y un tono generado localmente; no certifica la sincronización de una voz real de AI Studio.
 
 Consulta `VALIDATION.md` para los resultados observados de esta fase.
+
+La continuación de la fábrica está documentada en `REAL-INTEGRATION.md`, `FACTORY-RUNBOOK.md` y `FACTORY-VALIDATION.md`. Incluye asociación opcional por huellas (`bindings.json`), extracción de proyectos a paquetes locales, cola persistente y render FFmpeg por escenas con recuperación. La generación de voz/imágenes y la publicación permanecen desactivadas; el estado real y el sintético se distinguen en los resultados.
