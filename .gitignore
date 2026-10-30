@@ -3,3 +3,8 @@ node_modules/
 __pycache__/
 *.pyc
 *.sqlite*
+youtube-secrets/
+youtube-live-approval.json
+client_secret*.json
+token*.json
+.venv/

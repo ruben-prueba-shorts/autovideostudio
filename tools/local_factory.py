@@ -252,8 +252,17 @@ def render(manifest_path, output_root, heartbeat=lambda: None, height=720, fps=3
     return stats
 
 
+class ClosingConnection(sqlite3.Connection):
+    """A transaction context must also release its Windows file handles."""
+    def __exit__(self, *args):
+        try:
+            return super().__exit__(*args)
+        finally:
+            self.close()
+
+
 def connect(path):
-    db = sqlite3.connect(path, timeout=30)
+    db = sqlite3.connect(path, timeout=30, factory=ClosingConnection)
     db.row_factory = sqlite3.Row
     db.execute('PRAGMA journal_mode=WAL')
     db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, manifest TEXT NOT NULL, state TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, lease REAL, owner TEXT, error TEXT, result TEXT)')

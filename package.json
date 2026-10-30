@@ -2,6 +2,6 @@
   "name": "autovideostudio-integration-tests",
   "private": true,
   "engines": {"node": ">=20"},
-  "scripts": {"test": "node --test tests/*.test.cjs", "test:browser": "node tests/browser.cjs", "test:local": "python3 -m unittest discover -s tests -p local_factory_test.py -v", "test:orchestrator": "python3 -m unittest discover -s tests -p orchestrator_test.py -v"},
+  "scripts": {"test": "node --test tests/*.test.cjs", "test:browser": "node tests/browser.cjs", "test:local": "python3 -m unittest discover -s tests -p local_factory_test.py -v", "test:orchestrator": "python3 -m unittest discover -s tests -p orchestrator_test.py -v", "test:youtube": "python3 -m unittest discover -s tests -p youtube_factory_test.py -v"},
   "devDependencies": {"playwright": "1.62.1"}
 }

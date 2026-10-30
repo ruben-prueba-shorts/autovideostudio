@@ -12,12 +12,16 @@ from pathlib import Path
 import secrets
 import shutil
 import threading
+import platform
+import sys
 from urllib.parse import parse_qs
 import factory_orchestrator as factory
+import youtube_factory as youtube
 
 
 def doctor():
     return {'requirements': {p: shutil.which(p) for p in ('node','ffmpeg','ffprobe')},
+            'platform':platform.system(),'pythonVersion':platform.python_version(),'pythonExecutable':sys.executable,
             'clipFarmingCheckout': (factory.REPO.parent/'clipfarming/tools/local_shorts.py').is_file(),
             'userPcFolderTested': False, 'policy': factory.POLICY}
 
@@ -60,6 +64,10 @@ def create_server(root, port=8765):
             def form(action,title,fields,button):
                 return f'<section><h2>{title}</h2><form method="post" action="/{action}">{csrf}{fields}<button>{button}</button></form></section>'
             rows = ''.join(f'<tr><td>Vídeo {r["choice"]}</td><td>{escape(r["channel"])}</td><td>{escape(r["state"])} · {progress.get(r["id"],0)}/6</td><td>{escape(r["error"] or "")}</td></tr>' for r in jobs)
+            publishing=youtube.dashboard(root)
+            batch_options=''.join(f'<option value="{escape(b["id"])}">{escape(b["id"])} · {escape(b["origin"])}</option>' for b in publishing['batches'])
+            channel_rows=''.join(f'<tr><td>{escape(c["role"])}</td><td>{escape(c["title"])}</td><td>{escape(c["channel_id"])}</td><td>{escape(c["origin"])}</td></tr>' for c in publishing['channels'])
+            upload_rows=''.join(f'<tr><td>{escape(i["file"])}</td><td>{escape(i["channel_id"])}</td><td>{escape(i["origin"])} · {escape(i["state"])}</td><td>{escape(youtube.utc(i["publish_at"]) if i["publish_at"] else "Privado sin fecha")}</td><td>{escape(i["error"] or "")}</td></tr>' for i in publishing['items'])
             page = '''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Fábrica local</title>
 <style>body{font:16px system-ui;background:#f5f4ef;color:#21322c;margin:32px auto;max-width:1050px;padding:0 20px}h1{font-size:32px}section{background:white;padding:20px;border:1px solid #d7ddd7;border-radius:10px;margin:16px 0}h2{font-size:20px}label{display:block;margin:12px 0}textarea,input,select{display:block;box-sizing:border-box;width:100%;padding:9px;font:inherit}textarea{min-height:100px}button{background:#245c45;color:white;border:0;padding:11px 20px;border-radius:6px;cursor:pointer}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:9px;border-bottom:1px solid #ddd}p{line-height:1.5}.badge{background:#dfeadd;padding:10px;border-radius:6px}</style>
 <h1>Fábrica de vídeos local</h1><p class="badge">Sin servicios de pago · generación bloqueada · resultados para revisar</p>
@@ -69,7 +77,12 @@ def create_server(root, port=8765):
             page += form('script','3. Guion preparado',f'<label>Vídeo<select name="id" required>{choices}</select></label><label>Guion JSON<textarea name="script" required></textarea></label><label>Título, descripción y etiquetas en JSON<textarea name="metadata" required></textarea></label>','Incorporar guion')
             page += form('media','4. Material ya existente',f'<label>Vídeo<select name="id" required>{choices}</select></label><label>Manifiesto dentro de inbox/<input name="ready" placeholder="video-3/assets.ready.json" required></label><p>No genera imágenes ni voces. Conserva la asociación de cada archivo con su escena.</p>','Incorporar archivos')
             page += form('work','5. Procesar cola','<p>Montaje, Shorts, comprobaciones y carpeta final. Si falta contenido, queda en espera sin gastar cuota.</p>','Procesar siguiente vídeo')
-            page += f'<section><h2>Estado</h2><table><tr><th>Elección</th><th>Canal</th><th>Estado</th><th>Detalle</th></tr>{rows}</table><p><a href="/">Actualizar estado</a></p></section></html>'
+            page += f'<section><h2>Estado</h2><table aria-label="Producciones"><tr><th>Elección</th><th>Canal</th><th>Estado</th><th>Detalle</th></tr>{rows}</table><p><a href="/">Actualizar estado</a></p></section>'
+            page += f'<section><h2>Canales de YouTube</h2><p>La conexión oficial se completa personalmente en este ordenador mediante OAuth. No pegues contraseñas ni tokens.</p><table aria-label="Canales"><tr><th>Perfil</th><th>Nombre confirmado</th><th>ID exacto</th><th>Evidencia</th></tr>{channel_rows}</table></section>'
+            page += form('youtube-plan','6. Revisar entrega para YouTube',f'<label>Vídeo<select name="id" required>{choices}</select></label><label>Revisión y calendario JSON<textarea name="schedule" required></textarea></label><p>Crea un plan local con canal, archivos, visibilidad y fechas. No autoriza ni ejecuta subidas.</p>','Preparar plan sin subir')
+            page += f'<section><h2>Calendario de entregas</h2><table aria-label="Calendario YouTube"><tr><th>Archivo</th><th>Canal</th><th>Estado</th><th>Fecha UTC</th><th>Error</th></tr>{upload_rows}</table><p>Los resultados de simulación no prueban una subida real.</p></section>'
+            page += form('cleanup-preview','7. Simular limpieza',f'<label>Entrega<select name="batch" required>{batch_options}</select></label><p>Guarda la lista exacta, hashes, comprobaciones y bytes potenciales en cleanup-simulations/. Borrado desactivado. Espacio liberado: 0 bytes.</p>','Calcular sin borrar')
+            page += '</html>'
             self.respond(200,page)
 
         def do_POST(self):
@@ -95,6 +108,13 @@ def create_server(root, port=8765):
                         try: factory.scan_inbox(root); factory.run_once(root)
                         finally: worker.release()
                     threading.Thread(target=run,daemon=False).start()
+                elif self.path == '/youtube-plan': youtube.prepare(root,self.field(body,'id'),json.loads(self.field(body,'schedule')))
+                elif self.path == '/cleanup-preview':
+                    report=youtube.cleanup_simulation(root,self.field(body,'batch'))
+                    rows=''.join(f'<tr><td>{escape(a["path"])}</td><td>{a["bytes"]:,}</td><td><code>{a["sha256"]}</code></td></tr>' for a in report['files'])
+                    blocks=''.join(f'<li>{escape(b)}</li>' for b in report['blockers'])
+                    self.respond(200,f'<!doctype html><html lang="es"><meta charset="utf-8"><title>Simulación de limpieza</title><h1>Simulación: no se ha borrado ningún archivo</h1><p>Espacio potencial: {report["potentialBytes"]:,} bytes. Espacio liberado: 0 bytes.</p><ul>{blocks}</ul><table><tr><th>Archivo generado</th><th>Bytes</th><th>SHA-256</th></tr>{rows}</table><p>Se conservan originales, guiones, prompts, metadatos y registros.</p><a href="/">Volver</a></html>')
+                    return
                 else: return self.respond(404,'No existe')
                 self.send_response(303); self.send_header('Location','/'); self.end_headers()
             except (ValueError,OSError,KeyError) as error:

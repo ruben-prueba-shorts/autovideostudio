@@ -454,7 +454,7 @@ def package(root, job, outputs, ready, input_root, heartbeat):
       'uploadEnabled': False, 'publishEnabled': False,
       'videos': [{'file': 'long.mp4', 'snippet': {k:content['metadata'][k] for k in ('title','description','tags')}, 'status': {'privacyStatus': 'private'}}]+
         [{'file': f'shorts/short-{i+1:02}.mp4', 'snippet': {'title': c['selection']['title'][:100], 'description': content['metadata']['description'], 'tags': content['metadata']['tags']}, 'status': {'privacyStatus': 'private'}} for i, c in enumerate(outputs['shorts']['clips'])],
-      'pending': ['Authorize exact YouTube channel via official OAuth', 'Review content, audience and synthetic-media disclosure', 'Explicitly authorize upload; no uploader included']}
+      'pending': ['Authorize exact YouTube channel via official OAuth', 'Review content, audience and synthetic-media disclosure', 'Explicitly approve the exact upload plan; optional official client remains disabled']}
     render.atomic_json(staging/'youtube-preparation.json', plan)
     files = [{'path': str(p.relative_to(staging)).replace(os.sep, '/'), 'sha256': render.digest(p), 'bytes': p.stat().st_size}
       for p in sorted(staging.rglob('*')) if p.is_file() and p.name not in ('validation.json', 'ffmpeg.log')]

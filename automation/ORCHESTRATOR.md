@@ -1,6 +1,6 @@
 # Orquestador local — estado del 30 de octubre de 2026
 
-El núcleo está implementado en `tools/factory_orchestrator.py`, con interfaz local en `tools/factory_local_app.py`. No contiene clientes de generación, claves, facturación ni subida. Usa Python estándar, Node y FFmpeg/FFprobe. No necesita hosting, almacenamiento contratado ni una API de ChatGPT.
+El núcleo está implementado en `tools/factory_orchestrator.py`, con interfaz local en `tools/factory_local_app.py`. Usa Python estándar, Node y FFmpeg/FFprobe. No necesita hosting, almacenamiento contratado ni una API de ChatGPT. La extensión posterior de YouTube incluye un cliente oficial opcional **desactivado**, preparación Windows y limpieza **solo simulada**: estado y pruebas actuales en [WINDOWS-YOUTUBE.md](WINDOWS-YOUTUBE.md). No se añadió un generador ni se autorizó subir/borrar.
 
 **Funciona con guion y medios ya preparados; todavía no produce todo desde una idea sin intervención.** El trabajo de autoría de ChatGPT, las generaciones y su transferencia desde las interfaces de Google no se sustituyen por respuestas ficticias. Se emiten solicitudes de archivos y el encargo espera.
 
