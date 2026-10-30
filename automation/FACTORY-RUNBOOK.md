@@ -1,5 +1,7 @@
 # Fábrica local: medios existentes → montaje → revisión
 
+El orquestador central implementado añade selección «Haz el vídeo 3», informes versionados, etapas persistentes, bandeja automática, Shorts y entrega organizada. Consultar `ORCHESTRATOR.md`, `ZERO-COST.md` y `validation/orchestrator-results.json`. Este documento conserva las instrucciones del motor y de la prueba anterior; no hay que repetir las pruebas largas ya completadas.
+
 Continúa AutoVideo PR #3 y ClipFarming PR #2. No hay generación, facturación, despliegue ni publicación en estos ejecutables. El objetivo «Vídeo 1 desde una idea» aún requiere guion, medios y alineación; la selección por catálogo implementada aquí parte de un paquete de medios ya terminado.
 
 ## Requisitos

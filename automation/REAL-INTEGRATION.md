@@ -1,5 +1,7 @@
 # Primera integración real — 30 de octubre de 2026
 
+Continuación: `ORCHESTRATOR.md` documenta la ejecución de un encargo completo con estos mismos medios, sin generar otros. No se sustituye ni se repite esta validación original. Resultados nuevos separados en `validation/orchestrator-results.json`.
+
 **Se ha producido el vídeo real corto y un Short vertical.** Tres imágenes existentes de Flow, una sola narración autorizada en AI Studio, montaje/alineación/exportación en AutoVideo PR #3 y recepción/exportación vertical en ClipFarming PR #2. Se ejecutaron los editores de las ramas en Chromium aislado local; no se modificaron las webs públicas, no se fusionó nada y no se publicó en YouTube.
 
 Medidas, huellas y límites: `validation/real-30-results.json`. Las pruebas de 2/5/10/18 minutos de `FACTORY-VALIDATION.md` pertenecen a la fase anterior y usan material sintético. No se repitieron en esta fase.

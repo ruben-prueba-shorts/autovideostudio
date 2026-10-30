@@ -201,6 +201,13 @@ def attach_script(root, job_id, script_path, metadata_path):
         raise ValueError('Landscape script and title up to 100 characters required')
     if not isinstance(meta.get('description'), str) or len(meta['description']) > 5000 or not isinstance(meta.get('tags'), list) or any(not isinstance(t, str) for t in meta['tags']) or sum(len(t) for t in meta['tags']) > 450:
         raise ValueError('Invalid description/tags')
+    planned = meta.get('editorialShorts', [])
+    if not isinstance(planned, list) or len(planned)>12:
+        raise ValueError('At most twelve editorial Shorts may be planned')
+    for clip in planned:
+        a, b = clip.get('firstScene'), clip.get('lastScene')
+        if type(a) is not int or type(b) is not int or not 1 <= a <= b <= len(script['scenes']) or not isinstance(clip.get('title'), str) or not 1 <= len(clip['title']) <= 100 or not clip.get('reason'):
+            raise ValueError('Editorial Shorts require complete scene ranges, title and reason')
     payload = {'job': script, 'metadata': meta, 'sha256': fingerprint(script)}
     with connect(root) as db:
         db.execute('BEGIN IMMEDIATE'); current = db.execute('SELECT state,script FROM productions WHERE id=?', (job_id,)).fetchone()
@@ -299,6 +306,31 @@ def set_reference(root, channel, path):
     return {'channel': channel, 'reference': value, 'scope': 'new selections only'}
 
 
+def scan_inbox(root):
+    """Consume only explicitly ready envelopes in the dedicated inbox, idempotently.
+
+    Producers write assets first, the envelope last via atomic rename. Partial
+    downloads or hash mismatches never start a render or a generation retry.
+    """
+    results = []
+    for path in sorted(owned(root, 'inbox').glob('*/production.ready.json')):
+        try:
+            owned(root, path)
+            envelope = read(path)
+            if envelope.get('format') != 'video-factory-inbox/v1':
+                raise ValueError('Unsupported inbox envelope')
+            job_id = identifier(envelope.get('productionId'))
+            script = render.local_asset(path.parent, envelope['script'])
+            metadata = render.local_asset(path.parent, envelope['metadata'])
+            ready = render.local_asset(path.parent, envelope['media'])
+            attach_script(root, job_id, script, metadata)
+            attach_media(root, job_id, ready)
+            results.append({'id': job_id, 'accepted': True})
+        except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
+            results.append({'file': path.name, 'accepted': False, 'error': str(error)[:1000]})
+    return results
+
+
 def audit(path, duration, orientation):
     p = subprocess.run(['node', str(REPO/'tools/audit-mp4.cjs'), str(path), str(duration), orientation], capture_output=True, timeout=max(120, duration*2))
     if p.returncode:
@@ -363,12 +395,26 @@ def execute_stage(root, job, stage, outputs, heartbeat):
             raise Blocked('Install ClipFarming development checkout beside AutoVideo')
         module_spec = importlib.util.spec_from_file_location('clipfarming_local_shorts', location); module = importlib.util.module_from_spec(module_spec); module_spec.loader.exec_module(module)
         assembly = outputs['assembly']; h = read(assembly['handoff'])
-        clips = module.export(assembly['master'], h, work/'shorts', heartbeat, count=3, target=min(60, spec['targetSeconds']), flex=min(20, max(1, spec['targetSeconds']/4)))
+        content = json.loads(job['script']); planned = content['metadata'].get('editorialShorts', []); editorial = None
+        if planned:
+            if ready['mode']=='render':
+                timeline = read(roles['render-manifest'][0])['scenes']
+            else:
+                project = read(roles['project'][0], 600*1024*1024)
+                if contract('job', project['factoryJob'])['job'] != content['job']:
+                    raise ValueError('Editable project differs from the selected script')
+                timeline = project['scenes']
+                if [s['text'] for s in timeline] != [s['narration'] for s in content['job']['scenes']]:
+                    raise ValueError('Editable project scene order differs from the script')
+            editorial = [{'start': timeline[c['firstScene']-1]['start'], 'end': timeline[c['lastScene']-1]['end'],
+                          'title': c['title'], 'reason': c['reason']} for c in planned]
+        clips = module.export(assembly['master'], h, work/'shorts', heartbeat, count=3, target=min(60, spec['targetSeconds']),
+                              flex=min(20, max(1, spec['targetSeconds']/4)), editorial=editorial)
         editable = work/'clipfarming-local-project.json'
         render.atomic_json(editable, {'format': 'corta-studio/v1', 'factoryJobId': h['jobId'], 'video': h['video'], 'settings':
           {'mode': 'local', 'aspect': 'vertical', 'framing': 'contain', 'resolution': '720', 'fps': '30', 'burnSubs': True},
           'cues': h['cues'], 'clips': [c['selection'] for c in clips], 'subtitleName': 'AutoVideo cues'})
-        return {'clips': clips, 'project': str(editable), 'selection': 'shared-ClipFarming-local-heuristics', 'needsEditorialReview': True}, [editable, *[Path(c['path']) for c in clips]]
+        return {'clips': clips, 'project': str(editable), 'selection': 'script-editorial-plan' if planned else 'shared-ClipFarming-local-heuristics', 'needsEditorialReview': True}, [editable, *[Path(c['path']) for c in clips]]
     if stage != 'package':
         raise ValueError('Unsupported stage')
     return package(root, job, outputs, ready, ready_path.parent, heartbeat)
@@ -406,7 +452,7 @@ def package(root, job, outputs, ready, input_root, heartbeat):
         temp.replace(thumb)
     plan = {'format': 'video-factory-youtube-preparation/v1', 'productionId': job['id'], 'channelProfile': job['channel'], 'channelId': None,
       'uploadEnabled': False, 'publishEnabled': False,
-      'videos': [{'file': 'long.mp4', 'snippet': content['metadata'], 'status': {'privacyStatus': 'private'}}]+
+      'videos': [{'file': 'long.mp4', 'snippet': {k:content['metadata'][k] for k in ('title','description','tags')}, 'status': {'privacyStatus': 'private'}}]+
         [{'file': f'shorts/short-{i+1:02}.mp4', 'snippet': {'title': c['selection']['title'][:100], 'description': content['metadata']['description'], 'tags': content['metadata']['tags']}, 'status': {'privacyStatus': 'private'}} for i, c in enumerate(outputs['shorts']['clips'])],
       'pending': ['Authorize exact YouTube channel via official OAuth', 'Review content, audience and synthetic-media disclosure', 'Explicitly authorize upload; no uploader included']}
     render.atomic_json(staging/'youtube-preparation.json', plan)
@@ -416,7 +462,7 @@ def package(root, job, outputs, ready, input_root, heartbeat):
       'sourceReportMaterial': spec['material'], 'mediaMaterial': ready['material'], 'policy': POLICY, 'files': files,
       'longVideoAudits': outputs['assembly']['audits'], 'shortVideoAudits': [c['audit'] for c in outputs['shorts']['clips']],
       'reviewRequired': True, 'humanListeningApproved': False, 'thumbnail': 'frame-extraction-not-a-generated-or-CTR-tested-design',
-      'shortSelection': 'local-heuristics-not-a-semantic-or-virality-guarantee', 'userPcFolderTested': False}
+      'shortSelection': outputs['shorts']['selection'], 'semanticQualityGuaranteed': False, 'userPcFolderTested': False}
     render.atomic_json(staging/'validation.json', validation); heartbeat(); final.parent.mkdir(parents=True, exist_ok=True)
     if final.exists():
         raise ValueError('Delivery appeared concurrently; refuse overwrite')
@@ -497,7 +543,7 @@ def retry(root, job_id, reset_from=None):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__); sub = p.add_subparsers(dest='cmd', required=True)
-    for name in ['init', 'status']:
+    for name in ['init', 'status', 'scan']:
         q = sub.add_parser(name); q.add_argument('root')
     q = sub.add_parser('import-report'); q.add_argument('root'); q.add_argument('report')
     q = sub.add_parser('select'); q.add_argument('root'); q.add_argument('report_id'); q.add_argument('choice'); q.add_argument('--seconds', type=float, default=1080); q.add_argument('--scenes', type=int, default=160)
@@ -513,9 +559,11 @@ def main():
     elif a.cmd == 'attach-script': result = attach_script(a.root, a.id, a.script, a.metadata)
     elif a.cmd == 'attach-media': result = attach_media(a.root, a.id, a.ready)
     elif a.cmd == 'reference': result = set_reference(a.root, a.channel, a.image)
+    elif a.cmd == 'scan': result = scan_inbox(a.root)
     elif a.cmd == 'retry': result = retry(a.root, a.id, a.reset_from)
     elif a.cmd == 'work':
         while True:
+            if a.watch: scan_inbox(a.root)
             result = run_once(a.root, a.id)
             if not a.watch: break
             if result: print(json.dumps(result, ensure_ascii=False), flush=True)
