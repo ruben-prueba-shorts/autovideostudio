@@ -1,6 +1,7 @@
 (function (root) {
   "use strict";
   const FORMAT = "video-factory-job/v1";
+  let currentJob = null;
   function text(value, label, max) {
     if (typeof value !== "string" || !value.trim() || value.length > max) {
       throw new Error(label + " debe contener texto (máximo " + max + " caracteres).");
@@ -25,8 +26,8 @@
     const scenes = data.scenes.map(function (scene, i) {
       if (!scene || typeof scene !== "object") throw new Error("Escena " + (i + 1) + " no válida.");
       return {
-        narration: text(scene.narration, "Narración escena " + (i + 1), 4000),
-        imagePrompt: text(scene.imagePrompt, "Prompt escena " + (i + 1), 3000).replace(/\s+/g, " ").replace(/^\d+[.)]\s*/, "")
+        narration: text(scene.narration, "Narración escena " + (i + 1), 4000).replace(/\s+/g, " "),
+        imagePrompt: text(text(scene.imagePrompt, "Prompt escena " + (i + 1), 3000).replace(/\s+/g, " ").replace(/^\d+[.)]\s*/, ""), "Prompt escena " + (i + 1), 3000)
       };
     });
     return {format: FORMAT, id: id, title: title, language: data.language,
@@ -45,8 +46,8 @@
       if (!node) throw new Error("Falta el campo " + id + " en esta versión.");
       return node;
     };
-    const existing = root.Studio._test && root.Studio._test.snapshot ? root.Studio._test.snapshot() : null;
-    if (existing && (existing.images.length || existing.scenes.length || existing.verified)) {
+    const existing = root.Studio.projectInfo();
+    if (existing.hasMedia || existing.busy) {
       throw new Error("Ya hay medios o escenas cargados. Guarda el proyecto y abre AutoVideo Studio en una pestaña nueva antes de importar otro encargo.");
     }
     if (el("scriptArea").value.trim() && !root.confirm("¿Sustituir el guion y los prompts actuales? Guarda antes el proyecto.")) {
@@ -58,9 +59,14 @@
     el("promptGenMode").value = "manual19";
     el("aiManualPrompts19").value = promptList(job);
     el("promptsArea").value = promptList(job);
+    // External assets are the default for these jobs; never launch cloud services here.
+    el("voiceEngine").value = "upload";
+    root.Studio.voiceEngineChanged();
+    el("syncEngine").value = "local";
     el("promptGenMode").dispatchEvent(new Event("change", {bubbles: true}));
     root.Studio.setFormat(job.aspectRatio);
     el("scriptArea").dispatchEvent(new Event("input", {bubbles: true}));
+    restoreJob(job);
     root.Studio.saveDraftSoon();
     if (typeof root.switchTab === "function") root.switchTab(2);
     return true;
@@ -95,7 +101,28 @@
     header.insertBefore(button, header.querySelector("#saveProjectBtn"));
     root.document.body.appendChild(picker);
   }
-  const api = {validateJob: validateJob, promptList: promptList, applyJob: applyJob};
+  function getJob() {return currentJob ? JSON.parse(JSON.stringify(currentJob)) : null;}
+  function validateProjectJob(input, data) {
+    const job = validateJob(input);
+    if (typeof data.script !== 'string' || typeof data.manualPrompts !== 'string' ||
+        data.script.trim() !== job.scenes.map(s=>s.narration).join("\n\n") ||
+        data.manualPrompts.trim() !== promptList(job) || data.promptMode !== 'manual19')
+      throw new Error('El encargo guardado no coincide con el guion y sus prompts.');
+    return job;
+  }
+  function matchingJob() {
+    if (!currentJob || !root.document) return null;
+    const el=id=>root.document.getElementById(id);
+    try {return validateProjectJob(currentJob,{script:el('scriptArea').value,manualPrompts:el('aiManualPrompts19').value,promptMode:el('promptGenMode').value});}
+    catch (_) {return null;}
+  }
+  function restoreJob(job) {
+    currentJob = job ? validateJob(job) : null;
+    if(currentJob && root.document) for(const id of ['autoImageFit','aiImageFit']) {
+      const input=root.document.getElementById(id);if(input)input.checked=false;
+    }
+  }
+  const api = {validateJob, promptList, applyJob, getJob, matchingJob, validateProjectJob, restoreJob};
   root.VideoFactoryImport = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root.document) {
@@ -103,3 +130,4 @@
     else boot();
   }
 })(typeof window !== "undefined" ? window : globalThis);
+
