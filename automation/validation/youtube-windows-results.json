@@ -1,0 +1,90 @@
+{
+  "format": "video-factory-windows-youtube-validation/v1",
+  "date": "2026-10-30",
+  "tests": {
+    "youtubeOffline": 25,
+    "orchestratorRegression": 11,
+    "rendererRegression": 4,
+    "autoVideoNode": 6,
+    "isolatedLocalUi": true,
+    "isolatedYoutubeUi": true,
+    "totalAutomatedTests": 46,
+    "browserUiChecks": 2
+  },
+  "realMediaSimulatedYouTube": {
+    "cleanup": {
+      "blockers": [
+        "Simulated YouTube evidence cannot authorize real cleanup"
+      ],
+      "candidateFiles": 4,
+      "deletedFiles": 0,
+      "dryRun": true,
+      "eligibleAfterRemoteChecks": false,
+      "freedBytes": 0,
+      "potentialBytes": 30991816
+    },
+    "contentReviewWasSimulated": true,
+    "date": "2026-10-30",
+    "expectedSessions": 2,
+    "format": "video-factory-youtube-integration-result/v1",
+    "lostFinalResponseRecovery": true,
+    "media": "existing Flow/Mako real sample",
+    "newGenerations": 0,
+    "oauthRequests": 0,
+    "realUploads": 0,
+    "rerenders": 0,
+    "resumableSessionsCreated": 2,
+    "sourceHashesAndMtimesPreserved": true,
+    "state": "scheduled",
+    "syntheticVideoItems": 2,
+    "userChannelsConnected": 0,
+    "userWindowsTested": false,
+    "youtubeLiveTested": false,
+    "youtubeOrigin": "simulation"
+  },
+  "pcBootstrapSmoke": {
+    "passed": true,
+    "platform": "Linux",
+    "userPcFolderTested": false,
+    "masterHashAndMtimePreserved": true,
+    "state": "review",
+    "material": "synthetic",
+    "newGenerationQuota": 0,
+    "uploadRequests": 0,
+    "deletedFiles": 0,
+    "bytesWritten": 2107527
+  },
+  "windowsAccess": {
+    "braveConnected": true,
+    "loopbackCompanionAccessible": false,
+    "connectionError": "ERR_CONNECTION_REFUSED",
+    "windowsShellAvailable": false,
+    "windowsInstallationExecuted": false,
+    "powerShellSyntaxOrRuntimeTested": false,
+    "windowsDpapiTested": false,
+    "studioChannelIdsObserved": 4,
+    "oauthConsentsExecuted": 0
+  },
+  "initialIssues": {
+    "firstSyntheticSmoke": "SQLite disk I/O error; failed evidence retained",
+    "connectionChange": "Explicit commit/rollback and handle close; subsequent smoke and regressions passed; unique cause of initial I/O failure not proven",
+    "harnessRecovery": "Closed backup connections, saved simulated server state, final WAL checkpoint; final state verified by separate process and UI",
+    "browserTestFirstLaunch": "Default Playwright binary unavailable; rerun with existing isolated Chromium executable passed"
+  },
+  "policy": {
+    "economicCostEUR": 0,
+    "newGenerationQuota": 0,
+    "realUploads": 0,
+    "publications": 0,
+    "deletedFiles": 0,
+    "mergedPRs": 0,
+    "productionDeployments": 0
+  },
+  "notProven": [
+    "Windows execution and delivery to user disk",
+    "Live OAuth, DPAPI and exact-channel API authorization",
+    "Actual upload, server processing and future public scheduling",
+    "Automatic final deletion or approved automatic publication rules",
+    "Automatic free Google generation/transfer at long-video capacity"
+  ]
+}

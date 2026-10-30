@@ -1,0 +1,4 @@
+# Optional only: Google-maintained OAuth/auth clients from PyPI. No paid API key.
+# Install inside the dedicated Windows .venv, never into a system Python.
+google-auth-oauthlib>=1.2,<2
+google-auth[requests]>=2.38,<3

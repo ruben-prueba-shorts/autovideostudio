@@ -1,0 +1,181 @@
+{
+  "format": "video-factory-orchestrator-validation/v1",
+  "date": "2026-10-30",
+  "tests": {
+    "orchestratorPython": 11,
+    "legacyRendererPython": 4,
+    "autoVideoNode": 6,
+    "clipFarmingNode": 4,
+    "localCompanionUi": {
+      "passed": true,
+      "selection": 3,
+      "duplicateSelectionDidNotDuplicate": true,
+      "blockedWithoutScript": true,
+      "externalRequests": 0,
+      "localHostOnly": true,
+      "userPcFolderTested": false
+    },
+    "deliveredClipFarmingUi": {
+      "passed": true,
+      "masterIdentityPassed": true,
+      "editableProjectRestored": true,
+      "cues": 25,
+      "externalRequests": 0
+    }
+  },
+  "realReuseCase": {
+    "reportMaterial": "synthetic catalogue, not viral research",
+    "mediaMaterial": "real existing Flow/Mako sample",
+    "selection": "Haz el vídeo 3",
+    "state": "review",
+    "elapsedSeconds": 13.048,
+    "newVoiceGenerations": 0,
+    "newImageGenerations": 0,
+    "deliveryFiles": 23,
+    "longVideoUnchangedFromOriginal": true,
+    "longAudit": {
+      "audio": [
+        {
+          "channels": 2,
+          "codec_name": "aac",
+          "sample_rate": "48000"
+        }
+      ],
+      "checks": {
+        "aac": true,
+        "duration": true,
+        "durationMatches": true,
+        "faststart": true,
+        "fullDecode": true,
+        "h264": true,
+        "mp4": true,
+        "orientation": true,
+        "yuv420p": true
+      },
+      "duration": 25.819938,
+      "expected": 25.800146,
+      "file": "video-real-horizontal.mp4",
+      "passed": true,
+      "video": [
+        {
+          "avg_frame_rate": "30/1",
+          "codec_name": "h264",
+          "height": 720,
+          "pix_fmt": "yuv420p",
+          "width": 1280
+        }
+      ]
+    },
+    "shortAudits": [
+      {
+        "audio": [
+          {
+            "channels": 2,
+            "codec_name": "aac",
+            "sample_rate": "48000"
+          }
+        ],
+        "checks": {
+          "aac": true,
+          "duration": true,
+          "durationMatches": true,
+          "faststart": true,
+          "fullDecode": true,
+          "h264": true,
+          "mp4": true,
+          "orientation": true,
+          "yuv420p": true
+        },
+        "duration": 25.807479,
+        "expected": 25.800146,
+        "file": "short.mp4",
+        "passed": true,
+        "video": [
+          {
+            "avg_frame_rate": "30/1",
+            "codec_name": "h264",
+            "height": 1280,
+            "pix_fmt": "yuv420p",
+            "width": 720
+          }
+        ]
+      }
+    ],
+    "imageSamples": [
+      {
+        "time": 1.7,
+        "sourcePromptId": "102",
+        "passed": true
+      },
+      {
+        "time": 8.82,
+        "sourcePromptId": "110",
+        "passed": true
+      },
+      {
+        "time": 18.06,
+        "sourcePromptId": "97",
+        "passed": true
+      }
+    ],
+    "audioWindows": [
+      {
+        "sourceStart": 0.2,
+        "duration": 4,
+        "lagSeconds": 0.054875,
+        "streamStartSeconds": 0.045,
+        "correlation": 0.995196988089143
+      },
+      {
+        "sourceStart": 10.2,
+        "duration": 4,
+        "lagSeconds": 0.054875,
+        "streamStartSeconds": 0.045,
+        "correlation": 0.9897385044641471
+      },
+      {
+        "sourceStart": 21.2,
+        "duration": 4,
+        "lagSeconds": 0.054875,
+        "streamStartSeconds": 0.045,
+        "correlation": 0.9936934760640845
+      }
+    ],
+    "humanListeningApproved": false,
+    "userPcFolderTested": false
+  },
+  "syntheticCases": {
+    "connectedRenderAndShortsPassed": true,
+    "threeSceneEditorialShortsPassed": true,
+    "fourChannelSelectionPassed": true,
+    "controlledInterruptionResumeWithoutRenderPassed": true,
+    "targetedRenderClaimDoesNotTakeOtherJobs": true,
+    "quotaGenerationBlocked": true,
+    "inboxHashMismatchRejected": true,
+    "duplicateSelectionRejected": true,
+    "personalFolderOverwriteRejected": true
+  },
+  "longCapacity": {
+    "existing160Images18MinuteSyntheticResultsReused": true,
+    "longTestsRerun": false,
+    "real18Minutes160AlignedScenesTested": false
+  },
+  "policy": {
+    "economicBudgetEUR": 0,
+    "generationQuotaAuthorized": 0,
+    "networkGenerationEnabled": false,
+    "paidApiEnabled": false,
+    "publishEnabled": false,
+    "uploadEnabled": false
+  },
+  "unattendedFromIdea": false,
+  "limitations": [
+    "No new verified viral report was generated in this test",
+    "ChatGPT script and editorial plan supplied through file/UI contracts, not an automatic API",
+    "Flow/Viral DNA transfer and free throughput not certified",
+    "No new TTS samples; local alternatives not installed or compared acoustically",
+    "No actual Windows destination tested",
+    "No YouTube upload or OAuth channel authorization executed",
+    "Thumbnail is an extracted frame; semantic review required"
+  ]
+}
