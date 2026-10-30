@@ -275,18 +275,21 @@ def enqueue(db_path, manifest_path):
     return {'id': manifest['id'], 'state': 'queued', 'existing': False}
 
 
-def work_once(db_path, output, height=720, fps=30, burn=False, stop_after=0):
+def work_once(db_path, output, height=720, fps=30, burn=False, stop_after=0, job_id=None, external_heartbeat=lambda: None):
     owner = uuid.uuid4().hex
     with connect(db_path) as db:
         db.execute('BEGIN IMMEDIATE')
-        db.execute("UPDATE jobs SET state='failed',error='Worker lease expired; explicit retry required',owner=NULL WHERE state='running' AND lease<?", (time.time(),))
-        job = db.execute("SELECT * FROM jobs WHERE state='queued' AND attempts<3 ORDER BY rowid LIMIT 1").fetchone()
+        scope = ' AND id=?' if job_id else ''
+        db.execute("UPDATE jobs SET state='failed',error='Worker lease expired; explicit retry required',owner=NULL WHERE state='running' AND lease<?"+scope,
+                   (time.time(), job_id) if job_id else (time.time(),))
+        job = db.execute("SELECT * FROM jobs WHERE state='queued' AND attempts<3"+scope+' ORDER BY rowid LIMIT 1', (job_id,) if job_id else ()).fetchone()
         if not job:
             return None
         db.execute("UPDATE jobs SET state='running',owner=?,attempts=attempts+1,lease=?,error=NULL WHERE id=?", (owner, time.time()+120, job['id']))
     last_heartbeat = [0.]
 
     def heartbeat():
+        external_heartbeat()
         now = time.time()
         if now-last_heartbeat[0] < 10:
             return
